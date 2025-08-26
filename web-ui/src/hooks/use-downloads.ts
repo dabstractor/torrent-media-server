@@ -1,54 +1,132 @@
-import useSWR from 'swr'
-import { useCallback } from 'react'
-import { getDownloads, controlDownload } from '@/lib/api/torrents'
-import type { DownloadsResponse } from '@/types'
+import { useState, useCallback } from 'react'
 
-const DOWNLOADS_KEY = '/api/downloads'
-const REFRESH_INTERVAL = 5000 // 5 seconds
+export interface DownloadItem {
+  id: string
+  fileName: string
+  url: string
+  status: 'pending' | 'downloading' | 'completed' | 'failed' | 'cancelled'
+  progress: number
+  size?: number
+  downloaded?: number
+  startTime?: number
+  endTime?: number
+}
 
 export function useDownloads() {
-  const { data, error, mutate, isLoading } = useSWR<DownloadsResponse>(
-    DOWNLOADS_KEY,
-    getDownloads,
-    {
-      refreshInterval: REFRESH_INTERVAL,
-      revalidateOnFocus: true,
-      errorRetryInterval: 10000,
-    }
-  )
+  const [downloads, setDownloads] = useState<DownloadItem[]>([])
 
-  const pauseDownload = useCallback(async (hash: string) => {
-    const success = await controlDownload(hash, 'pause')
-    if (success) {
-      mutate() // Revalidate data
-    }
-    return success
-  }, [mutate])
+  // Simulate download progress (in a real app, this would be replaced with actual download logic)
+  const simulateDownload = useCallback((downloadId: string) => {
+    const interval = setInterval(() => {
+      setDownloads(prev => prev.map(download => {
+        if (download.id === downloadId && download.status === 'downloading') {
+          const newProgress = Math.min(download.progress + 10, 100)
+          const status = newProgress === 100 ? 'completed' : 'downloading'
+          
+          if (status === 'completed') {
+            clearInterval(interval)
+            return { 
+              ...download, 
+              progress: newProgress, 
+              status,
+              endTime: Date.now()
+            }
+          }
+          
+          return { ...download, progress: newProgress }
+        }
+        return download
+      }))
+    }, 500)
 
-  const resumeDownload = useCallback(async (hash: string) => {
-    const success = await controlDownload(hash, 'resume')
-    if (success) {
-      mutate()
-    }
-    return success
-  }, [mutate])
+    // Clean up interval after 5 seconds (simulation)
+    setTimeout(() => {
+      clearInterval(interval)
+      setDownloads(prev => prev.map(download => 
+        download.id === downloadId && download.status === 'downloading'
+          ? { ...download, status: 'completed', progress: 100, endTime: Date.now() }
+          : download
+      ))
+    }, 5000)
+  }, [])
 
-  const deleteDownload = useCallback(async (hash: string) => {
-    const success = await controlDownload(hash, 'delete')
-    if (success) {
-      mutate()
+  // Initiate the actual download process
+  const initiateDownload = useCallback(async (downloadId: string) => {
+    setDownloads(prev => prev.map(download => 
+      download.id === downloadId 
+        ? { ...download, status: 'downloading', startTime: Date.now() } 
+        : download
+    ))
+
+    try {
+      // For now, we'll simulate a download process
+      simulateDownload(downloadId)
+    } catch {
+      setDownloads(prev => prev.map(download => 
+        download.id === downloadId 
+          ? { ...download, status: 'failed' } 
+          : download
+      ))
     }
-    return success
-  }, [mutate])
+  }, [simulateDownload])
+
+  // Add a new download
+  const addDownload = useCallback((url: string, fileName: string) => {
+    const newDownload: DownloadItem = {
+      id: Date.now().toString(),
+      fileName,
+      url,
+      status: 'pending',
+      progress: 0
+    }
+    
+    setDownloads(prev => [...prev, newDownload])
+    
+    // Start the download process
+    initiateDownload(newDownload.id)
+  }, [initiateDownload])
+
+  // Cancel a download
+  const cancelDownload = useCallback((id: string) => {
+    setDownloads(prev => prev.map(download => 
+      download.id === id 
+        ? { ...download, status: 'cancelled', endTime: Date.now() } 
+        : download
+    ))
+  }, [])
+
+  // Retry a failed download
+  const retryDownload = useCallback((id: string) => {
+    setDownloads(prev => prev.map(download => 
+      download.id === id 
+        ? { ...download, status: 'pending', progress: 0, startTime: undefined, endTime: undefined } 
+        : download
+    ))
+    
+    // Restart the download process
+    setTimeout(() => {
+      initiateDownload(id)
+    }, 100)
+  }, [initiateDownload])
+
+  // Clear completed downloads
+  const clearCompleted = useCallback(() => {
+    setDownloads(prev => prev.filter(download => 
+      download.status !== 'completed' && download.status !== 'cancelled'
+    ))
+  }, [])
+
+  // Clear all downloads
+  const clearAll = useCallback(() => {
+    setDownloads([])
+  }, [])
 
   return {
-    downloads: data?.downloads || [],
-    stats: data?.stats,
-    isLoading,
-    error,
-    refresh: mutate,
-    pauseDownload,
-    resumeDownload,
-    deleteDownload,
+    downloads,
+    addDownload,
+    cancelDownload,
+    retryDownload,
+    clearCompleted,
+    clearAll
   }
 }

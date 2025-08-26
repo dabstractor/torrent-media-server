@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import type { DownloadsResponse } from '@/types'
+import type { DownloadsResponse } from '@/lib/types';
 
 export function useRealtimeDownloads() {
   const [data, setData] = useState<DownloadsResponse | null>(null)
@@ -13,21 +13,21 @@ export function useRealtimeDownloads() {
 
     eventSource.onopen = () => {
       setIsConnected(true)
-      console.log('Real-time connection established')
+      // console.log('Real-time connection established')
     }
 
     eventSource.onmessage = (event) => {
       try {
         const newData = JSON.parse(event.data)
         setData(newData)
-      } catch (error) {
-        console.error('Failed to parse real-time data:', error)
+      } catch {
+        // console.error('Failed to parse real-time data:', error)
       }
     }
 
-    eventSource.onerror = (error) => {
+    eventSource.onerror = (_error) => {
       setIsConnected(false)
-      console.error('Real-time connection error:', error)
+      // console.error('Real-time connection error:', error)
     }
 
     // Cleanup on unmount
@@ -69,8 +69,8 @@ export function useRealtimeSearch(query: string, debounceMs = 300) {
         const response = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`)
         const data = await response.json()
         setSuggestions(data.suggestions || [])
-      } catch (error) {
-        console.error('Failed to fetch suggestions:', error)
+      } catch {
+        // console.error('Failed to fetch suggestions:', error)
         setSuggestions([])
       } finally {
         setIsLoading(false)

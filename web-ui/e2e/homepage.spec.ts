@@ -11,22 +11,22 @@ test.describe('Homepage', () => {
     await expect(page.getByRole('heading', { name: 'Torrent Manager' })).toBeVisible()
 
     // Check navigation cards
-    await expect(page.getByRole('link', { name: /search/i })).toBeVisible()
-    await expect(page.getByRole('link', { name: /downloads/i })).toBeVisible()
-    await expect(page.getByRole('link', { name: /settings/i })).toBeVisible()
+    await expect(page.getByRole('main').getByRole('link', { name: /search/i })).toBeVisible()
+    await expect(page.getByRole('main').getByRole('link', { name: /downloads/i })).toBeVisible()
+    await expect(page.getByRole('main').getByRole('link', { name: /settings/i })).toBeVisible()
   })
 
   test('should navigate to search page', async ({ page }) => {
     await page.goto('/')
     
-    await page.getByRole('link', { name: /search/i }).click()
+    await page.getByRole('main').getByRole('link', { name: /search/i }).click()
     await expect(page).toHaveURL('/search')
   })
 
   test('should navigate to downloads page', async ({ page }) => {
     await page.goto('/')
     
-    await page.getByRole('link', { name: /downloads/i }).click()
+    await page.getByRole('main').getByRole('link', { name: /downloads/i }).click()
     await expect(page).toHaveURL('/downloads')
   })
 
@@ -36,8 +36,8 @@ test.describe('Homepage', () => {
     await page.goto('/')
 
     // Check that navigation cards are stacked vertically and touch-friendly
-    const searchCard = page.getByRole('link', { name: /search/i })
-    const downloadCard = page.getByRole('link', { name: /downloads/i })
+    const searchCard = page.getByRole('main').getByRole('link', { name: /search/i })
+    const downloadCard = page.getByRole('main').getByRole('link', { name: /downloads/i })
     
     await expect(searchCard).toBeVisible()
     await expect(downloadCard).toBeVisible()

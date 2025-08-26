@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:${PORT:-3000}"
     volumes:
       - ./src:/app/src
       - ./public:/app/public
@@ -15,9 +15,13 @@ services:
     environment:
       - NODE_ENV=development
       - NEXT_TELEMETRY_DISABLED=1
+      - PORT=${PORT:-3000}
       # API endpoints for external services
       - PROWLARR_URL=http://prowlarr:9696
+      - PROWLARR_API_KEY=your_prowlarr_api_key_here
       - QBITTORRENT_URL=http://qbittorrent:8080
+      - QBITTORRENT_USER=admin
+      - QBITTORRENT_PASSWORD=admin
     networks:
       - torrent-network
     depends_on:

@@ -4,13 +4,13 @@ import type {
   DownloadsResponse, 
   TorrentResult,
   Download 
-} from '@/types'
+} from '@/lib/types';
 
 // Search torrents via Prowlarr/Jackett
 export const searchTorrents = async (
   query: string, 
   category?: string
-): Promise<SearchResponse | null> => {
+): Promise<SearchResponse> => {
   const params = new URLSearchParams({ query })
   if (category) params.append('category', category)
   
@@ -18,7 +18,10 @@ export const searchTorrents = async (
     `/search?${params.toString()}`
   )
   
-  return response.success ? response.data : null
+  if (response.success) {
+    return response.data;
+  }
+  throw new Error(response.error || 'Search failed');
 }
 
 // Add torrent to qBittorrent
@@ -26,7 +29,7 @@ export const addTorrent = async (
   torrent: Pick<TorrentResult, 'downloadUrl' | 'magnetUrl'>,
   category?: string
 ): Promise<boolean> => {
-  const response = await apiClient.post<{ hash: string }>('/downloads', {
+  const response = await apiClient.post<{ hash: string }>('/torrents', {
     url: torrent.magnetUrl || torrent.downloadUrl,
     category,
   })
@@ -34,25 +37,31 @@ export const addTorrent = async (
   return response.success
 }
 
-// Get all downloads
-export const getDownloads = async (): Promise<DownloadsResponse | null> => {
-  const response = await apiClient.get<DownloadsResponse>('/downloads')
-  return response.success ? response.data : null
+// Get all torrents
+export const getTorrents = async (): Promise<DownloadsResponse> => {
+  const response = await apiClient.get<DownloadsResponse>('/torrents');
+  if (response.success) {
+    return response.data;
+  }
+  throw new Error(response.error || 'Failed to fetch torrents');
 }
 
-// Control download (pause, resume, delete)
-export const controlDownload = async (
+// Control torrent (pause, resume, delete)
+export const controlTorrent = async (
   hash: string, 
   action: 'pause' | 'resume' | 'delete'
 ): Promise<boolean> => {
-  const response = await apiClient.post<void>(`/downloads/${hash}/${action}`)
+  const response = await apiClient.post<void>(`/torrents/${hash}/${action}`)
   return response.success
 }
 
-// Get download details
-export const getDownloadDetails = async (
+// Get torrent details
+export const getTorrentDetails = async (
   hash: string
-): Promise<Download | null> => {
-  const response = await apiClient.get<Download>(`/downloads/${hash}`)
-  return response.success ? response.data : null
+): Promise<Download> => {
+  const response = await apiClient.get<Download>(`/torrents/${hash}`);
+  if (response.success) {
+    return response.data;
+  }
+  throw new Error(response.error || 'Failed to fetch torrent details');
 }

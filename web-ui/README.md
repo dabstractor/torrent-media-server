@@ -39,7 +39,8 @@ A modern, mobile-first React/Next.js application for managing torrents with real
 2. **Set up environment variables**
    ```bash
    cp .env.example .env.local
-   # Edit .env.local with your API endpoints
+   # Edit .env.local with your API endpoints and port configuration
+   # Set PORT=3000 (or any available port) to avoid conflicts
    ```
 
 3. **Start development server**
@@ -52,7 +53,7 @@ A modern, mobile-first React/Next.js application for managing torrents with real
    docker-compose -f docker-compose.dev.yml up
    ```
 
-The application will be available at `http://localhost:3000`
+The application will be available at `http://localhost:3000` (or your configured PORT)
 
 ### Testing
 
@@ -164,7 +165,9 @@ function DownloadsPage() {
 
 ```bash
 docker build -t torrent-web-ui .
-docker run -p 3000:3000 torrent-web-ui
+docker run -p 3000:3000 -e PORT=3000 torrent-web-ui
+# Or use a different port:
+# docker run -p 4000:4000 -e PORT=4000 torrent-web-ui
 ```
 
 ### Development with Services
@@ -179,6 +182,7 @@ This starts the web UI along with Prowlarr and qBittorrent services.
 
 ### Environment Variables
 
+- `PORT` - Server port (default: 3000)
 - `PROWLARR_URL` - Prowlarr instance URL
 - `PROWLARR_API_KEY` - Prowlarr API key
 - `QBITTORRENT_URL` - qBittorrent WebUI URL
