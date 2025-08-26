@@ -1,4 +1,4 @@
-import type { ApiResponse } from '@/types'
+import type { ApiResponse } from '@/lib/types';
 
 class ApiClient {
   private baseUrl: string
@@ -25,11 +25,12 @@ class ApiClient {
       const response = await fetch(url, config)
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json()
-      return data
+      return { success: true, data };
     } catch (error) {
       console.error('API request failed:', error)
       return {

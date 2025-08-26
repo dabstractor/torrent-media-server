@@ -69,3 +69,10 @@ export interface AppSettings {
   autoStart: boolean
   notifications: boolean
 }
+
+// Service status
+export interface ServiceStatus {
+  name: string;
+  status: 'online' | 'offline' | 'error';
+  message?: string;
+}

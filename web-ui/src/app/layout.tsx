@@ -7,8 +7,11 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Torrent Manager',
   description: 'Mobile-friendly torrent management interface',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
 }
+
+export const viewport = 'width=device-width, initial-scale=1, maximum-scale=1';
+
+import Layout from '@/components/layout/Layout';
 
 export default function RootLayout({
   children,
@@ -18,9 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <div className="min-h-screen bg-gray-50">
-          {children}
-        </div>
+        <Layout>{children}</Layout>
       </body>
     </html>
   )

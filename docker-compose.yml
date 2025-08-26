@@ -158,15 +158,16 @@ services:
       prowlarr:
         condition: service_healthy
     ports:
-      - "3000:3000"
+      - "${WEB_UI_PORT:-3000}:${WEB_UI_PORT:-3000}"
     environment:
       - NODE_ENV=production
       - API_BASE_URL=http://localhost
       - PROWLARR_URL=http://prowlarr:9696
       - TRANSMISSION_URL=http://transmission:9091
       - PLEX_URL=http://plex:32400
+      - PORT=${WEB_UI_PORT:-3000}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:${WEB_UI_PORT:-3000}/health"]
       interval: 30s
       timeout: 10s
       retries: 3

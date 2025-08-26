@@ -23,7 +23,7 @@ A complete self-hosted torrent management and media streaming solution with VPN-
    - **Transmission**: http://localhost:9091 (Torrent client)
    - **Sonarr**: http://localhost:8989 (TV series management)  
    - **Radarr**: http://localhost:7878 (Movie management)
-   - **Web UI**: http://localhost:3000 (Dashboard - when built)
+   - **Web UI**: http://localhost:3000 (Dashboard - configurable port via WEB_UI_PORT)
 
 ## 🏗️ Architecture
 
