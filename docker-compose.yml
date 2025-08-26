@@ -1,0 +1,203 @@
+version: '3.8'
+
+# Custom networks for service isolation
+networks:
+  media_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${NETWORK_SUBNET:-172.20.0.0/16}
+  vpn_network:
+    driver: bridge
+
+# Using local directories instead of Docker volumes for easier management
+
+services:
+  # VPN Service - Routes all torrent traffic through a secure tunnel
+  vpn:
+    image: ghcr.io/linuxserver/wireguard
+    container_name: vpn
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/New_York}
+      - SERVERURL=wireguard
+      - SERVERPORT=${VPN_PORT:-51820}
+    volumes:
+      - ${VPN_CONFIG_PATH}:/config
+    networks:
+      - vpn_network
+    ports:
+      - 51820:51820/udp
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    healthcheck:
+      test: ["CMD", "ping", "-c", "1", "1.1.1.1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  # Transmission - Torrent download client running through VPN
+  transmission:
+    image: ghcr.io/linuxserver/transmission
+    container_name: transmission
+    network_mode: service:vpn  # Routes all traffic through VPN
+    depends_on:
+      vpn:
+        condition: service_healthy
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/New_York}
+      - USER=${TRANSMISSION_USERNAME}
+      - PASS=${TRANSMISSION_PASSWORD}
+    volumes:
+      - ./config/transmission:/config
+      - ${DOWNLOADS_ROOT:-./data/downloads}:${TRANSMISSION_DOWNLOAD_DIR:-/downloads}
+      - ${TRANSMISSION_WATCH_DIR:-./data/torrents}:/watch
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # Plex Media Server
+  plex:
+    image: ghcr.io/linuxserver/plex
+    container_name: plex
+    network_mode: host  # Required for discovery and direct play
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/New_York}
+      - PLEX_CLAIM=${PLEX_CLAIM_TOKEN}
+    volumes:
+      - ./config/plex:/config
+      - ${MEDIA_ROOT:-./data/media}:/media
+      - ${DOWNLOADS_ROOT:-./data/downloads}:/downloads
+    ports:
+      - ${PLEX_EXTERNAL_PORT:-32400}:32400
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:32400/web/index.html"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Sonarr - TV Series Management
+  sonarr:
+    image: ghcr.io/linuxserver/sonarr
+    container_name: sonarr
+    network_mode: service:vpn
+    depends_on:
+      transmission:
+        condition: service_healthy
+      prowlarr:
+        condition: service_healthy
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/New_York}
+    volumes:
+      - ./config/sonarr:/config
+      - ${MEDIA_ROOT:-./data/media}/tv:/tv
+      - ${DOWNLOADS_ROOT:-./data/downloads}:/downloads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8989/api/v3/system/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Radarr - Movie Management
+  radarr:
+    image: ghcr.io/linuxserver/radarr
+    container_name: radarr
+    network_mode: service:vpn
+    depends_on:
+      transmission:
+        condition: service_healthy
+      prowlarr:
+        condition: service_healthy
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/New_York}
+    volumes:
+      - ./config/radarr:/config
+      - ${MEDIA_ROOT:-./data/media}/movies:/movies
+      - ${DOWNLOADS_ROOT:-./data/downloads}:/downloads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7878/api/v3/system/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Web UI - React frontend for managing the entire stack
+  web-ui:
+    build: ./web-ui
+    container_name: web-ui
+    networks:
+      - media_network
+    depends_on:
+      plex:
+        condition: service_healthy
+      transmission:
+        condition: service_healthy
+      prowlarr:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - API_BASE_URL=http://localhost
+      - PROWLARR_URL=http://prowlarr:9696
+      - TRANSMISSION_URL=http://transmission:9091
+      - PLEX_URL=http://plex:32400
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  # Prowlarr - Torrent Indexer
+  prowlarr:
+    image: ghcr.io/linuxserver/prowlarr
+    container_name: prowlarr
+    network_mode: service:vpn
+    depends_on:
+      vpn:
+        condition: service_healthy
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/New_York}
+    volumes:
+      - ./config/prowlarr:/config
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9696/api/v1/system/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+# Logging configuration
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: ${LOG_MAX_SIZE:-10m}
+    max-file: ${LOG_MAX_FILE:-3}

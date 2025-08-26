@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  web-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1
+      # API endpoints for external services
+      - PROWLARR_URL=http://prowlarr:9696
+      - QBITTORRENT_URL=http://qbittorrent:8080
+    networks:
+      - torrent-network
+    depends_on:
+      - prowlarr
+      - qbittorrent
+    restart: unless-stopped
+
+  # Mock services for development (replace with actual services)
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr-dev
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    volumes:
+      - prowlarr-config:/config
+    ports:
+      - "9696:9696"
+    networks:
+      - torrent-network
+    restart: unless-stopped
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent-dev
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+      - WEBUI_PORT=8080
+    volumes:
+      - qbittorrent-config:/config
+      - ./downloads:/downloads
+    ports:
+      - "8080:8080"
+      - "6881:6881"
+      - "6881:6881/udp"
+    networks:
+      - torrent-network
+    restart: unless-stopped
+
+volumes:
+  prowlarr-config:
+  qbittorrent-config:
+
+networks:
+  torrent-network:
+    driver: bridge
