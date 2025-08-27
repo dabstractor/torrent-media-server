@@ -76,3 +76,33 @@ export interface ServiceStatus {
   status: 'online' | 'offline' | 'error';
   message?: string;
 }
+
+// Download Management Extensions
+export interface DownloadFilters {
+  state: DownloadState[]
+  categories: string[]
+  dateRange?: [Date, Date]
+  sizeRange?: [number, number]
+  progressRange?: [number, number]
+}
+
+export interface QueueItem {
+  id: string
+  priority: number
+  position: number
+}
+
+export interface BatchOperation {
+  action: 'pause' | 'resume' | 'delete' | 'setPriority' | 'setCategory'
+  targetIds: string[]
+  params?: Record<string, unknown>
+}
+
+export interface DownloadNotification {
+  id: string
+  torrentId: string
+  type: 'completed' | 'error' | 'paused'
+  message: string
+  timestamp: Date
+  read: boolean
+}

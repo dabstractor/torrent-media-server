@@ -24,12 +24,13 @@ node_modules/
 # OS specific
 .DS_Store
 
-# Task files
-# tasks.json
-# tasks/
 config/plex/Library/Application Support/Plex Media Server/Logs
 config/plex/Library/Application Support/Plex Media Server/Cache
 config/plex/Library/Application Support/Plex Media Server/Crash Reports
 config/plex/Library/Application Support/Plex Media Server/Plug-in Support
 config/plex/Library/Application Support/Plex Media Server/.LocalAdminToken
 config/plex/Library/Application Support/Plex Media Server/plexmediaserver.pid
+
+# Task files
+# tasks.json
+# tasks/ 
