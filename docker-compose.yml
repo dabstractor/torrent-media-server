@@ -148,6 +148,8 @@ services:
   web-ui:
     build: ./web-ui
     container_name: web-ui
+    env_file:
+      - .env
     networks:
       - media_network
     depends_on:
@@ -161,10 +163,6 @@ services:
       - "${WEB_UI_PORT:-3000}:${WEB_UI_PORT:-3000}"
     environment:
       - NODE_ENV=production
-      - API_BASE_URL=http://localhost
-      - PROWLARR_URL=http://prowlarr:9696
-      - TRANSMISSION_URL=http://transmission:9091
-      - PLEX_URL=http://plex:32400
       - PORT=${WEB_UI_PORT:-3000}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${WEB_UI_PORT:-3000}/health"]
