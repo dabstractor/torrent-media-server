@@ -1,6 +1,6 @@
-const QB_URL = process.env.QBITTORRENT_URL || 'http://qbittorrent:8080';
-const QB_USER = process.env.QBITTORRENT_USER || 'admin';
-const QB_PASSWORD = process.env.QBITTORRENT_PASSWORD || 'admin';
+const QB_URL = process.env.TRANSMISSION_URL || 'http://transmission:9091';
+const QB_USER = process.env.TRANSMISSION_USERNAME || 'admin';
+const QB_PASSWORD = process.env.TRANSMISSION_PASSWORD || 'adminpass123';
 
 // In-memory session store (in production, use Redis or similar)
 const sessionStore = new Map<string, { sid: string; timestamp: number }>();
