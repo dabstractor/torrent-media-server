@@ -1,10 +1,10 @@
 import React from 'react';
+import { SettingsLayout } from '@/components/settings';
 
 const SettingsPage: React.FC = () => {
   return (
-    <div>
-      <h1 className="text-2xl font-bold">Settings</h1>
-      <p>Settings page content goes here.</p>
+    <div className="container mx-auto px-4 py-8">
+      <SettingsLayout />
     </div>
   );
 };
