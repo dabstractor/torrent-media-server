@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import type { BackupMetadata } from '@/lib/types/settings';
@@ -40,7 +41,7 @@ const BackupList: React.FC<BackupListProps> = ({
 
   if (error) {
     return (
-      <div className={`p-4 rounded-md bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 ${className}`}>
+      <div className={`p-4 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 ${className}`}>
         <div className="flex items-center">
           <div className="flex-shrink-0">
             <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -85,7 +86,7 @@ const BackupList: React.FC<BackupListProps> = ({
     <div className={`overflow-hidden ${className}`}>
       <ul className="divide-y divide-gray-200 dark:divide-gray-700">
         {backups.map((backup) => (
-          <li 
+          <li
             key={backup.id}
             className={`
               px-4 py-4 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors duration-150

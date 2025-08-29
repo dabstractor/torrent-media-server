@@ -88,16 +88,16 @@ const BatchControls: React.FC<BatchControlsProps> = ({
   if (selectedIds.length === 0) return null
 
   return (
-    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         {/* Selection info */}
         <div className="flex items-center space-x-3">
-          <div className="text-sm font-medium text-blue-900">
+          <div className="text-sm font-medium text-blue-900 dark:text-blue-100">
             {selectedIds.length} download{selectedIds.length !== 1 ? 's' : ''} selected
           </div>
           
           {isProcessing && (
-            <div className="flex items-center space-x-2 text-sm text-blue-700">
+            <div className="flex items-center space-x-2 text-sm text-blue-700 dark:text-blue-300">
               <div className="inline-block animate-spin">⏳</div>
               <span>Processing {processingAction}...</span>
             </div>
@@ -127,7 +127,7 @@ const BatchControls: React.FC<BatchControlsProps> = ({
           <button
             onClick={handleDeleteAll}
             disabled={isProcessing}
-            className="btn btn-secondary min-h-[44px] px-4 text-sm hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+            className="btn btn-secondary min-h-[44px] px-4 text-sm hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 disabled:opacity-50"
             title="Delete selected downloads"
           >
             🗑️ Delete All
@@ -146,8 +146,8 @@ const BatchControls: React.FC<BatchControlsProps> = ({
       </div>
 
       {/* Quick actions bar */}
-      <div className="mt-3 pt-3 border-t border-blue-200">
-        <div className="flex items-center justify-between text-xs text-blue-700">
+      <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
+        <div className="flex items-center justify-between text-xs text-blue-700 dark:text-blue-300">
           <span>Batch Operations:</span>
           <div className="flex items-center space-x-4">
             <span>• Pause/Resume: Immediate</span>

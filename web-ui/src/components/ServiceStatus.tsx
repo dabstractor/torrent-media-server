@@ -21,7 +21,7 @@ const ServiceStatus: React.FC = () => {
         {serviceStatus.map((service) => (
           <div key={service.name} className="p-4 rounded-lg shadow-md bg-white dark:bg-gray-800">
             <h3 className="font-bold">{service.name}</h3>
-            <p className={`capitalize ${service.status === 'online' ? 'text-success-500' : 'text-error-500'}`}>
+            <p className={`capitalize ${service.status === 'online' ? 'text-success-500 dark:text-success-400' : 'text-red-600 dark:text-red-300'}`}>
               {service.status}
             </p>
             {service.message && <p className="text-sm text-gray-500">{service.message}</p>}

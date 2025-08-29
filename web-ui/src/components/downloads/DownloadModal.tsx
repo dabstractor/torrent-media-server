@@ -163,8 +163,8 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Error message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
-              <p className="text-sm text-red-800">{error}</p>
+            <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md p-3">
+              <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
             </div>
           )}
 
