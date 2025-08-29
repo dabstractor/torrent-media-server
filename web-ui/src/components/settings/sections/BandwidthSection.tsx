@@ -31,14 +31,14 @@ const BandwidthSection: React.FC<BandwidthSectionProps> = ({
         <h4 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-4">
           Global Rate Limits
         </h4>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <NumberInput
             id="max-download-rate"
             label="Maximum Download Rate"
             value={settings.bandwidth.maxDownloadRate}
-            onChange={(value) => onSettingsChange({ 
-              bandwidth: { ...settings.bandwidth, maxDownloadRate: value } 
+            onChange={(value) => onSettingsChange({
+              bandwidth: { ...settings.bandwidth, maxDownloadRate: value }
             })}
             min={0}
             unit="KB/s"
@@ -51,8 +51,8 @@ const BandwidthSection: React.FC<BandwidthSectionProps> = ({
             id="max-upload-rate"
             label="Maximum Upload Rate"
             value={settings.bandwidth.maxUploadRate}
-            onChange={(value) => onSettingsChange({ 
-              bandwidth: { ...settings.bandwidth, maxUploadRate: value } 
+            onChange={(value) => onSettingsChange({
+              bandwidth: { ...settings.bandwidth, maxUploadRate: value }
             })}
             min={0}
             unit="KB/s"
@@ -68,13 +68,13 @@ const BandwidthSection: React.FC<BandwidthSectionProps> = ({
         <h4 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-4">
           Alternative Rate Limits
         </h4>
-        
+
         <ToggleSwitch
           id="alt-rate-enabled"
           label="Enable Alternative Rate Limits"
           checked={settings.bandwidth.alternativeRateEnabled}
-          onChange={(checked) => onSettingsChange({ 
-            bandwidth: { ...settings.bandwidth, alternativeRateEnabled: checked } 
+          onChange={(checked) => onSettingsChange({
+            bandwidth: { ...settings.bandwidth, alternativeRateEnabled: checked }
           })}
           disabled={isLoading}
           description="Use different rate limits during scheduled times"
@@ -88,8 +88,8 @@ const BandwidthSection: React.FC<BandwidthSectionProps> = ({
                 id="alt-max-download-rate"
                 label="Alternative Download Rate"
                 value={settings.bandwidth.alternativeMaxDownloadRate}
-                onChange={(value) => onSettingsChange({ 
-                  bandwidth: { ...settings.bandwidth, alternativeMaxDownloadRate: value } 
+                onChange={(value) => onSettingsChange({
+                  bandwidth: { ...settings.bandwidth, alternativeMaxDownloadRate: value }
                 })}
                 min={0}
                 unit="KB/s"
@@ -102,8 +102,8 @@ const BandwidthSection: React.FC<BandwidthSectionProps> = ({
                 id="alt-max-upload-rate"
                 label="Alternative Upload Rate"
                 value={settings.bandwidth.alternativeMaxUploadRate}
-                onChange={(value) => onSettingsChange({ 
-                  bandwidth: { ...settings.bandwidth, alternativeMaxUploadRate: value } 
+                onChange={(value) => onSettingsChange({
+                  bandwidth: { ...settings.bandwidth, alternativeMaxUploadRate: value }
                 })}
                 min={0}
                 unit="KB/s"
@@ -121,14 +121,14 @@ const BandwidthSection: React.FC<BandwidthSectionProps> = ({
         <h4 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-4">
           Connection Settings
         </h4>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <NumberInput
             id="max-connections"
             label="Maximum Connections"
             value={settings.bandwidth.maxConnections}
-            onChange={(value) => onSettingsChange({ 
-              bandwidth: { ...settings.bandwidth, maxConnections: value } 
+            onChange={(value) => onSettingsChange({
+              bandwidth: { ...settings.bandwidth, maxConnections: value }
             })}
             min={1}
             max={10000}
@@ -141,8 +141,8 @@ const BandwidthSection: React.FC<BandwidthSectionProps> = ({
             id="max-connections-per-torrent"
             label="Connections per Torrent"
             value={settings.bandwidth.maxConnectionsPerTorrent}
-            onChange={(value) => onSettingsChange({ 
-              bandwidth: { ...settings.bandwidth, maxConnectionsPerTorrent: value } 
+            onChange={(value) => onSettingsChange({
+              bandwidth: { ...settings.bandwidth, maxConnectionsPerTorrent: value }
             })}
             min={1}
             max={1000}
@@ -155,8 +155,8 @@ const BandwidthSection: React.FC<BandwidthSectionProps> = ({
             id="max-uploads"
             label="Maximum Upload Slots"
             value={settings.bandwidth.maxUploads}
-            onChange={(value) => onSettingsChange({ 
-              bandwidth: { ...settings.bandwidth, maxUploads: value } 
+            onChange={(value) => onSettingsChange({
+              bandwidth: { ...settings.bandwidth, maxUploads: value }
             })}
             min={1}
             max={1000}
@@ -169,8 +169,8 @@ const BandwidthSection: React.FC<BandwidthSectionProps> = ({
             id="max-uploads-per-torrent"
             label="Upload Slots per Torrent"
             value={settings.bandwidth.maxUploadsPerTorrent}
-            onChange={(value) => onSettingsChange({ 
-              bandwidth: { ...settings.bandwidth, maxUploadsPerTorrent: value } 
+            onChange={(value) => onSettingsChange({
+              bandwidth: { ...settings.bandwidth, maxUploadsPerTorrent: value }
             })}
             min={1}
             max={100}
@@ -186,14 +186,14 @@ const BandwidthSection: React.FC<BandwidthSectionProps> = ({
         <h4 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-4">
           Advanced Options
         </h4>
-        
+
         <div className="space-y-4">
           <ToggleSwitch
             id="rate-limit-utp"
             label="Apply Rate Limit to µTP"
             checked={settings.bandwidth.rateLimitUtp}
-            onChange={(checked) => onSettingsChange({ 
-              bandwidth: { ...settings.bandwidth, rateLimitUtp: checked } 
+            onChange={(checked) => onSettingsChange({
+              bandwidth: { ...settings.bandwidth, rateLimitUtp: checked }
             })}
             disabled={isLoading}
             description="Apply rate limits to µTP protocol connections"
@@ -204,8 +204,8 @@ const BandwidthSection: React.FC<BandwidthSectionProps> = ({
             id="rate-limit-tcp"
             label="Apply Rate Limit to TCP"
             checked={settings.bandwidth.rateLimitTcp}
-            onChange={(checked) => onSettingsChange({ 
-              bandwidth: { ...settings.bandwidth, rateLimitTcp: checked } 
+            onChange={(checked) => onSettingsChange({
+              bandwidth: { ...settings.bandwidth, rateLimitTcp: checked }
             })}
             disabled={isLoading}
             description="Apply rate limits to TCP protocol connections"

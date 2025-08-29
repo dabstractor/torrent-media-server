@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from 'react';
 import BackupList from './BackupList';
 import CreateBackupForm from './CreateBackupForm';
@@ -14,9 +15,9 @@ const BackupManagement: React.FC<BackupManagementProps> = ({
 }) => {
   const { restoreBackup, deleteBackup, bulkDeleteOldBackups, loading, error } = useBackupManagement();
   const [activeTab, setActiveTab] = useState<'backups' | 'create' | 'import'>('backups');
-  const [showConfirmDialog, setShowConfirmDialog] = useState<{ 
-    type: 'restore' | 'delete' | 'bulk-delete'; 
-    id?: string; 
+  const [showConfirmDialog, setShowConfirmDialog] = useState<{
+    type: 'restore' | 'delete' | 'bulk-delete';
+    id?: string;
     days?: number;
     name?: string;
   } | null>(null);
@@ -51,7 +52,7 @@ const BackupManagement: React.FC<BackupManagementProps> = ({
     if (!showConfirmDialog) return;
 
     setOperationResult(null);
-    
+
     try {
       if (showConfirmDialog.type === 'restore' && showConfirmDialog.id) {
         const result = await restoreBackup(showConfirmDialog.id);
@@ -70,9 +71,9 @@ const BackupManagement: React.FC<BackupManagementProps> = ({
       } else if (showConfirmDialog.type === 'bulk-delete' && showConfirmDialog.days) {
         const result = await bulkDeleteOldBackups(showConfirmDialog.days);
         if (result.success) {
-          setOperationResult({ 
-            success: true, 
-            message: `Successfully deleted ${result.deletedCount} old backups!` 
+          setOperationResult({
+            success: true,
+            message: `Successfully deleted ${result.deletedCount} old backups!`
           });
         } else {
           setOperationResult({ success: false, message: result.error || 'Failed to delete old backups' });
@@ -84,7 +85,7 @@ const BackupManagement: React.FC<BackupManagementProps> = ({
     }
 
     setShowConfirmDialog(null);
-    
+
     // Clear success message after 3 seconds
     setTimeout(() => {
       if (operationResult?.success) {
@@ -157,11 +158,11 @@ const BackupManagement: React.FC<BackupManagementProps> = ({
       <div className="mt-4">
         {activeTab === 'backups' && (
           <div className="space-y-6">
-            <BackupList 
+            <BackupList
               onRestoreRequested={handleRestoreRequested}
               className="border border-gray-200 dark:border-gray-700 rounded-lg"
             />
-            
+
             <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
               <button
                 type="button"
@@ -189,11 +190,10 @@ const BackupManagement: React.FC<BackupManagementProps> = ({
 
       {/* Operation Result Notification */}
       {operationResult && (
-        <div className={`fixed top-4 right-4 z-50 rounded-md p-4 max-w-sm shadow-lg ${
-          operationResult.success 
-            ? 'bg-green-50 border border-green-200 dark:bg-green-900 dark:border-green-800' 
-            : 'bg-red-50 border border-red-200 dark:bg-red-900 dark:border-red-800'
-        }`}>
+        <div className={`fixed top-4 right-4 z-50 rounded-md p-4 max-w-sm shadow-lg ${operationResult.success
+          ? 'bg-green-50 border border-green-200 dark:bg-green-900 dark:border-green-800'
+          : 'bg-red-50 border border-red-200 dark:bg-red-900 dark:border-red-800'
+          }`}>
           <div className="flex">
             <div className="flex-shrink-0">
               {operationResult.success ? (
@@ -207,11 +207,10 @@ const BackupManagement: React.FC<BackupManagementProps> = ({
               )}
             </div>
             <div className="ml-3">
-              <p className={`text-sm font-medium ${
-                operationResult.success 
-                  ? 'text-green-800 dark:text-green-200' 
-                  : 'text-red-800 dark:text-red-200'
-              }`}>
+              <p className={`text-sm font-medium ${operationResult.success
+                ? 'text-green-800 dark:text-green-200'
+                : 'text-red-800 dark:text-red-200'
+                }`}>
                 {operationResult.message}
               </p>
             </div>
@@ -232,11 +231,10 @@ const BackupManagement: React.FC<BackupManagementProps> = ({
             <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
               <div className="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="sm:flex sm:items-start">
-                  <div className={`mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full ${
-                    showConfirmDialog.type === 'restore' 
-                      ? 'bg-blue-100 dark:bg-blue-900' 
-                      : 'bg-red-100 dark:bg-red-900'
-                  } sm:mx-0 sm:h-10 sm:w-10`}>
+                  <div className={`mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full ${showConfirmDialog.type === 'restore'
+                    ? 'bg-blue-100 dark:bg-blue-900'
+                    : 'bg-red-100 dark:bg-red-900'
+                    } sm:mx-0 sm:h-10 sm:w-10`}>
                     {showConfirmDialog.type === 'restore' ? (
                       <svg className="h-6 w-6 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -255,11 +253,11 @@ const BackupManagement: React.FC<BackupManagementProps> = ({
                     </h3>
                     <div className="mt-2">
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {showConfirmDialog.type === 'restore' && 
+                        {showConfirmDialog.type === 'restore' &&
                           `Are you sure you want to restore "${showConfirmDialog.name}"? This will overwrite your current settings.`}
-                        {showConfirmDialog.type === 'delete' && 
+                        {showConfirmDialog.type === 'delete' &&
                           `Are you sure you want to delete "${showConfirmDialog.name}"? This action cannot be undone.`}
-                        {showConfirmDialog.type === 'bulk-delete' && 
+                        {showConfirmDialog.type === 'bulk-delete' &&
                           `Are you sure you want to delete backups older than ${showConfirmDialog.days} days? This action cannot be undone.`}
                       </p>
                     </div>
@@ -281,9 +279,9 @@ const BackupManagement: React.FC<BackupManagementProps> = ({
                     ${loading ? 'opacity-50 cursor-not-allowed' : ''}
                   `}
                 >
-                  {loading ? 'Processing...' : 
-                    (showConfirmDialog.type === 'restore' ? 'Restore' : 
-                     showConfirmDialog.type === 'delete' ? 'Delete' : 'Delete Old')}
+                  {loading ? 'Processing...' :
+                    (showConfirmDialog.type === 'restore' ? 'Restore' :
+                      showConfirmDialog.type === 'delete' ? 'Delete' : 'Delete Old')}
                 </button>
                 <button
                   type="button"

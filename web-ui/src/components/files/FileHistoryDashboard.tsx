@@ -100,35 +100,35 @@ const FileHistoryDashboard: React.FC = () => {
       {/* Statistics Summary */}
       {globalStats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg border p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {globalStats.totalDownloads}
             </div>
-            <div className="text-sm text-gray-500">Total Downloads</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">Total Downloads</div>
           </div>
-          <div className="bg-white rounded-lg border p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
               {formatFileSize(globalStats.totalSize)}
             </div>
-            <div className="text-sm text-gray-500">Total Size</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">Total Size</div>
           </div>
-          <div className="bg-white rounded-lg border p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
+            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
               {formatSpeed(globalStats.averageSpeed)}
             </div>
-            <div className="text-sm text-gray-500">Avg Speed</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">Avg Speed</div>
           </div>
-          <div className="bg-white rounded-lg border p-4 text-center">
-            <div className="text-2xl font-bold text-orange-600">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
+            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
               {Math.round(globalStats.totalTime / (1000 * 60 * 60))}h
             </div>
-            <div className="text-sm text-gray-500">Total Time</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">Total Time</div>
           </div>
         </div>
       )}
 
       {/* Search and Filter Controls */}
-      <div className="bg-white rounded-lg border p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search Input */}
           <div className="flex-1">
@@ -138,7 +138,7 @@ const FileHistoryDashboard: React.FC = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search downloads..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                 onKeyPress={(e) => e.key === "Enter" && handleSearch()}
               />
               <button onClick={handleSearch} className="btn btn-primary px-6">
@@ -152,7 +152,7 @@ const FileHistoryDashboard: React.FC = () => {
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="">All Categories</option>
               {availableCategories.map((category) => (

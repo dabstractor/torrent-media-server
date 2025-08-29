@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   web-ui:
     build:
@@ -20,8 +18,6 @@ services:
       - prowlarr
       - qbittorrent
     restart: unless-stopped
-
-  # Mock services for development (replace with actual services)
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr-dev
@@ -36,7 +32,6 @@ services:
     networks:
       - torrent-network
     restart: unless-stopped
-
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent-dev
@@ -55,11 +50,10 @@ services:
     networks:
       - torrent-network
     restart: unless-stopped
-
 volumes:
   prowlarr-config:
   qbittorrent-config:
-
 networks:
   torrent-network:
     driver: bridge
+

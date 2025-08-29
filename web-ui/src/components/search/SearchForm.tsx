@@ -121,7 +121,7 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading = false }) 
       <div className="flex flex-wrap gap-4 text-sm">
         {/* Minimum seeders */}
         <div className="flex items-center gap-2">
-          <label htmlFor="minSeeders" className="text-gray-700">
+          <label htmlFor="minSeeders" className="text-gray-700 dark:text-gray-300">
             Min Seeders:
           </label>
           <input
@@ -137,7 +137,7 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading = false }) 
 
         {/* Sort by */}
         <div className="flex items-center gap-2">
-          <label htmlFor="sortBy" className="text-gray-700">
+          <label htmlFor="sortBy" className="text-gray-700 dark:text-gray-300">
             Sort by:
           </label>
           <select
@@ -156,7 +156,7 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading = false }) 
 
         {/* Sort order */}
         <div className="flex items-center gap-2">
-          <label htmlFor="sortOrder" className="text-gray-700">
+          <label htmlFor="sortOrder" className="text-gray-700 dark:text-gray-300">
             Order:
           </label>
           <select
