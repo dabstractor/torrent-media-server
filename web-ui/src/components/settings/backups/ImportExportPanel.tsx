@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useRef } from 'react';
 import { useBackupManagement } from '@/hooks/use-backup-management';
 
@@ -17,14 +18,14 @@ const ImportExportPanel: React.FC<ImportExportPanelProps> = ({
   const handleExport = async () => {
     setExportSuccess(false);
     setImportError(null);
-    
+
     const result = await exportSettings();
-    
+
     if (result.success && result.data) {
       try {
         // Create a blob and download it
-        const blob = new Blob([JSON.stringify(result.data, null, 2)], { 
-          type: 'application/json' 
+        const blob = new Blob([JSON.stringify(result.data, null, 2)], {
+          type: 'application/json'
         });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -51,7 +52,7 @@ const ImportExportPanel: React.FC<ImportExportPanelProps> = ({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setImportSuccess(false);
     setImportError(null);
-    
+
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -63,12 +64,12 @@ const ImportExportPanel: React.FC<ImportExportPanelProps> = ({
     try {
       const text = await file.text();
       const data = JSON.parse(text);
-      
+
       const result = await importSettings(data, {
         overwrite: true,
         categories: undefined, // Import all categories
       });
-      
+
       if (result.success) {
         setImportSuccess(true);
         setTimeout(() => setImportSuccess(false), 3000);
@@ -115,8 +116,8 @@ const ImportExportPanel: React.FC<ImportExportPanelProps> = ({
             disabled={loading}
             className={`
               btn btn-secondary w-full
-              ${loading 
-                ? 'opacity-50 cursor-not-allowed' 
+              ${loading
+                ? 'opacity-50 cursor-not-allowed'
                 : 'hover:bg-gray-200 dark:hover:bg-gray-600'
               }
             `}
@@ -151,8 +152,8 @@ const ImportExportPanel: React.FC<ImportExportPanelProps> = ({
             disabled={loading}
             className={`
               btn btn-secondary w-full
-              ${loading 
-                ? 'opacity-50 cursor-not-allowed' 
+              ${loading
+                ? 'opacity-50 cursor-not-allowed'
                 : 'hover:bg-gray-200 dark:hover:bg-gray-600'
               }
             `}

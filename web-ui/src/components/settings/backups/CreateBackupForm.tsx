@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from 'react';
 import { useBackupManagement } from '@/hooks/use-backup-management';
 
@@ -16,13 +17,13 @@ const CreateBackupForm: React.FC<CreateBackupFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!name.trim()) {
       return;
     }
-    
+
     const result = await createBackup(name.trim(), description.trim() || undefined);
-    
+
     if (result.success) {
       setName('');
       setDescription('');
@@ -46,8 +47,8 @@ const CreateBackupForm: React.FC<CreateBackupFormProps> = ({
             disabled={loading}
             className={`
               input w-full mt-1
-              ${loading 
-                ? 'bg-gray-100 text-gray-500 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500' 
+              ${loading
+                ? 'bg-gray-100 text-gray-500 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500'
                 : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'
               }
               block border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm
@@ -75,8 +76,8 @@ const CreateBackupForm: React.FC<CreateBackupFormProps> = ({
             disabled={loading}
             className={`
               input w-full mt-1
-              ${loading 
-                ? 'bg-gray-100 text-gray-500 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500' 
+              ${loading
+                ? 'bg-gray-100 text-gray-500 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500'
                 : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'
               }
               block border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm
