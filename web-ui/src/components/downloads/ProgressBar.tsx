@@ -54,15 +54,15 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 
   const getProgressGradient = (progress: number): string => {
     if (progress === 100) {
-      return 'from-green-400 to-green-600'
+      return 'from-green-400 to-green-600 dark:from-green-400 dark:to-green-500'
     } else if (progress >= 75) {
-      return 'from-blue-400 to-blue-600'
+      return 'from-blue-400 to-blue-600 dark:from-blue-400 dark:to-blue-500'
     } else if (progress >= 50) {
-      return 'from-indigo-400 to-indigo-600'
+      return 'from-indigo-400 to-indigo-600 dark:from-indigo-400 dark:to-indigo-500'
     } else if (progress >= 25) {
-      return 'from-purple-400 to-purple-600'
+      return 'from-purple-400 to-purple-600 dark:from-purple-400 dark:to-purple-500'
     }
-    return 'from-gray-300 to-gray-500'
+    return 'from-gray-300 to-gray-500 dark:from-gray-500 dark:to-gray-600'
   }
 
   // Clamp progress to valid range
@@ -75,7 +75,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
       {/* Progress bar */}
       <div className="relative">
         {/* Background bar */}
-        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
           {/* Progress fill */}
           <div
             className={`h-full bg-gradient-to-r ${getProgressGradient(clampedProgress)} transition-all duration-300 ease-out relative`}
@@ -90,7 +90,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         
         {/* Progress percentage overlay */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className={`text-xs font-medium ${clampedProgress > 50 ? 'text-white' : 'text-gray-700'}`}>
+          <span className={`text-xs font-medium ${clampedProgress > 50 ? 'text-white dark:text-white' : 'text-gray-700 dark:text-gray-200'}`}>
             {clampedProgress.toFixed(1)}%
           </span>
         </div>
@@ -98,24 +98,24 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 
       {/* Progress details */}
       {showDetails && (
-        <div className="flex items-center justify-between text-xs text-gray-600">
+        <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
           <div className="flex items-center space-x-3">
             {/* Download speed */}
             <div className="flex items-center space-x-1">
-              <span className={`${downloadSpeed > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+              <span className={`${downloadSpeed > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
                 ⬇
               </span>
-              <span className={downloadSpeed > 0 ? 'text-green-600 font-medium' : ''}>
+              <span className={downloadSpeed > 0 ? 'text-green-600 dark:text-green-400 font-medium' : ''}>
                 {formatSpeed(downloadSpeed)}
               </span>
             </div>
             
             {/* Upload speed */}
             <div className="flex items-center space-x-1">
-              <span className={`${uploadSpeed > 0 ? 'text-purple-600' : 'text-gray-400'}`}>
+              <span className={`${uploadSpeed > 0 ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400 dark:text-gray-500'}`}>
                 ⬆
               </span>
-              <span className={uploadSpeed > 0 ? 'text-purple-600 font-medium' : ''}>
+              <span className={uploadSpeed > 0 ? 'text-purple-600 dark:text-purple-400 font-medium' : ''}>
                 {formatSpeed(uploadSpeed)}
               </span>
             </div>
@@ -123,7 +123,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 
           {/* ETA */}
           <div className="flex items-center space-x-1">
-            <span className="text-gray-400">⏱</span>
+            <span className="text-gray-400 dark:text-gray-500">⏱</span>
             <span className={eta > 0 && eta !== Infinity ? 'font-medium' : ''}>
               {isCompleted ? 'Completed' : formatETA(eta)}
             </span>

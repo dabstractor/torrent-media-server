@@ -6,9 +6,9 @@ type ErrorMessageProps = {
 
 const ErrorMessage: React.FC<ErrorMessageProps> = ({ message }) => {
   return (
-    <div className="bg-error-100 border border-error-400 text-error-700 px-4 py-3 rounded relative" role="alert">
-      <strong className="font-bold">Error:</strong>
-      <span className="block sm:inline"> {message}</span>
+    <div className="error-container" role="alert">
+      <strong className="font-bold error-text">Error:</strong>
+      <span className="block sm:inline error-text"> {message}</span>
     </div>
   );
 };
