@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { getTorrents, controlTorrent } from '@/lib/api/torrents'
 import type { DownloadsResponse } from '@/lib/types';
 
-const TORRENTS_KEY = '/api/torrents'
+const TORRENTS_KEY = '/api/downloads'
 const REFRESH_INTERVAL = 5000 // 5 seconds - fallback polling
 const SSE_ENDPOINT = '/api/downloads/stream'
 
