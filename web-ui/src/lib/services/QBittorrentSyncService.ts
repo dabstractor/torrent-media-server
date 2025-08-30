@@ -63,6 +63,13 @@ class QBittorrentSyncService {
       return;
     }
 
+    // Check if qBittorrent credentials are configured
+    const qbSettings = settings.qbittorrent;
+    if (!qbSettings.url || !qbSettings.username || !qbSettings.password) {
+      console.log('qBittorrent credentials not configured, auto-sync disabled');
+      return;
+    }
+
     // Stop existing interval if running
     this.stopAutoSync();
 

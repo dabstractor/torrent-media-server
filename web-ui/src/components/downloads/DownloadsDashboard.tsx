@@ -4,6 +4,7 @@ import DownloadCard from './DownloadCard'
 import BatchControls from './BatchControls'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
 import ErrorMessage from '@/components/common/ErrorMessage'
+import { useNotifications } from '@/context/NotificationContext'
 import type { DownloadState } from '@/lib/types'
 
 interface DownloadFiltersState {
@@ -15,6 +16,7 @@ interface DownloadFiltersState {
 
 const DownloadsDashboard: React.FC = () => {
   const { torrents, stats, isLoading, error, refresh } = useTorrents()
+  const { addNotification } = useNotifications()
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [filters, setFilters] = useState<DownloadFiltersState>({
     state: [],
@@ -76,8 +78,23 @@ const DownloadsDashboard: React.FC = () => {
     }
   }
 
-  const handleRefresh = () => {
-    refresh()
+  const handleRefresh = async () => {
+    try {
+      await refresh()
+      addNotification({
+        type: 'success',
+        title: 'Refreshed',
+        message: 'Download list updated successfully',
+        duration: 3000
+      })
+    } catch (err) {
+      addNotification({
+        type: 'error',
+        title: 'Refresh Failed',
+        message: 'Failed to refresh download list',
+        duration: 5000
+      })
+    }
   }
 
   // Show loading state

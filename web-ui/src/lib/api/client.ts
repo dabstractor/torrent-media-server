@@ -30,6 +30,13 @@ class ApiClient {
       }
 
       const data = await response.json()
+      
+      // If the response is already in the expected format, return as-is
+      if (data && typeof data === 'object' && 'success' in data) {
+        return data;
+      }
+      
+      // Otherwise wrap it in the expected format
       return { success: true, data };
     } catch (error) {
       console.error('API request failed:', error)

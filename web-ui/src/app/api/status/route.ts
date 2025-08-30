@@ -1,3 +1,5 @@
+import { createErrorResponse, createSuccessResponse, HTTP_STATUS } from '@/lib/api/errors';
+
 export async function GET() {
   try {
     const services = {
@@ -8,15 +10,14 @@ export async function GET() {
       radarr: await checkServiceHealth('http://radarr:7878/api/v3/system/status'),
     };
 
-    return Response.json({ 
-      success: true, 
-      data: services 
-    });
+    return createSuccessResponse({ 
+      services 
+    }, HTTP_STATUS.OK);
   } catch {
-    return Response.json({ 
-      success: false, 
-      error: 'Failed to check service status' 
-    }, { status: 500 });
+    return createErrorResponse(
+      'Failed to check service status',
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
   }
 }
 
