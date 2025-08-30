@@ -3,10 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { useSettings } from '@/hooks/use-settings';
 import { useNotifications } from '@/context/NotificationContext';
-import { GeneralSection } from '@/components/settings/sections';
+import { AdvancedSection } from '@/components/settings/sections';
 import type { AppSettings } from '@/lib/types/settings';
 
-const SettingsPage: React.FC = () => {
+const AdvancedSettingsPage: React.FC = () => {
   const { 
     settings, 
     mutate: updateSettings, 
@@ -33,7 +33,7 @@ const SettingsPage: React.FC = () => {
       addNotification({
         type: 'error',
         title: 'Failed to load settings',
-        message: 'Could not load your settings. Please refresh the page or try again later.',
+        message: 'Could not load your advanced settings. Please refresh the page or try again later.',
         duration: 8000
       });
     }
@@ -78,15 +78,15 @@ const SettingsPage: React.FC = () => {
         await updateSettings(localSettings, false);
         addNotification({
           type: 'success',
-          title: 'Settings saved',
-          message: 'Your settings have been saved successfully.',
+          title: 'Advanced settings saved',
+          message: 'Your advanced settings have been saved successfully.',
           duration: 3000
         });
       } else {
         addNotification({
           type: 'error',
           title: 'Save failed',
-          message: result.error || 'Failed to save settings. Please try again.',
+          message: result.error || 'Failed to save advanced settings. Please try again.',
           duration: 5000
         });
       }
@@ -94,7 +94,7 @@ const SettingsPage: React.FC = () => {
       addNotification({
         type: 'error',
         title: 'Save failed',
-        message: 'Failed to save settings. Please check your connection and try again.',
+        message: 'Failed to save advanced settings. Please check your connection and try again.',
         duration: 5000
       });
       console.error('Error saving settings:', err);
@@ -125,13 +125,13 @@ const SettingsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">General Settings</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Advanced Settings</h1>
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-          Configure general application preferences and behavior.
+          Configure advanced application behavior and performance tuning options.
         </p>
       </div>
       
-      <GeneralSection
+      <AdvancedSection
         settings={localSettings}
         onSettingsChange={handleSettingsChange}
         isLoading={isValidating || isSaving}
@@ -184,4 +184,4 @@ const SettingsPage: React.FC = () => {
   );
 };
 
-export default SettingsPage;
+export default AdvancedSettingsPage;

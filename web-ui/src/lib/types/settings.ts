@@ -45,6 +45,14 @@ export interface AppSettings {
     syncInterval: number; // seconds
     autoLogin: boolean;
     trustSelfSignedCerts: boolean;
+    scheduler: {
+      enabled: boolean;
+      fromHour: number;
+      fromMin: number;
+      toHour: number;
+      toMin: number;
+      days: number;
+    };
   };
 
   // Plex Integration
@@ -334,6 +342,14 @@ const DEFAULT_SETTINGS: AppSettings = {
     syncInterval: 30,
     autoLogin: true,
     trustSelfSignedCerts: false,
+    scheduler: {
+      enabled: false,
+      fromHour: 8,
+      fromMin: 0,
+      toHour: 20,
+      toMin: 0,
+      days: 127, // All days
+    },
   },
   plex: {
     enabled: false,

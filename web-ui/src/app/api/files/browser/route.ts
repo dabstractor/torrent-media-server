@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { promises as fs } from 'fs'
 import path from 'path'
 import type { FileBrowserNode } from '@/lib/api/files'
 import { getMediaType, isPlexCompatible } from '@/lib/api/files'
+import { createErrorResponse, createSuccessResponse, HTTP_STATUS } from '@/lib/api/errors'
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,13 +16,9 @@ export async function GET(request: NextRequest) {
     
     // Prevent directory traversal attacks
     if (!fullPath.startsWith(basePath)) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          data: null,
-          error: 'Access denied: Invalid path' 
-        },
-        { status: 403 }
+      return createErrorResponse(
+        'Access denied: Invalid path',
+        HTTP_STATUS.FORBIDDEN
       )
     }
     
@@ -29,13 +26,9 @@ export async function GET(request: NextRequest) {
     try {
       stats = await fs.stat(fullPath)
     } catch (error) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          data: null,
-          error: 'Path not found' 
-        },
-        { status: 404 }
+      return createErrorResponse(
+        'Path not found',
+        HTTP_STATUS.NOT_FOUND
       )
     }
     
@@ -50,13 +43,10 @@ export async function GET(request: NextRequest) {
         modified: stats.mtime,
       }
       
-      return NextResponse.json({
-        success: true,
-        data: {
-          nodes: [fileNode],
-          path: requestedPath,
-          parent: path.dirname(requestedPath)
-        }
+      return createSuccessResponse({
+        nodes: [fileNode],
+        path: requestedPath,
+        parent: path.dirname(requestedPath)
       })
     }
     
@@ -93,23 +83,16 @@ export async function GET(request: NextRequest) {
     
     const parentPath = requestedPath === '/' ? undefined : path.dirname(requestedPath)
     
-    return NextResponse.json({
-      success: true,
-      data: {
-        nodes,
-        path: requestedPath,
-        parent: parentPath
-      }
+    return createSuccessResponse({
+      nodes,
+      path: requestedPath,
+      parent: parentPath
     })
   } catch (error) {
     console.error('File browser error:', error)
-    return NextResponse.json(
-      { 
-        success: false, 
-        data: null,
-        error: 'Failed to browse files' 
-      },
-      { status: 500 }
+    return createErrorResponse(
+      'Failed to browse files',
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
     )
   }
 }

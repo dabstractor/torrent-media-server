@@ -51,7 +51,7 @@ const QBittorrentSection: React.FC<QBittorrentSectionProps> = ({
       qbittorrent: {
         ...settings.qbittorrent,
         scheduler: {
-          ...settings.qbittorrent.scheduler,
+          ...settings.qbittorrent?.scheduler,
           enabled,
           fromHour,
           fromMin,
@@ -273,34 +273,34 @@ const QBittorrentSection: React.FC<QBittorrentSectionProps> = ({
         <TimeScheduler
           id="qbittorrent-scheduler"
           label="Enable Scheduled Bandwidth Limits"
-          enabled={settings.qbittorrent.scheduler.enabled}
+          enabled={settings.qbittorrent?.scheduler?.enabled ?? false}
           onEnabledChange={(enabled) => handleSchedulerChange(
             enabled,
-            settings.qbittorrent.scheduler.fromHour,
-            settings.qbittorrent.scheduler.fromMin,
-            settings.qbittorrent.scheduler.toHour,
-            settings.qbittorrent.scheduler.toMin,
-            settings.qbittorrent.scheduler.days
+            settings.qbittorrent?.scheduler?.fromHour ?? 8,
+            settings.qbittorrent?.scheduler?.fromMin ?? 0,
+            settings.qbittorrent?.scheduler?.toHour ?? 20,
+            settings.qbittorrent?.scheduler?.toMin ?? 0,
+            settings.qbittorrent?.scheduler?.days ?? 127
           )}
-          fromHour={settings.qbittorrent.scheduler.fromHour}
-          fromMin={settings.qbittorrent.scheduler.fromMin}
-          toHour={settings.qbittorrent.scheduler.toHour}
-          toMin={settings.qbittorrent.scheduler.toMin}
-          days={settings.qbittorrent.scheduler.days}
+          fromHour={settings.qbittorrent?.scheduler?.fromHour ?? 8}
+          fromMin={settings.qbittorrent?.scheduler?.fromMin ?? 0}
+          toHour={settings.qbittorrent?.scheduler?.toHour ?? 20}
+          toMin={settings.qbittorrent?.scheduler?.toMin ?? 0}
+          days={settings.qbittorrent?.scheduler?.days ?? 127}
           onTimeChange={(fromHour, fromMin, toHour, toMin) => handleSchedulerChange(
-            settings.qbittorrent.scheduler.enabled,
+            settings.qbittorrent?.scheduler?.enabled ?? false,
             fromHour,
             fromMin,
             toHour,
             toMin,
-            settings.qbittorrent.scheduler.days
+            settings.qbittorrent?.scheduler?.days ?? 127
           )}
           onDaysChange={(days) => handleSchedulerChange(
-            settings.qbittorrent.scheduler.enabled,
-            settings.qbittorrent.scheduler.fromHour,
-            settings.qbittorrent.scheduler.fromMin,
-            settings.qbittorrent.scheduler.toHour,
-            settings.qbittorrent.scheduler.toMin,
+            settings.qbittorrent?.scheduler?.enabled ?? false,
+            settings.qbittorrent?.scheduler?.fromHour ?? 8,
+            settings.qbittorrent?.scheduler?.fromMin ?? 0,
+            settings.qbittorrent?.scheduler?.toHour ?? 20,
+            settings.qbittorrent?.scheduler?.toMin ?? 0,
             days
           )}
           disabled={isLoading}

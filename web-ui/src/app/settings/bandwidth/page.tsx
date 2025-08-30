@@ -2,11 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSettings } from '@/hooks/use-settings';
-import { useNotifications } from '@/context/NotificationContext';
-import { GeneralSection } from '@/components/settings/sections';
+import { BandwidthSection } from '@/components/settings/sections';
 import type { AppSettings } from '@/lib/types/settings';
 
-const SettingsPage: React.FC = () => {
+const BandwidthSettingsPage: React.FC = () => {
   const { 
     settings, 
     mutate: updateSettings, 
@@ -14,10 +13,10 @@ const SettingsPage: React.FC = () => {
     error: settingsError 
   } = useSettings();
   
-  const { addNotification } = useNotifications();
-  
   const [localSettings, setLocalSettings] = useState<AppSettings | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Initialize local settings when settings are loaded
@@ -26,18 +25,6 @@ const SettingsPage: React.FC = () => {
       setLocalSettings(settings);
     }
   }, [settings]);
-
-  // Show error notification for settings loading errors
-  useEffect(() => {
-    if (settingsError) {
-      addNotification({
-        type: 'error',
-        title: 'Failed to load settings',
-        message: 'Could not load your settings. Please refresh the page or try again later.',
-        duration: 8000
-      });
-    }
-  }, [settingsError, addNotification]);
 
   // Handle settings changes
   const handleSettingsChange = (updates: Partial<AppSettings>) => {
@@ -61,6 +48,8 @@ const SettingsPage: React.FC = () => {
     if (!localSettings) return;
     
     setIsSaving(true);
+    setSaveError(null);
+    setSaveSuccess(false);
     
     try {
       const response = await fetch('/api/settings', {
@@ -76,27 +65,13 @@ const SettingsPage: React.FC = () => {
       if (result.success) {
         // Update the SWR cache with the new settings
         await updateSettings(localSettings, false);
-        addNotification({
-          type: 'success',
-          title: 'Settings saved',
-          message: 'Your settings have been saved successfully.',
-          duration: 3000
-        });
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
       } else {
-        addNotification({
-          type: 'error',
-          title: 'Save failed',
-          message: result.error || 'Failed to save settings. Please try again.',
-          duration: 5000
-        });
+        setSaveError(result.error || 'Failed to save settings');
       }
     } catch (err) {
-      addNotification({
-        type: 'error',
-        title: 'Save failed',
-        message: 'Failed to save settings. Please check your connection and try again.',
-        duration: 5000
-      });
+      setSaveError('Failed to save settings');
       console.error('Error saving settings:', err);
     } finally {
       setIsSaving(false);
@@ -125,13 +100,13 @@ const SettingsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">General Settings</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Bandwidth Settings</h1>
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-          Configure general application preferences and behavior.
+          Configure upload and download speed limits, scheduling, and bandwidth management.
         </p>
       </div>
       
-      <GeneralSection
+      <BandwidthSection
         settings={localSettings}
         onSettingsChange={handleSettingsChange}
         isLoading={isValidating || isSaving}
@@ -180,8 +155,65 @@ const SettingsPage: React.FC = () => {
         </button>
       </div>
 
+      {/* Status Messages */}
+      {(saveSuccess || saveError || settingsError) && (
+        <div className="mt-4">
+          {saveSuccess && (
+            <div className="rounded-md bg-green-50 dark:bg-green-900 p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                    Settings saved successfully!
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {saveError && (
+            <div className="rounded-md bg-red-50 dark:bg-red-900 p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Error saving settings</h3>
+                  <div className="mt-2 text-sm text-red-700 dark:text-red-300">
+                    <p>{saveError}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {settingsError && (
+            <div className="rounded-md bg-red-50 dark:bg-red-900 p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Error loading settings</h3>
+                  <div className="mt-2 text-sm text-red-700 dark:text-red-300">
+                    <p>{settingsError}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
 
-export default SettingsPage;
+export default BandwidthSettingsPage;

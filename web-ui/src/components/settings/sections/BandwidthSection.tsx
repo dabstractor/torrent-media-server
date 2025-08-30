@@ -36,29 +36,29 @@ const BandwidthSection: React.FC<BandwidthSectionProps> = ({
           <NumberInput
             id="max-download-rate"
             label="Maximum Download Rate"
-            value={settings.bandwidth.maxDownloadRate}
+            value={settings.maxDownloadSpeed}
             onChange={(value) => onSettingsChange({
-              bandwidth: { ...settings.bandwidth, maxDownloadRate: value }
+              maxDownloadSpeed: value
             })}
             min={0}
             unit="KB/s"
             disabled={isLoading}
             description="0 = unlimited"
-            error={errors['bandwidth.maxDownloadRate']}
+            error={errors['maxDownloadSpeed']}
           />
 
           <NumberInput
             id="max-upload-rate"
             label="Maximum Upload Rate"
-            value={settings.bandwidth.maxUploadRate}
+            value={settings.maxUploadSpeed}
             onChange={(value) => onSettingsChange({
-              bandwidth: { ...settings.bandwidth, maxUploadRate: value }
+              maxUploadSpeed: value
             })}
             min={0}
             unit="KB/s"
             disabled={isLoading}
             description="0 = unlimited"
-            error={errors['bandwidth.maxUploadRate']}
+            error={errors['maxUploadSpeed']}
           />
         </div>
       </div>
@@ -72,147 +72,60 @@ const BandwidthSection: React.FC<BandwidthSectionProps> = ({
         <ToggleSwitch
           id="alt-rate-enabled"
           label="Enable Alternative Rate Limits"
-          checked={settings.bandwidth.alternativeRateEnabled}
+          checked={settings.altSpeedEnabled}
           onChange={(checked) => onSettingsChange({
-            bandwidth: { ...settings.bandwidth, alternativeRateEnabled: checked }
+            altSpeedEnabled: checked
           })}
           disabled={isLoading}
           description="Use different rate limits during scheduled times"
-          error={errors['bandwidth.alternativeRateEnabled']}
+          error={errors['altSpeedEnabled']}
         />
 
-        {settings.bandwidth.alternativeRateEnabled && (
+        {settings.altSpeedEnabled && (
           <div className="ml-4 mt-4 space-y-4 border-l-2 border-gray-200 dark:border-gray-700 pl-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <NumberInput
                 id="alt-max-download-rate"
                 label="Alternative Download Rate"
-                value={settings.bandwidth.alternativeMaxDownloadRate}
+                value={settings.altDownloadSpeed}
                 onChange={(value) => onSettingsChange({
-                  bandwidth: { ...settings.bandwidth, alternativeMaxDownloadRate: value }
+                  altDownloadSpeed: value
                 })}
                 min={0}
                 unit="KB/s"
                 disabled={isLoading}
                 description="0 = unlimited"
-                error={errors['bandwidth.alternativeMaxDownloadRate']}
+                error={errors['altDownloadSpeed']}
               />
 
               <NumberInput
                 id="alt-max-upload-rate"
                 label="Alternative Upload Rate"
-                value={settings.bandwidth.alternativeMaxUploadRate}
+                value={settings.altUploadSpeed}
                 onChange={(value) => onSettingsChange({
-                  bandwidth: { ...settings.bandwidth, alternativeMaxUploadRate: value }
+                  altUploadSpeed: value
                 })}
                 min={0}
                 unit="KB/s"
                 disabled={isLoading}
                 description="0 = unlimited"
-                error={errors['bandwidth.alternativeMaxUploadRate']}
+                error={errors['altUploadSpeed']}
               />
             </div>
           </div>
         )}
       </div>
 
-      {/* Connection Settings */}
+      {/* TODO: Connection Settings - Need to define proper settings structure
       <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
         <h4 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-4">
           Connection Settings
         </h4>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <NumberInput
-            id="max-connections"
-            label="Maximum Connections"
-            value={settings.bandwidth.maxConnections}
-            onChange={(value) => onSettingsChange({
-              bandwidth: { ...settings.bandwidth, maxConnections: value }
-            })}
-            min={1}
-            max={10000}
-            disabled={isLoading}
-            description="Global maximum number of connections"
-            error={errors['bandwidth.maxConnections']}
-          />
-
-          <NumberInput
-            id="max-connections-per-torrent"
-            label="Connections per Torrent"
-            value={settings.bandwidth.maxConnectionsPerTorrent}
-            onChange={(value) => onSettingsChange({
-              bandwidth: { ...settings.bandwidth, maxConnectionsPerTorrent: value }
-            })}
-            min={1}
-            max={1000}
-            disabled={isLoading}
-            description="Maximum connections per individual torrent"
-            error={errors['bandwidth.maxConnectionsPerTorrent']}
-          />
-
-          <NumberInput
-            id="max-uploads"
-            label="Maximum Upload Slots"
-            value={settings.bandwidth.maxUploads}
-            onChange={(value) => onSettingsChange({
-              bandwidth: { ...settings.bandwidth, maxUploads: value }
-            })}
-            min={1}
-            max={1000}
-            disabled={isLoading}
-            description="Global maximum number of upload slots"
-            error={errors['bandwidth.maxUploads']}
-          />
-
-          <NumberInput
-            id="max-uploads-per-torrent"
-            label="Upload Slots per Torrent"
-            value={settings.bandwidth.maxUploadsPerTorrent}
-            onChange={(value) => onSettingsChange({
-              bandwidth: { ...settings.bandwidth, maxUploadsPerTorrent: value }
-            })}
-            min={1}
-            max={100}
-            disabled={isLoading}
-            description="Maximum upload slots per individual torrent"
-            error={errors['bandwidth.maxUploadsPerTorrent']}
-          />
-        </div>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Connection settings will be available in a future update.
+        </p>
       </div>
-
-      {/* Advanced Bandwidth Options */}
-      <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-        <h4 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-4">
-          Advanced Options
-        </h4>
-
-        <div className="space-y-4">
-          <ToggleSwitch
-            id="rate-limit-utp"
-            label="Apply Rate Limit to µTP"
-            checked={settings.bandwidth.rateLimitUtp}
-            onChange={(checked) => onSettingsChange({
-              bandwidth: { ...settings.bandwidth, rateLimitUtp: checked }
-            })}
-            disabled={isLoading}
-            description="Apply rate limits to µTP protocol connections"
-            error={errors['bandwidth.rateLimitUtp']}
-          />
-
-          <ToggleSwitch
-            id="rate-limit-tcp"
-            label="Apply Rate Limit to TCP"
-            checked={settings.bandwidth.rateLimitTcp}
-            onChange={(checked) => onSettingsChange({
-              bandwidth: { ...settings.bandwidth, rateLimitTcp: checked }
-            })}
-            disabled={isLoading}
-            description="Apply rate limits to TCP protocol connections"
-            error={errors['bandwidth.rateLimitTcp']}
-          />
-        </div>
-      </div>
+      */}
     </div>
   );
 };
