@@ -15,6 +15,46 @@ const AdvancedSection: React.FC<AdvancedSectionProps> = ({
   isLoading = false,
   errors = {},
 }) => {
+  // Defensive check for advancedSettings - provide defaults if missing
+  const advancedSettings = settings.advanced || {
+    cacheSize: 64,
+    enableLogging: false,
+    logRetentionDays: 7,
+    requireHttps: false,
+    csrfProtection: true,
+    sessionTimeout: 30,
+    databaseWalMode: false,
+    databaseCacheSize: 2000,
+    backupCompression: true,
+    apiTimeout: 30,
+    maxRetryAttempts: 3,
+    apiRateLimiting: false,
+    rateLimitRequests: 100,
+    rateLimitWindow: 60,
+    experimentalFeatures: false,
+    betaUpdates: false,
+  };
+
+  if (!advancedSettings) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+            Advanced Settings
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+            Advanced settings are not available in the current configuration.
+          </p>
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-4">
+            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+              Advanced settings will be available in a future version of this application.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -36,9 +76,9 @@ const AdvancedSection: React.FC<AdvancedSectionProps> = ({
           <NumberInput
             id="cache-size"
             label="Cache Size"
-            value={settings.advanced.cacheSize}
+            value={advancedSettings.cacheSize}
             onChange={(value) => onSettingsChange({ 
-              advanced: { ...settings.advanced, cacheSize: value } 
+              advanced: { ...advancedSettings, cacheSize: value } 
             })}
             min={1}
             max={1024}
@@ -51,9 +91,9 @@ const AdvancedSection: React.FC<AdvancedSectionProps> = ({
           <ToggleSwitch
             id="enable-logging"
             label="Enable Detailed Logging"
-            checked={settings.advanced.enableLogging}
+            checked={advancedSettings.enableLogging}
             onChange={(checked) => onSettingsChange({ 
-              advanced: { ...settings.advanced, enableLogging: checked } 
+              advanced: { ...advancedSettings, enableLogging: checked } 
             })}
             disabled={isLoading}
             description="Enable verbose logging for debugging purposes"
@@ -63,9 +103,9 @@ const AdvancedSection: React.FC<AdvancedSectionProps> = ({
           <NumberInput
             id="log-retention"
             label="Log Retention"
-            value={settings.advanced.logRetentionDays}
+            value={advancedSettings.logRetentionDays}
             onChange={(value) => onSettingsChange({ 
-              advanced: { ...settings.advanced, logRetentionDays: value } 
+              advanced: { ...advancedSettings, logRetentionDays: value } 
             })}
             min={1}
             max={365}
@@ -87,9 +127,9 @@ const AdvancedSection: React.FC<AdvancedSectionProps> = ({
           <ToggleSwitch
             id="require-https"
             label="Require HTTPS"
-            checked={settings.advanced.requireHttps}
+            checked={advancedSettings.requireHttps}
             onChange={(checked) => onSettingsChange({ 
-              advanced: { ...settings.advanced, requireHttps: checked } 
+              advanced: { ...advancedSettings, requireHttps: checked } 
             })}
             disabled={isLoading}
             description="Require HTTPS for all connections"
@@ -99,9 +139,9 @@ const AdvancedSection: React.FC<AdvancedSectionProps> = ({
           <ToggleSwitch
             id="enable-csrf-protection"
             label="Enable CSRF Protection"
-            checked={settings.advanced.csrfProtection}
+            checked={advancedSettings.csrfProtection}
             onChange={(checked) => onSettingsChange({ 
-              advanced: { ...settings.advanced, csrfProtection: checked } 
+              advanced: { ...advancedSettings, csrfProtection: checked } 
             })}
             disabled={isLoading}
             description="Enable Cross-Site Request Forgery protection"
@@ -111,9 +151,9 @@ const AdvancedSection: React.FC<AdvancedSectionProps> = ({
           <NumberInput
             id="session-timeout"
             label="Session Timeout"
-            value={settings.advanced.sessionTimeout}
+            value={advancedSettings.sessionTimeout}
             onChange={(value) => onSettingsChange({ 
-              advanced: { ...settings.advanced, sessionTimeout: value } 
+              advanced: { ...advancedSettings, sessionTimeout: value } 
             })}
             min={1}
             max={1440}
@@ -135,9 +175,9 @@ const AdvancedSection: React.FC<AdvancedSectionProps> = ({
           <ToggleSwitch
             id="enable-wal-mode"
             label="Enable WAL Mode"
-            checked={settings.advanced.databaseWalMode}
+            checked={advancedSettings.databaseWalMode}
             onChange={(checked) => onSettingsChange({ 
-              advanced: { ...settings.advanced, databaseWalMode: checked } 
+              advanced: { ...advancedSettings, databaseWalMode: checked } 
             })}
             disabled={isLoading}
             description="Enable Write-Ahead Logging for better concurrency"
@@ -147,9 +187,9 @@ const AdvancedSection: React.FC<AdvancedSectionProps> = ({
           <NumberInput
             id="database-cache-size"
             label="Database Cache Size"
-            value={settings.advanced.databaseCacheSize}
+            value={advancedSettings.databaseCacheSize}
             onChange={(value) => onSettingsChange({ 
-              advanced: { ...settings.advanced, databaseCacheSize: value } 
+              advanced: { ...advancedSettings, databaseCacheSize: value } 
             })}
             min={1}
             max={1000}
@@ -162,9 +202,9 @@ const AdvancedSection: React.FC<AdvancedSectionProps> = ({
           <ToggleSwitch
             id="enable-backup-compression"
             label="Enable Backup Compression"
-            checked={settings.advanced.backupCompression}
+            checked={advancedSettings.backupCompression}
             onChange={(checked) => onSettingsChange({ 
-              advanced: { ...settings.advanced, backupCompression: checked } 
+              advanced: { ...advancedSettings, backupCompression: checked } 
             })}
             disabled={isLoading}
             description="Compress backup files to save disk space"
@@ -183,9 +223,9 @@ const AdvancedSection: React.FC<AdvancedSectionProps> = ({
           <NumberInput
             id="api-timeout"
             label="API Timeout"
-            value={settings.advanced.apiTimeout}
+            value={advancedSettings.apiTimeout}
             onChange={(value) => onSettingsChange({ 
-              advanced: { ...settings.advanced, apiTimeout: value } 
+              advanced: { ...advancedSettings, apiTimeout: value } 
             })}
             min={1}
             max={300}
@@ -198,9 +238,9 @@ const AdvancedSection: React.FC<AdvancedSectionProps> = ({
           <NumberInput
             id="max-retry-attempts"
             label="Max Retry Attempts"
-            value={settings.advanced.maxRetryAttempts}
+            value={advancedSettings.maxRetryAttempts}
             onChange={(value) => onSettingsChange({ 
-              advanced: { ...settings.advanced, maxRetryAttempts: value } 
+              advanced: { ...advancedSettings, maxRetryAttempts: value } 
             })}
             min={0}
             max={10}
@@ -212,23 +252,23 @@ const AdvancedSection: React.FC<AdvancedSectionProps> = ({
           <ToggleSwitch
             id="enable-api-rate-limiting"
             label="Enable API Rate Limiting"
-            checked={settings.advanced.apiRateLimiting}
+            checked={advancedSettings.apiRateLimiting}
             onChange={(checked) => onSettingsChange({ 
-              advanced: { ...settings.advanced, apiRateLimiting: checked } 
+              advanced: { ...advancedSettings, apiRateLimiting: checked } 
             })}
             disabled={isLoading}
             description="Limit API requests to prevent abuse"
             error={errors['advanced.apiRateLimiting']}
           />
 
-          {settings.advanced.apiRateLimiting && (
+          {advancedSettings.apiRateLimiting && (
             <div className="ml-4 space-y-4 border-l-2 border-gray-200 dark:border-gray-700 pl-4">
               <NumberInput
                 id="rate-limit-requests"
                 label="Requests per Window"
-                value={settings.advanced.rateLimitRequests}
+                value={advancedSettings.rateLimitRequests}
                 onChange={(value) => onSettingsChange({ 
-                  advanced: { ...settings.advanced, rateLimitRequests: value } 
+                  advanced: { ...advancedSettings, rateLimitRequests: value } 
                 })}
                 min={1}
                 max={1000}
@@ -240,9 +280,9 @@ const AdvancedSection: React.FC<AdvancedSectionProps> = ({
               <NumberInput
                 id="rate-limit-window"
                 label="Time Window"
-                value={settings.advanced.rateLimitWindow}
+                value={advancedSettings.rateLimitWindow}
                 onChange={(value) => onSettingsChange({ 
-                  advanced: { ...settings.advanced, rateLimitWindow: value } 
+                  advanced: { ...advancedSettings, rateLimitWindow: value } 
                 })}
                 min={1}
                 max={3600}
@@ -266,9 +306,9 @@ const AdvancedSection: React.FC<AdvancedSectionProps> = ({
           <ToggleSwitch
             id="enable-experimental-features"
             label="Enable Experimental Features"
-            checked={settings.advanced.experimentalFeatures}
+            checked={advancedSettings.experimentalFeatures}
             onChange={(checked) => onSettingsChange({ 
-              advanced: { ...settings.advanced, experimentalFeatures: checked } 
+              advanced: { ...advancedSettings, experimentalFeatures: checked } 
             })}
             disabled={isLoading}
             description="Enable access to experimental and unstable features"
@@ -278,9 +318,9 @@ const AdvancedSection: React.FC<AdvancedSectionProps> = ({
           <ToggleSwitch
             id="enable-beta-updates"
             label="Enable Beta Updates"
-            checked={settings.advanced.betaUpdates}
+            checked={advancedSettings.betaUpdates}
             onChange={(checked) => onSettingsChange({ 
-              advanced: { ...settings.advanced, betaUpdates: checked } 
+              advanced: { ...advancedSettings, betaUpdates: checked } 
             })}
             disabled={isLoading}
             description="Receive beta versions with new features and fixes"

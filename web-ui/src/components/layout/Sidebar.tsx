@@ -14,6 +14,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { href: '/search', label: 'Search' },
     { href: '/downloads', label: 'Downloads' },
     { href: '/completed', label: 'Completed' },
+    { href: '/settings', label: 'Settings' },
     { href: '/status', label: 'Status' },
   ];
   useEffect(() => {
@@ -56,18 +57,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
           md:hidden
         `}
+        role="navigation"
+        aria-label="Main navigation"
       >
-        <nav className="flex flex-col space-y-2">
+        <nav className="flex flex-col space-y-2" role="menubar">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               onClick={onClose}
-              className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-500 transition-colors ${
+              className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-500 transition-colors min-h-[44px] flex items-center ${
                 pathname === item.href 
                   ? 'bg-primary-100 dark:bg-primary-900 text-primary-600 font-semibold' 
                   : 'text-gray-700 dark:text-gray-300'
               }`}
+              role="menuitem"
             >
               {item.label}
             </Link>

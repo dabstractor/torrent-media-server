@@ -15,6 +15,21 @@ const GeneralSection: React.FC<GeneralSectionProps> = ({
   isLoading = false,
   errors = {},
 }) => {
+  // Defensive check for settings
+  if (!settings || !settings.notifications) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+            General Settings
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+            Loading settings...
+          </p>
+        </div>
+      </div>
+    );
+  }
   const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onSettingsChange({
       theme: e.target.value as 'light' | 'dark' | 'system',

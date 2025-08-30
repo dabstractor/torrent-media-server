@@ -235,7 +235,14 @@ class SettingsService {
           });
         } else {
           try {
-            new URL(settings.qbittorrent.url);
+            const url = new URL(settings.qbittorrent.url);
+            if (!['http:', 'https:'].includes(url.protocol)) {
+              errors.push({
+                field: 'qbittorrent.url',
+                message: 'qBittorrent URL must use http or https protocol',
+                code: 'INVALID_QB_PROTOCOL',
+              });
+            }
           } catch {
             errors.push({
               field: 'qbittorrent.url',
@@ -279,6 +286,42 @@ class SettingsService {
         });
       }
 
+      // Plex validation
+      if (settings.plex.enabled) {
+        if (!settings.plex.url) {
+          errors.push({
+            field: 'plex.url',
+            message: 'Plex URL is required when Plex integration is enabled',
+            code: 'MISSING_PLEX_URL',
+          });
+        } else {
+          try {
+            const url = new URL(settings.plex.url);
+            if (!['http:', 'https:'].includes(url.protocol)) {
+              errors.push({
+                field: 'plex.url',
+                message: 'Plex URL must use http or https protocol',
+                code: 'INVALID_PLEX_PROTOCOL',
+              });
+            }
+          } catch {
+            errors.push({
+              field: 'plex.url',
+              message: 'Plex URL must be a valid URL',
+              code: 'INVALID_PLEX_URL',
+            });
+          }
+        }
+
+        if (!settings.plex.token) {
+          errors.push({
+            field: 'plex.token',
+            message: 'Plex token is required when Plex integration is enabled',
+            code: 'MISSING_PLEX_TOKEN',
+          });
+        }
+      }
+
       // Logging validation
       if (!['debug', 'info', 'warn', 'error'].includes(settings.logging.level)) {
         errors.push({
@@ -293,6 +336,31 @@ class SettingsService {
           field: 'logging.maxLogSize',
           message: 'Maximum log size must be between 1 and 1000 MB',
           code: 'INVALID_LOG_SIZE',
+        });
+      }
+
+      if (settings.logging.keepLogDays < 1 || settings.logging.keepLogDays > 365) {
+        errors.push({
+          field: 'logging.keepLogDays',
+          message: 'Keep log days must be between 1 and 365',
+          code: 'INVALID_LOG_DAYS',
+        });
+      }
+
+      // Database validation
+      if (settings.database.maxHistoryEntries < 100 || settings.database.maxHistoryEntries > 10000) {
+        errors.push({
+          field: 'database.maxHistoryEntries',
+          message: 'Maximum history entries must be between 100 and 10000',
+          code: 'INVALID_HISTORY_ENTRIES',
+        });
+      }
+
+      if (settings.database.vacuumInterval < 1 || settings.database.vacuumInterval > 365) {
+        errors.push({
+          field: 'database.vacuumInterval',
+          message: 'Vacuum interval must be between 1 and 365 days',
+          code: 'INVALID_VACUUM_INTERVAL',
         });
       }
 
