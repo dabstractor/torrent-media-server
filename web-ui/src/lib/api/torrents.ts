@@ -24,13 +24,13 @@ export const searchTorrents = async (
   throw new Error(response.error || 'Search failed');
 }
 
-// Add torrent to qBittorrent
+// Add torrent to Transmission
 export const addTorrent = async (
   torrent: Pick<TorrentResult, 'downloadUrl' | 'magnetUrl'>,
   category?: string
 ): Promise<boolean> => {
-  const response = await apiClient.post<{ hash: string }>('/torrents', {
-    url: torrent.magnetUrl || torrent.downloadUrl,
+  const response = await apiClient.post<{ hash: string }>('/downloads', {
+    magnet: torrent.magnetUrl || torrent.downloadUrl,
     category,
   })
   
@@ -39,7 +39,7 @@ export const addTorrent = async (
 
 // Get all torrents
 export const getTorrents = async (): Promise<DownloadsResponse> => {
-  const response = await apiClient.get<DownloadsResponse>('/torrents');
+  const response = await apiClient.get<DownloadsResponse>('/downloads');
   if (response.success) {
     return response.data;
   }
@@ -51,7 +51,7 @@ export const controlTorrent = async (
   hash: string, 
   action: 'pause' | 'resume' | 'delete'
 ): Promise<boolean> => {
-  const response = await apiClient.post<void>(`/torrents/${hash}/${action}`)
+  const response = await apiClient.post<void>(`/downloads/${hash}/${action}`)
   return response.success
 }
 
@@ -59,7 +59,7 @@ export const controlTorrent = async (
 export const getTorrentDetails = async (
   hash: string
 ): Promise<Download> => {
-  const response = await apiClient.get<Download>(`/torrents/${hash}`);
+  const response = await apiClient.get<Download>(`/downloads/${hash}`);
   if (response.success) {
     return response.data;
   }
