@@ -36,8 +36,8 @@ export interface AppSettings {
   scheduleToMin: number;
   scheduleDays: number; // Bitmask: 1=Mon, 2=Tue, 4=Wed, etc.
 
-  // qBittorrent Integration
-  qbittorrent: {
+  // Transmission Integration
+  transmission: {
     url: string;
     username: string;
     password: string;
@@ -51,7 +51,7 @@ export interface AppSettings {
       fromMin: number;
       toHour: number;
       toMin: number;
-      days: number;
+      days: number; // Bitmask: 1=Sunday, 2=Monday, 4=Tuesday...
     };
   };
 
@@ -147,6 +147,26 @@ export interface SettingsConflict {
   timestamp: Date;
 }
 
+export interface TransmissionPreferences {
+  'speed-limit-down-enabled': boolean;
+  'speed-limit-down': number;
+  'speed-limit-up-enabled': boolean;
+  'speed-limit-up': number;
+  'alt-speed-enabled': boolean;
+  'alt-speed-down': number;
+  'alt-speed-up': number;
+  'alt-speed-time-enabled': boolean;
+  'alt-speed-time-begin': number; // minutes since midnight
+  'alt-speed-time-end': number;
+  'alt-speed-time-day': number; // bitmask
+  'download-queue-enabled': boolean;
+  'download-queue-size': number;
+  'seed-queue-enabled': boolean;
+  'seed-queue-size': number;
+  'start-added-torrents': boolean;
+  'download-dir': string;
+}
+
 export interface QBPreferences {
   // Core qBittorrent preferences mapping to AppSettings
   max_upload: number;
@@ -192,7 +212,7 @@ export type SettingsCategory =
   | 'general'
   | 'download' 
   | 'bandwidth'
-  | 'qbittorrent'
+  | 'transmission'
   | 'plex'
   | 'advanced';
 
@@ -334,10 +354,10 @@ const DEFAULT_SETTINGS: AppSettings = {
   scheduleToHour: 20,
   scheduleToMin: 0,
   scheduleDays: 127, // All days
-  qbittorrent: {
-    url: 'http://localhost:8080',
+  transmission: {
+    url: 'http://localhost:9091',
     username: 'admin',
-    password: '',
+    password: 'adminpass123',
     syncEnabled: true,
     syncInterval: 30,
     autoLogin: true,
@@ -421,11 +441,11 @@ export const SETTINGS_CATEGORIES: SettingsCategoryInfo[] = [
     ],
   },
   {
-    id: 'qbittorrent',
-    name: 'qBittorrent',
+    id: 'transmission',
+    name: 'Transmission',
     description: 'Connection settings, sync preferences, and authentication',
     icon: 'link',
-    fields: ['qbittorrent'],
+    fields: ['transmission'],
   },
   {
     id: 'plex',
