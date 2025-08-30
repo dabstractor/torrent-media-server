@@ -1,4 +1,5 @@
-"use client";
+'use client';
+
 import React, { useState } from 'react';
 import BackupList from './BackupList';
 import CreateBackupForm from './CreateBackupForm';

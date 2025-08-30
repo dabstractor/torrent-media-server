@@ -32,7 +32,7 @@ interface UseSettingsReturn {
 
 // Cache key for settings
 const SETTINGS_CACHE_KEY = 'settings-cache-v1';
-const DEFAULT_REFRESH_INTERVAL = 30000; // 30 seconds
+const DEFAULT_REFRESH_INTERVAL = 0; // Disabled due to infinite loop issue
 
 // Utility functions for caching
 const getCachedSettings = (): { settings: AppSettings; timestamp: number } | null => {
@@ -112,7 +112,7 @@ export function useSettings(options: UseSettingsOptions = {}): UseSettingsReturn
 
   // Revalidate settings
   const revalidate = useCallback(async (showValidating = true): Promise<AppSettings | null> => {
-    if (isValidatingRef.current) return settings;
+    if (isValidatingRef.current) return null;
     
     isValidatingRef.current = true;
     if (showValidating) setIsValidating(true);
@@ -141,8 +141,8 @@ export function useSettings(options: UseSettingsOptions = {}): UseSettingsReturn
       abortControllerRef.current = null;
     }
 
-    return settings;
-  }, [settings, fetchSettings]);
+    return null;
+  }, [fetchSettings]);
 
   // Initialize and load settings
   const initialize = useCallback(async () => {

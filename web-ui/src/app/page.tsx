@@ -13,7 +13,12 @@ export default function HomePage() {
 
         {/* Navigation Cards */}
         <div className="space-y-4">
-          <Link href="/search">
+          <Link 
+            href="/search"
+            className="block"
+            role="link"
+            aria-label="Search torrents"
+          >
             <div className="card hover:shadow-md transition-shadow">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-primary-100 dark:bg-primary-900 rounded-full">
@@ -27,7 +32,12 @@ export default function HomePage() {
             </div>
           </Link>
 
-          <Link href="/downloads">
+          <Link 
+            href="/downloads"
+            className="block"
+            role="link"
+            aria-label="Manage downloads"
+          >
             <div className="card hover:shadow-md transition-shadow">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-success-100 dark:bg-success-900 rounded-full">
@@ -41,7 +51,12 @@ export default function HomePage() {
             </div>
           </Link>
 
-          <Link href="/settings">
+          <Link 
+            href="/settings"
+            className="block"
+            role="link"
+            aria-label="Configure settings"
+          >
             <div className="card hover:shadow-md transition-shadow">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-full">

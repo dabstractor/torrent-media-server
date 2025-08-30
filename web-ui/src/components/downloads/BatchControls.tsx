@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useTorrents } from '@/hooks/use-torrents'
+import { useNotifications } from '@/context/NotificationContext'
 
 interface BatchControlsProps {
   selectedIds: string[]
@@ -11,6 +12,7 @@ const BatchControls: React.FC<BatchControlsProps> = ({
   onBatchComplete
 }) => {
   const { pauseTorrent, resumeTorrent, deleteTorrent } = useTorrents()
+  const { addNotification } = useNotifications()
   const [isProcessing, setIsProcessing] = useState(false)
   const [processingAction, setProcessingAction] = useState<string>('')
 
