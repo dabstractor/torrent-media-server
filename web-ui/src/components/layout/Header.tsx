@@ -20,7 +20,9 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isSidebarOpen }) => {
   return (
     <header className="bg-white dark:bg-gray-800 shadow-md">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-        <div className="text-xl font-bold">Torrent UI</div>
+        <Link href="/" className="text-xl font-bold text-gray-800 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+          Torrent UI
+        </Link>
         <div className="hidden md:flex space-x-4">
           {navItems.map((item) => (
             <Link
