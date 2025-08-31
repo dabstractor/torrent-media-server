@@ -15,33 +15,27 @@ networks:
 # Using local directories instead of Docker volumes for easier management
 
 services:
-  # VPN Service - Routes all torrent traffic through a secure tunnel
+  # VPN Service - Default: Cloudflare WARP (no credentials needed)
+  # To use PIA instead: docker-compose -f docker-compose.yml -f docker-compose.pia.yml up -d
   vpn:
-    image: ghcr.io/linuxserver/wireguard
+    image: caomingjun/warp:latest
     container_name: vpn
     cap_add:
       - NET_ADMIN
-      - SYS_MODULE
     environment:
-      - PUID=1000
-      - PGID=1000
+      - WARP_SLEEP=2
       - TZ=${TZ:-America/New_York}
-      - SERVERURL=wireguard
-      - SERVERPORT=${VPN_PORT:-51820}
-    volumes:
-      - ${VPN_CONFIG_PATH}:/config
     networks:
       - vpn_network
-    ports:
-      - 51820:51820/udp
     sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
       - net.ipv4.conf.all.src_valid_mark=1
     healthcheck:
-      test: ["CMD", "ping", "-c", "1", "1.1.1.1"]
+      test: ["CMD", "sh", "-c", "warp-cli --accept-tos status | grep -q 'Connected'"]
       interval: 60s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 90s
     restart: unless-stopped
 
   # Transmission - Torrent download client running through VPN
@@ -63,7 +57,7 @@ services:
       - ${DOWNLOADS_ROOT:-./data/downloads}:${TRANSMISSION_DOWNLOAD_DIR:-/downloads}
       - ${TRANSMISSION_WATCH_DIR:-./data/torrents}:/watch
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9091"]
+      test: ["CMD", "curl", "-f", "--user", "${TRANSMISSION_USERNAME}:${TRANSMISSION_PASSWORD}", "http://localhost:9091"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -182,6 +176,8 @@ services:
     depends_on:
       vpn:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
       - PUID=1000
       - PGID=1000
@@ -189,7 +185,7 @@ services:
     volumes:
       - ./config/prowlarr:/config
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9696/api/v1/system/status"]
+      test: ["CMD-SHELL", "curl -f -H \"X-Api-Key: $$PROWLARR_API_KEY\" http://localhost:9696/api/v1/system/status"]
       interval: 30s
       timeout: 10s
       retries: 3
