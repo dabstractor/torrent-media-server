@@ -1,4 +1,4 @@
-const PROWLARR_URL = process.env.PROWLARR_URL || 'http://prowlarr:9696';
+const PROWLARR_URL = process.env.PROWLARR_URL || 'http://vpn:9696';
 const PROWLARR_API_KEY = process.env.PROWLARR_API_KEY;
 
 export async function GET(
