@@ -93,7 +93,22 @@ export async function searchTorrents(params: SearchRequest): Promise<ApiResponse
       throw new Error(`Search failed: ${response.status} ${response.statusText} - ${errorText}`)
     }
 
-    const prowlarrData: ProwlarrSearchResponse = await response.json()
+    const rawData = await response.json()
+    
+    // Handle both response formats: array directly or structured object
+    let prowlarrData: ProwlarrSearchResponse;
+    if (Array.isArray(rawData)) {
+      // Prowlarr returned just an array (likely empty or when no indexers configured)
+      prowlarrData = {
+        results: rawData,
+        offset: params.offset || 0,
+        limit: params.limit || 50,
+        total: rawData.length
+      }
+    } else {
+      // Prowlarr returned structured response
+      prowlarrData = rawData as ProwlarrSearchResponse
+    }
     
     // Normalize results to match our TorrentResult interface
     const normalizedResults: TorrentResult[] = prowlarrData.results.map(normalizeTorrentResult)
