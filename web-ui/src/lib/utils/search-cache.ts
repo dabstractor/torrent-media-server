@@ -178,7 +178,7 @@ export class SearchCacheManager {
             localStorage.removeItem(key)
             removedCount++
           }
-        } catch (error) {
+        } catch {
           // Remove invalid cache items
           localStorage.removeItem(key)
           removedCount++

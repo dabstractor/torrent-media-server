@@ -54,16 +54,24 @@ const QBittorrentSettingsPage: React.FC = () => {
     setQBTestResult(null);
     
     try {
-      const result = await testQBittorrentConnection();
-      if (result.success) {
-        setQBTestResult({ 
-          success: true, 
-          message: 'Successfully connected to qBittorrent!' 
-        });
+      const response = await testQBittorrentConnection();
+      if (response.success && response.data) {
+        const result = response.data;
+        if (result.connected) {
+          setQBTestResult({ 
+            success: true, 
+            message: 'Successfully connected to qBittorrent!' 
+          });
+        } else {
+          setQBTestResult({ 
+            success: false, 
+            message: result.error || 'Failed to connect to qBittorrent' 
+          });
+        }
       } else {
         setQBTestResult({ 
           success: false, 
-          message: result.error || 'Failed to connect to qBittorrent' 
+          message: 'Failed to test connection' 
         });
       }
     } catch (err) {
