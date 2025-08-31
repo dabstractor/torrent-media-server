@@ -1,0 +1,39 @@
+# PIA VPN Provider Override
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.pia.yml up -d
+# 
+# Requirements:
+# - Set PIA_USER and PIA_PASS in your .env file
+# - Valid PIA subscription
+#
+# This file overrides the default WARP VPN with PIA's WireGuard service
+
+services:
+  vpn:
+    image: thrnz/docker-wireguard-pia:latest
+    environment:
+      # PIA Credentials (required)
+      - USER=${PIA_USER}
+      - PASS=${PIA_PASS}
+      
+      # PIA Configuration  
+      - LOC=${PIA_REGION:-us_atlanta}
+      - PORTFORWARD=${PORT_FORWARDING:-1}
+      - LOCAL_NETWORK=${LOCAL_NETWORK:-192.168.1.0/24}
+      - KEEPALIVE=25
+      - TZ=${TZ:-America/New_York}
+      
+    volumes:
+      # PIA needs config storage for WireGuard keys and tokens
+      - ./config/vpn:/config
+      
+    ports:
+      # WireGuard port for PIA
+      - 51820:51820/udp
+      
+    # Health check for PIA VPN - test connectivity through the tunnel
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f --max-time 10 https://ipinfo.io/ip || exit 1"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 90s

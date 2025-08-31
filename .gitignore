@@ -24,6 +24,34 @@ node_modules/
 # OS specific
 .DS_Store
 
+# Docker-generated config files
+config/prowlarr/asp/
+config/prowlarr/logs/
+config/prowlarr/Sentry/
+config/prowlarr/*.db*
+config/prowlarr/*.pid
+config/prowlarr/config.xml
+config/prowlarr/Definitions/
+
+config/transmission/blocklists/
+config/transmission/resume/
+config/transmission/torrents/
+config/transmission/*.dat
+config/transmission/*.json
+config/transmission/dht.dat
+
+config/radarr/asp/
+config/radarr/logs/
+config/radarr/*.db*
+config/radarr/*.pid
+config/radarr/config.xml
+
+config/sonarr/asp/
+config/sonarr/logs/
+config/sonarr/*.db*
+config/sonarr/*.pid
+config/sonarr/config.xml
+
 config/plex/Library/Application Support/Plex Media Server/Logs
 config/plex/Library/Application Support/Plex Media Server/Cache
 config/plex/Library/Application Support/Plex Media Server/Crash Reports
