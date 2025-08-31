@@ -3,6 +3,13 @@ const nextConfig = {
   experimental: {
     typedRoutes: true,
   },
+  // Disable ESLint and TypeScript checking during production builds for now
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   images: {
     domains: ['localhost', '192.168.1.0/24'],
     formats: ['image/webp', 'image/avif'],

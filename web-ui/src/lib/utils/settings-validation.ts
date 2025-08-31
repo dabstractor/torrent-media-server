@@ -15,11 +15,11 @@ const isValidUrl = (url: string): boolean => {
   }
 };
 
-// Email validation helper
-const isValidEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
+// Email validation helper (currently unused but may be needed later)
+// const isValidEmail = (email: string): boolean => {
+//   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+//   return emailRegex.test(email);
+// };
 
 // Path validation helper
 const isValidPath = (path: string): boolean => {
@@ -31,10 +31,10 @@ const isValidPath = (path: string): boolean => {
   return !invalidChars.test(path);
 };
 
-// Port validation helper
-const isValidPort = (port: number): boolean => {
-  return Number.isInteger(port) && port >= 1 && port <= 65535;
-};
+// Port validation helper (currently unused but may be needed later)
+// const isValidPort = (port: number): boolean => {
+//   return Number.isInteger(port) && port >= 1 && port <= 65535;
+// };
 
 // Validate theme settings
 const validateThemeSettings = (settings: AppSettings, errors: ValidationError[]): void => {
@@ -56,7 +56,7 @@ const validateThemeSettings = (settings: AppSettings, errors: ValidationError[])
 };
 
 // Validate notification settings
-const validateNotificationSettings = (settings: AppSettings, errors: ValidationError[]): void => {
+const validateNotificationSettings = (settings: AppSettings, _errors: ValidationError[]): void => {
   // If notifications are enabled, check related settings
   if (settings.notifications.enabled) {
     // All boolean fields are valid by default since they're typed as boolean
@@ -548,8 +548,10 @@ export const getFriendlyErrorMessage = (error: ValidationError): string => {
   return friendlyMessages[error.code] || error.message;
 };
 
-export default {
+const settingsValidation = {
   validateAllSettings,
   validateField,
   getFriendlyErrorMessage,
 };
+
+export default settingsValidation;
