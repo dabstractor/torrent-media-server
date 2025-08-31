@@ -30,6 +30,8 @@ services:
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=0
       - net.ipv4.conf.all.src_valid_mark=1
+    ports:
+      - "9696:9696"
     healthcheck:
       test: ["CMD", "sh", "-c", "warp-cli --accept-tos status | grep -q 'Connected'"]
       interval: 60s
@@ -148,6 +150,7 @@ services:
       - .env
     networks:
       - media_network
+      - vpn_network
     depends_on:
       plex:
         condition: service_healthy
@@ -160,6 +163,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=${WEB_UI_PORT:-3000}
+      - PROWLARR_URL=http://vpn:9696
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${WEB_UI_PORT:-3000}/health"]
       interval: 30s
