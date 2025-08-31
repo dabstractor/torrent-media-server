@@ -213,6 +213,7 @@ export type SettingsCategory =
   | 'download' 
   | 'bandwidth'
   | 'transmission'
+  | 'qbittorrent'
   | 'plex'
   | 'advanced';
 

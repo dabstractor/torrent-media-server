@@ -1,4 +1,3 @@
-version: '3.8'
 
 # Custom networks for service isolation
 networks:
@@ -6,9 +5,12 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: ${NETWORK_SUBNET:-172.20.0.0/16}
+        - subnet: ${NETWORK_SUBNET:-172.27.0.0/16}
   vpn_network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
 
 # Using local directories instead of Docker volumes for easier management
 
