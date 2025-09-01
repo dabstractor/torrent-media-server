@@ -29,6 +29,9 @@ services:
     ports:
       # WireGuard port for PIA
       - 51820:51820/udp
+      # Exposed services through VPN
+      - "9696:9696"
+      - "8191:8191"
       
     # Health check for PIA VPN - test connectivity through the tunnel
     healthcheck:
