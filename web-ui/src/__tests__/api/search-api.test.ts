@@ -73,7 +73,7 @@ describe('searchTorrents', () => {
       leechers: 25,
       category: 'PC/Software',
       indexer: 'Test Indexer',
-      downloadUrl: 'https://example.com/download/ubuntu.torrent',
+      downloadUrl: '/api/download/torrent/test-guid-123',
       magnetUrl: 'magnet:?xt=urn:btih:test123',
       publishDate: '2023-08-10T12:00:00Z'
     })

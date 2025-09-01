@@ -1,4 +1,5 @@
 import type { ApiResponse, SearchResponse, TorrentResult } from '@/lib/types'
+import { transformDownloadUrls } from '@/lib/utils/download-url-utils'
 
 export interface SearchRequest {
   query: string
@@ -47,6 +48,13 @@ function formatFileSize(bytes: number): string {
 }
 
 function normalizeTorrentResult(prowlarrResult: ProwlarrSearchResult): TorrentResult {
+  // Transform download URLs to use secure proxy endpoints
+  const secureUrls = transformDownloadUrls(
+    prowlarrResult.downloadUrl,
+    prowlarrResult.magnetUrl,
+    prowlarrResult.guid
+  )
+
   return {
     id: prowlarrResult.guid,
     title: prowlarrResult.title,
@@ -56,8 +64,8 @@ function normalizeTorrentResult(prowlarrResult: ProwlarrSearchResult): TorrentRe
     leechers: prowlarrResult.peers || 0,
     category: prowlarrResult.categoryDesc || 'Unknown',
     indexer: prowlarrResult.indexer,
-    downloadUrl: prowlarrResult.downloadUrl,
-    magnetUrl: prowlarrResult.magnetUrl,
+    downloadUrl: secureUrls.downloadUrl, // Uses secure proxy endpoint
+    magnetUrl: secureUrls.magnetUrl, // Uses secure magnet endpoint if needed
     publishDate: prowlarrResult.publishDate
   }
 }
@@ -79,8 +87,13 @@ export async function searchTorrents(params: SearchRequest): Promise<ApiResponse
       queryParams.append('minSeeders', params.minSeeders.toString())
     }
 
-    // Use existing proxy route for authentication and proper headers
-    const response = await fetch(`/api/prowlarr/search?${queryParams}`, {
+    // Determine base URL for server-side calls
+    const baseUrl = typeof window === 'undefined' 
+      ? process.env.NEXTAUTH_URL || 'http://localhost:3000'
+      : ''
+    
+    // Call Prowlarr directly via proxy route for authentication and proper headers
+    const response = await fetch(`${baseUrl}/api/prowlarr/search?${queryParams}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'

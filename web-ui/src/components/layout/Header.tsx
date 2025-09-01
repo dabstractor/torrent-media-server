@@ -11,7 +11,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isSidebarOpen }) => {
   const pathname = usePathname();
 
   const navItems = [
-    { href: '/search', label: 'Search' },
+    { href: '/', label: 'Search' }, // Search is now the home page
     { href: '/downloads', label: 'Downloads' },
     { href: '/completed', label: 'Completed' },
     { href: '/status', label: 'Status' },

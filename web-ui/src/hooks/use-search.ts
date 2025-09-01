@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react'
 import useSWR from 'swr'
 import { searchTorrents, addTorrentToDownloads, type SearchRequest } from '@/lib/api/search'
 import type { SearchResponse, TorrentResult } from '@/lib/types'
+import { useSearchURL } from './use-search-url'
 
 // Debounce utility function
 function useDebounce<T>(value: T, delay: number): T {
@@ -39,16 +40,19 @@ const DEFAULT_SEARCH_PARAMS: SearchRequest = {
 }
 
 export function useSearch(): UseSearchReturn {
-  const [searchParams, setSearchParams] = useState<SearchRequest>(DEFAULT_SEARCH_PARAMS)
+  // Use URL-based state management instead of local state
+  const { searchState, updateURL, isInitialized } = useSearchURL()
   
   // Debounce search parameters to avoid excessive API calls
-  const debouncedParams = useDebounce(searchParams, 500)
+  const debouncedParams = useDebounce(searchState, 500)
   
   // Generate consistent cache key for SWR deduplication
   const searchKey = useMemo(() => {
-    if (!debouncedParams.query || debouncedParams.query.length < 2) {
+    // Don't search if not initialized or query too short
+    if (!isInitialized || !debouncedParams.query || debouncedParams.query.length < 2) {
       return null // Don't search for queries less than 2 characters
     }
+    
     return ['search', debouncedParams.query, JSON.stringify({
       categories: debouncedParams.categories,
       minSeeders: debouncedParams.minSeeders,
@@ -58,7 +62,7 @@ export function useSearch(): UseSearchReturn {
       offset: debouncedParams.offset,
       limit: debouncedParams.limit
     })]
-  }, [debouncedParams])
+  }, [debouncedParams, isInitialized])
   
   // SWR configuration following existing patterns
   const { data, error, mutate, isLoading } = useSWR<SearchResponse>(
@@ -84,11 +88,9 @@ export function useSearch(): UseSearchReturn {
   )
   
   const search = useCallback((params: SearchRequest) => {
-    setSearchParams(prevParams => ({
-      ...prevParams,
-      ...params
-    }))
-  }, [])
+    // Update URL parameters which will trigger state update
+    updateURL(params)
+  }, [updateURL])
   
   const refetch = useCallback(() => {
     mutate()
@@ -112,9 +114,10 @@ export function useSearch(): UseSearchReturn {
   }, [])
   
   const clearResults = useCallback(() => {
-    setSearchParams(DEFAULT_SEARCH_PARAMS)
+    // Reset URL to default state and clear cache
+    updateURL(DEFAULT_SEARCH_PARAMS)
     mutate(undefined, false) // Clear cache without revalidation
-  }, [mutate])
+  }, [updateURL, mutate])
   
   return {
     results: data?.results || [],
