@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import type { SearchRequest } from '@/lib/api/search'
+import { useSearchURL } from '@/hooks/use-search-url'
 
 interface SearchFormProps {
   onSearch: (params: SearchRequest) => void
@@ -23,7 +24,11 @@ const CATEGORIES = [
   { id: '7000', label: 'Books' }
 ]
 
-const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading = false }) => {
+const SearchForm: React.FC<SearchFormProps> = ({ onSearch: _, isLoading = false }) => {
+  // Use URL state for form data synchronization
+  const { searchState, updateURL, isInitialized } = useSearchURL()
+  
+  // Local form state that syncs with URL state
   const [formData, setFormData] = useState<FormData>({
     query: '',
     categories: [],
@@ -31,6 +36,19 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading = false }) 
     sortBy: 'seeders',
     sortOrder: 'desc'
   })
+
+  // Sync form data with URL state when it changes
+  useEffect(() => {
+    if (isInitialized) {
+      setFormData({
+        query: searchState.query || '',
+        categories: searchState.categories || [],
+        minSeeders: searchState.minSeeders || 0,
+        sortBy: searchState.sortBy || 'seeders',
+        sortOrder: searchState.sortOrder || 'desc'
+      })
+    }
+  }, [searchState, isInitialized])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,14 +67,31 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading = false }) 
       offset: 0
     }
 
-    onSearch(searchParams)
+    // Update URL which will trigger search through the useSearch hook
+    updateURL(searchParams)
   }
 
   const handleInputChange = (field: keyof FormData, value: string | number | string[]) => {
-    setFormData(prev => ({
-      ...prev,
+    const updatedData = {
+      ...formData,
       [field]: value
-    }))
+    }
+    
+    setFormData(updatedData)
+
+    // For non-query fields, update URL immediately for instant filtering
+    // For query field, only update on submit to avoid excessive API calls
+    if (field !== 'query') {
+      const searchParams: Partial<SearchRequest> = {
+        query: updatedData.query || undefined,
+        categories: updatedData.categories.length > 0 ? updatedData.categories : undefined,
+        minSeeders: updatedData.minSeeders > 0 ? updatedData.minSeeders : undefined,
+        sortBy: updatedData.sortBy,
+        sortOrder: updatedData.sortOrder,
+      }
+      
+      updateURL(searchParams)
+    }
   }
 
   const handleCategoryToggle = (categoryId: string) => {
@@ -65,7 +100,20 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading = false }) 
         ? prev.categories.filter(id => id !== categoryId)
         : [...prev.categories, categoryId]
       
-      return { ...prev, categories }
+      const updatedData = { ...prev, categories }
+      
+      // Update URL immediately for instant category filtering
+      const searchParams: Partial<SearchRequest> = {
+        query: updatedData.query || undefined,
+        categories: updatedData.categories.length > 0 ? updatedData.categories : undefined,
+        minSeeders: updatedData.minSeeders > 0 ? updatedData.minSeeders : undefined,
+        sortBy: updatedData.sortBy,
+        sortOrder: updatedData.sortOrder,
+      }
+      
+      updateURL(searchParams)
+      
+      return updatedData
     })
   }
 

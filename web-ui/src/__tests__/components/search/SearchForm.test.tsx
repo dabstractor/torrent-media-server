@@ -4,11 +4,34 @@ import '@testing-library/jest-dom'
 import SearchForm from '@/components/search/SearchForm'
 import type { SearchRequest } from '@/lib/api/search'
 
+// Create stable mock objects to prevent infinite re-renders
+const mockSearchParams = {
+  get: jest.fn(() => null),
+  getAll: jest.fn(() => [])
+}
+
+const mockRouter = {
+  push: jest.fn(),
+  replace: jest.fn(),
+  refresh: jest.fn()
+}
+
+// Mock Next.js router hooks
+jest.mock('next/navigation', () => ({
+  useSearchParams: jest.fn(() => mockSearchParams),
+  useRouter: jest.fn(() => mockRouter),
+  usePathname: jest.fn(() => '/')
+}))
+
 const mockOnSearch = jest.fn()
 
 describe('SearchForm', () => {
   beforeEach(() => {
     mockOnSearch.mockClear()
+    mockSearchParams.get.mockReturnValue(null)
+    mockSearchParams.getAll.mockReturnValue([])
+    mockRouter.push.mockClear()
+    mockRouter.replace.mockClear()
   })
 
   it('renders search form elements correctly', () => {

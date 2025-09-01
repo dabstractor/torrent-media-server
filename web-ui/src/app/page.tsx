@@ -1,76 +1,89 @@
-import Link from 'next/link';
-import { Search, Download, Settings } from 'lucide-react'
+'use client'
 
-export default function HomePage() {
+import React, { Suspense } from 'react'
+import { useSearch } from '@/hooks/use-search'
+import SearchForm from '@/components/search/SearchForm'
+import SearchResults from '@/components/search/SearchResults'
+import SearchLoadingSkeleton from '@/components/search/SearchLoadingSkeleton'
+import type { SearchRequest } from '@/lib/api/search'
+import type { TorrentResult } from '@/lib/types'
+
+// CRITICAL: SearchContent component uses useSearchParams and must be wrapped in Suspense
+const SearchContent: React.FC = () => {
+  const {
+    results,
+    total,
+    indexers,
+    isLoading,
+    error,
+    search,
+    addToDownloads,
+    clearResults
+  } = useSearch()
+
+  const handleSearch = (searchParams: SearchRequest) => {
+    search(searchParams)
+  }
+
+  const handleAddTorrent = async (torrent: TorrentResult) => {
+    const success = await addToDownloads(torrent)
+    return success
+  }
+
+  const handleClearResults = () => {
+    clearResults()
+  }
+
   return (
-    <main className="min-h-screen p-4 bg-white dark:bg-gray-900">
-      <div className="max-w-md mx-auto space-y-6">
-        {/* Header */}
-        <header className="text-center py-8">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Torrent Manager</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">Mobile-friendly torrent management</p>
-        </header>
-
-        {/* Navigation Cards */}
-        <div className="space-y-4">
-          <Link 
-            href="/search"
-            className="block"
-            role="link"
-            aria-label="Search torrents"
-          >
-            <div className="card hover:shadow-md transition-shadow">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-primary-100 dark:bg-primary-900 rounded-full">
-                  <Search className="h-6 w-6 text-primary-600 dark:text-primary-400" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Search</h2>
-                  <p className="text-gray-500 dark:text-gray-400">Find and add torrents</p>
-                </div>
-              </div>
-            </div>
-          </Link>
-
-          <Link 
-            href="/downloads"
-            className="block"
-            role="link"
-            aria-label="Manage downloads"
-          >
-            <div className="card hover:shadow-md transition-shadow">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-success-100 dark:bg-success-900 rounded-full">
-                  <Download className="h-6 w-6 text-success-600 dark:text-success-400" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Downloads</h2>
-                  <p className="text-gray-500 dark:text-gray-400">Manage active downloads</p>
-                </div>
-              </div>
-            </div>
-          </Link>
-
-          <Link 
-            href="/settings"
-            className="block"
-            role="link"
-            aria-label="Configure settings"
-          >
-            <div className="card hover:shadow-md transition-shadow">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-full">
-                  <Settings className="h-6 w-6 text-gray-600 dark:text-gray-300" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Settings</h2>
-                  <p className="text-gray-500 dark:text-gray-400">Configure preferences</p>
-                </div>
-              </div>
-            </div>
-          </Link>
+    <div className="max-w-6xl mx-auto px-4 py-6 space-y-6 min-h-screen bg-white dark:bg-gray-900">
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
+            Search Torrents
+          </h1>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            Search across multiple indexers for torrents
+          </p>
         </div>
+
+        {/* Clear results button */}
+        {results.length > 0 && (
+          <button
+            onClick={handleClearResults}
+            className="btn btn-secondary min-h-[44px] px-4"
+          >
+            Clear Results
+          </button>
+        )}
       </div>
-    </main>
+
+      {/* Search form */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <SearchForm
+          onSearch={handleSearch}
+          isLoading={isLoading}
+        />
+      </div>
+
+      {/* Search results */}
+      <SearchResults
+        results={results}
+        total={total}
+        indexers={indexers}
+        isLoading={isLoading}
+        error={error}
+        onAddTorrent={handleAddTorrent}
+      />
+    </div>
+  )
+}
+
+// Main SearchPage component with required Suspense boundary
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<SearchLoadingSkeleton />}>
+      <SearchContent />
+    </Suspense>
   )
 }
