@@ -32,12 +32,32 @@ services:
       - net.ipv4.conf.all.src_valid_mark=1
     ports:
       - "9696:9696"
+      - "8191:8191"
     healthcheck:
       test: ["CMD", "sh", "-c", "warp-cli --accept-tos status | grep -q 'Connected'"]
       interval: 60s
       timeout: 10s
       retries: 5
       start_period: 90s
+    restart: unless-stopped
+
+  # FlareSolverr - CloudFlare bypass proxy for Prowlarr indexers
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    network_mode: service:vpn
+    depends_on:
+      vpn:
+        condition: service_healthy
+    environment:
+      - LOG_LEVEL=info
+      - TZ=${TZ:-America/New_York}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8191/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
 
   # Transmission - Torrent download client running through VPN
