@@ -7,10 +7,10 @@ interface TorrentCardProps {
   isAdding?: boolean
 }
 
-const TorrentCard: React.FC<TorrentCardProps> = ({ 
-  torrent, 
-  onAdd, 
-  isAdding = false 
+const TorrentCard: React.FC<TorrentCardProps> = ({
+  torrent,
+  onAdd,
+  isAdding = false
 }) => {
   const handleAddClick = () => {
     onAdd(torrent)
@@ -32,7 +32,7 @@ const TorrentCard: React.FC<TorrentCardProps> = ({
   const getCategoryColor = (category: string) => {
     // Assign colors based on category type
     const categoryLower = category.toLowerCase()
-    
+
     if (categoryLower.includes('movie') || categoryLower.includes('film')) {
       return 'bg-blue-100 text-blue-800'
     } else if (categoryLower.includes('tv') || categoryLower.includes('show')) {
@@ -44,7 +44,7 @@ const TorrentCard: React.FC<TorrentCardProps> = ({
     } else if (categoryLower.includes('book') || categoryLower.includes('ebook')) {
       return 'bg-yellow-100 text-yellow-800'
     }
-    
+
     return 'bg-gray-100 text-gray-800'
   }
 
@@ -65,7 +65,7 @@ const TorrentCard: React.FC<TorrentCardProps> = ({
               {torrent.title}
             </h3>
           </div>
-          
+
           {/* Category badge */}
           <div className="flex-shrink-0">
             <span className={`inline-flex px-2 py-1 text-xs rounded-full ${getCategoryColor(torrent.category)}`}>
@@ -80,19 +80,19 @@ const TorrentCard: React.FC<TorrentCardProps> = ({
             <span className="text-gray-400">📦</span>
             <span>{torrent.sizeText}</span>
           </div>
-          
+
           <div className="flex items-center space-x-1">
             <span className="text-green-400">↑</span>
             <span className={getSeederColor(torrent.seeders)}>
               {torrent.seeders}
             </span>
           </div>
-          
+
           <div className="flex items-center space-x-1">
             <span className="text-red-400">↓</span>
             <span>{torrent.leechers}</span>
           </div>
-          
+
           <div className="flex items-center space-x-1">
             <span className="text-gray-400">📡</span>
             <span className="truncate">{torrent.indexer}</span>
@@ -118,18 +118,20 @@ const TorrentCard: React.FC<TorrentCardProps> = ({
                 🧲 Magnet
               </a>
             )}
-            
-            <a
-              href={torrent.downloadUrl}
-              className="btn btn-secondary flex-1 min-h-[44px] text-xs"
-              title="Download torrent file"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              💾 .torrent
-            </a>
+
+            {torrent.downloadUrl && (
+              <a
+                href={torrent.downloadUrl}
+                className="btn btn-secondary flex-1 min-h-[44px] text-xs"
+                title="Download torrent file"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                💾 .torrent
+              </a>
+            )}
           </div>
-          
+
           {/* Add button */}
           <button
             onClick={handleAddClick}

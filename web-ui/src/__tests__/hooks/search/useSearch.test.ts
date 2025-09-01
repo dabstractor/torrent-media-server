@@ -4,6 +4,20 @@ import { searchTorrents, addTorrentToDownloads } from '@/lib/api/search'
 import type { SearchRequest } from '@/lib/api/search'
 import type { TorrentResult, SearchResponse } from '@/lib/types'
 
+// Mock Next.js router hooks
+jest.mock('next/navigation', () => ({
+  useSearchParams: jest.fn(() => ({
+    get: jest.fn(() => null),
+    getAll: jest.fn(() => [])
+  })),
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    refresh: jest.fn()
+  })),
+  usePathname: jest.fn(() => '/')
+}))
+
 // Mock the API functions
 jest.mock('@/lib/api/search', () => ({
   searchTorrents: jest.fn(),
