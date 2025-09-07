@@ -32,6 +32,7 @@ config/prowlarr/*.db*
 config/prowlarr/*.pid
 config/prowlarr/config.xml
 config/prowlarr/Definitions/
+config/prowlarr/Backups/
 
 config/transmission/blocklists/
 config/transmission/resume/
@@ -45,12 +46,14 @@ config/radarr/logs/
 config/radarr/*.db*
 config/radarr/*.pid
 config/radarr/config.xml
+config/radarr/Backups/
 
 config/sonarr/asp/
 config/sonarr/logs/
 config/sonarr/*.db*
 config/sonarr/*.pid
 config/sonarr/config.xml
+config/sonarr/Backups/
 
 config/plex/Library/Application Support/Plex Media Server/Logs
 config/plex/Library/Application Support/Plex Media Server/Cache
