@@ -129,7 +129,7 @@ services:
       - ${MEDIA_ROOT:-./data/media}/tv:/tv
       - ${DOWNLOADS_ROOT:-./data/downloads}:/downloads
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8989/api/v3/system/status"]
+      test: ["CMD-SHELL", "curl -s http://localhost:8989 > /dev/null 2>&1 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -155,7 +155,7 @@ services:
       - ${MEDIA_ROOT:-./data/media}/movies:/movies
       - ${DOWNLOADS_ROOT:-./data/downloads}:/downloads
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7878/api/v3/system/status"]
+      test: ["CMD-SHELL", "curl -s http://localhost:7878 > /dev/null 2>&1 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -185,7 +185,7 @@ services:
       - PORT=${WEB_UI_PORT:-3000}
       - PROWLARR_URL=http://vpn:9696
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${WEB_UI_PORT:-3000}/health"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:${WEB_UI_PORT:-3000}/health"]
       interval: 30s
       timeout: 10s
       retries: 3
