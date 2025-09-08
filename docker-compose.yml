@@ -33,6 +33,8 @@ services:
     ports:
       - "9696:9696"
       - "8191:8191"
+      - "${QBITTORRENT_PORT:-8080}:${QBITTORRENT_PORT:-8080}"
+      - "${WEB_UI_PORT:-8787}:${WEB_UI_PORT:-8787}"
     healthcheck:
       test: ["CMD", "sh", "-c", "warp-cli --accept-tos status | grep -q 'Connected'"]
       interval: 60s
@@ -80,6 +82,30 @@ services:
       - ${TRANSMISSION_WATCH_DIR:-./data/torrents}:/watch
     healthcheck:
       test: ["CMD", "curl", "-f", "--user", "${TRANSMISSION_USERNAME}:${TRANSMISSION_PASSWORD}", "http://localhost:9091"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # qBittorrent - Alternative torrent download client running through VPN
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    network_mode: service:vpn  # Routes all traffic through VPN
+    depends_on:
+      vpn:
+        condition: service_healthy
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/New_York}
+      - WEBUI_PORT=${QBITTORRENT_PORT:-8080}
+    volumes:
+      - ./config/qbittorrent:/config
+      - ${DOWNLOADS_ROOT:-./data/downloads}:/downloads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${QBITTORRENT_PORT:-8080}"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -166,26 +192,27 @@ services:
   web-ui:
     build: ./web-ui
     container_name: web-ui
+    network_mode: service:vpn  # Share VPN network namespace to access qBittorrent directly
     env_file:
       - .env
-    networks:
-      - media_network
-      - vpn_network
     depends_on:
+      vpn:
+        condition: service_healthy
       plex:
         condition: service_healthy
       transmission:
         condition: service_healthy
+      qbittorrent:
+        condition: service_healthy
       prowlarr:
         condition: service_healthy
-    ports:
-      - "${WEB_UI_PORT:-3000}:${WEB_UI_PORT:-3000}"
     environment:
       - NODE_ENV=production
-      - PORT=${WEB_UI_PORT:-3000}
-      - PROWLARR_URL=http://vpn:9696
+      - PORT=${WEB_UI_PORT:-8787}
+      - PROWLARR_URL=http://localhost:9696
+      - QBITTORRENT_URL=http://172.28.0.2:${QBITTORRENT_PORT:-8080}
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:${WEB_UI_PORT:-3000}/health"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:${WEB_UI_PORT:-8787}/health"]
       interval: 30s
       timeout: 10s
       retries: 3

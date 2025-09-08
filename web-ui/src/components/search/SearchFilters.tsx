@@ -42,7 +42,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
   onToggle: controlledOnToggle
 }) => {
   const [internalIsOpen, setInternalIsOpen] = useState(false)
-  
+
   // Use controlled state if provided, otherwise use internal state
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen
   const onToggle = controlledOnToggle || (() => setInternalIsOpen(!internalIsOpen))
@@ -58,7 +58,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
     const categories = filters.categories.includes(categoryId)
       ? filters.categories.filter(id => id !== categoryId)
       : [...filters.categories, categoryId]
-    
+
     handleFilterChange('categories', categories)
   }
 
@@ -100,7 +100,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             </span>
           )}
         </div>
-        
+
         <svg
           className={`w-5 h-5 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
@@ -127,17 +127,16 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                 </button>
               )}
             </div>
-            
+
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {CATEGORIES.map((category) => (
                 <button
                   key={category.id}
                   onClick={() => handleCategoryToggle(category.id)}
-                  className={`btn min-h-[40px] px-3 py-2 text-sm ${
-                    filters.categories.includes(category.id)
-                      ? 'btn-primary'
-                      : 'btn-secondary'
-                  }`}
+                  className={`btn min-h-[40px] px-3 py-2 text-sm ${filters.categories.includes(category.id)
+                    ? 'btn-primary'
+                    : 'btn-secondary'
+                    }`}
                   title={category.description}
                 >
                   {category.label}

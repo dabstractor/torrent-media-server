@@ -62,6 +62,10 @@ config/plex/Library/Application Support/Plex Media Server/Plug-in Support
 config/plex/Library/Application Support/Plex Media Server/.LocalAdminToken
 config/plex/Library/Application Support/Plex Media Server/plexmediaserver.pid
 
+# qBittorrent runtime files
+config/qbittorrent/
+
 # Task files
 # tasks.json
 # tasks/ 
+data/*

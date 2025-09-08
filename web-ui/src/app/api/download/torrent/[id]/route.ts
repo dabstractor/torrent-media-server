@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import http from 'http'
+import https from 'https'
 
 const PROWLARR_URL = process.env.PROWLARR_URL || 'http://vpn:9696'
 const PROWLARR_API_KEY = process.env.PROWLARR_API_KEY
@@ -26,11 +28,17 @@ export async function GET(
       )
     }
 
-    // Decode the torrent ID (it's base64 encoded for URL safety)
+    // Decode the torrent ID (it's URL-safe base64 encoded)
     let decodedId: string
     try {
-      // First try base64 decoding (new format)
-      decodedId = atob(torrentId)
+      // Convert URL-safe base64 back to standard base64 and decode
+      const standardBase64 = torrentId
+        .replace(/-/g, '+')
+        .replace(/_/g, '/')
+        // Add padding if needed
+        + '='.repeat((4 - torrentId.length % 4) % 4)
+      
+      decodedId = atob(standardBase64)
     } catch (error) {
       // Fallback to URL decoding for backwards compatibility
       try {
@@ -76,14 +84,22 @@ export async function GET(
     }
 
     // Make the request to the original URL through our secure proxy
-    const response = await fetch(originalUrl, {
-      method: 'GET',
-      headers,
-      signal: AbortSignal.timeout(30000), // 30 second timeout
-    })
+    // Use Node.js fetch with explicit URL validation
+    let response: Response
+    try {
+      // Validate URL format
+      const url = new URL(originalUrl)
+      
+      response = await fetch(url.href, {
+        method: 'GET',
+        headers,
+        signal: AbortSignal.timeout(30000), // 30 second timeout
+      })
+    } catch (urlError) {
+      throw new Error(`Invalid URL or fetch failed: ${urlError instanceof Error ? urlError.message : urlError}`)
+    }
 
     if (!response.ok) {
-      console.error(`Download proxy failed: ${response.status} ${response.statusText}`)
       return NextResponse.json(
         { error: 'Download failed', status: response.status },
         { status: response.status }
@@ -108,11 +124,9 @@ export async function GET(
     })
 
   } catch (error) {
-    console.error('Torrent download proxy error:', error)
-    
     if (error instanceof TypeError && error.message.includes('fetch')) {
       return NextResponse.json(
-        { error: 'Download service unavailable' },
+        { error: 'Download service unavailable', details: error.message },
         { status: 503 }
       )
     }

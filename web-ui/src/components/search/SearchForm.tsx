@@ -24,7 +24,7 @@ const CATEGORIES = [
   { id: '7000', label: 'Books' }
 ]
 
-const SearchForm: React.FC<SearchFormProps> = ({ onSearch: _, isLoading = false }) => {
+const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading = false }) => {
   // Use URL state for form data synchronization
   const { searchState, updateURL, isInitialized } = useSearchURL()
   
