@@ -29,7 +29,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
 
   const handleAddTorrent = async (torrent: TorrentResult) => {
     setAddingTorrents(prev => new Set([...prev, torrent.id]))
-    
+
     try {
       const success = await onAddTorrent(torrent)
       if (!success) {
@@ -99,7 +99,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
             </>
           )}
         </div>
-        
+
         {/* Indexer list */}
         {indexers.length > 0 && (
           <div className="flex flex-wrap gap-1">

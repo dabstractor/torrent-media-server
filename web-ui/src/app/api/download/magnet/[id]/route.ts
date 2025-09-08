@@ -20,11 +20,17 @@ export async function GET(
       )
     }
 
-    // Decode the magnet ID (it's base64 encoded for URL safety)
+    // Decode the magnet ID (it's URL-safe base64 encoded)
     let decodedMagnetUrl: string
     try {
-      // First try base64 decoding (new format)
-      decodedMagnetUrl = atob(magnetId)
+      // Convert URL-safe base64 back to standard base64 and decode
+      const standardBase64 = magnetId
+        .replace(/-/g, '+')
+        .replace(/_/g, '/')
+        // Add padding if needed
+        + '='.repeat((4 - magnetId.length % 4) % 4)
+      
+      decodedMagnetUrl = atob(standardBase64)
     } catch (error) {
       // Fallback to URL decoding for backwards compatibility
       try {
