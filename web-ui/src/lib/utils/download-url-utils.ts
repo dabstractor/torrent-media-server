@@ -43,11 +43,24 @@ export function transformDownloadUrls(
     }
   }
 
-  // Transform magnet URL if it needs proxying
-  if (result.magnetUrl && shouldProxyMagnetUrl(result.magnetUrl)) {
-    const secureMagnetUrl = generateSecureMagnetEndpoint(result.magnetUrl)
-    if (secureMagnetUrl) {
-      result.magnetUrl = secureMagnetUrl
+  // Handle magnet URL - check if it's actually a torrent download URL
+  if (result.magnetUrl) {
+    // If the magnetUrl is actually a torrent download URL (common indexer misconfiguration)
+    if (result.magnetUrl.startsWith('http') && !result.magnetUrl.startsWith('magnet:?')) {
+      // This is a torrent download URL incorrectly placed in magnetUrl - move it to downloadUrl
+      const secureDownloadUrl = generateSecureTorrentEndpoint(result.magnetUrl, torrentId)
+      if (secureDownloadUrl) {
+        result.downloadUrl = secureDownloadUrl
+      }
+      result.magnetUrl = '' // Clear magnetUrl since it's not actually a magnet link
+    } else if (result.magnetUrl.startsWith('magnet:?')) {
+      // This is a real magnet link - keep it as magnetUrl
+    } else if (shouldProxyMagnetUrl(result.magnetUrl)) {
+      // Transform magnet URL if it needs proxying
+      const secureMagnetUrl = generateSecureMagnetEndpoint(result.magnetUrl)
+      if (secureMagnetUrl) {
+        result.magnetUrl = secureMagnetUrl
+      }
     }
   }
 
@@ -118,7 +131,6 @@ export function generateSecureTorrentEndpoint(
     // Return the secure proxy endpoint
     return `/api/download/torrent/${downloadId}`
   } catch (err) {
-    console.error('Error generating secure torrent endpoint:', err)
     return null
   }
 }
@@ -138,7 +150,6 @@ export function generateSecureMagnetEndpoint(magnetUrl: string): string | null {
     // Return the secure proxy endpoint
     return `/api/download/magnet/${encodedMagnetUrl}`
   } catch (err) {
-    console.error('Error generating secure magnet endpoint:', err)
     return null
   }
 }
