@@ -211,6 +211,9 @@ services:
       - PORT=${WEB_UI_PORT:-8787}
       - PROWLARR_URL=http://localhost:9696
       - QBITTORRENT_URL=http://172.28.0.2:${QBITTORRENT_PORT:-8080}
+    volumes:
+      - ${DOWNLOADS_ROOT:-./data/downloads}:/downloads
+      - ${MEDIA_ROOT:-./data/media}:/media
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:${WEB_UI_PORT:-8787}/health"]
       interval: 30s

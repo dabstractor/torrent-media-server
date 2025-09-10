@@ -6,7 +6,7 @@ class PlexService {
   private token: string | null;
 
   constructor() {
-    this.baseUrl = '/api/plex';
+    this.baseUrl = '/plex';
     this.token = null;
   }
 
