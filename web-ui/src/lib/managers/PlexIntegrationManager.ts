@@ -1,15 +1,23 @@
 import { plexService } from '@/lib/services/PlexService';
+import { plexOrganizationService } from '@/lib/services/PlexOrganizationService';
 import type { Download } from '@/lib/types';
 import type { CompletedFile } from '@/lib/types/file-history';
+import type { AppSettings } from '@/lib/types/settings';
 import { getMediaType } from '@/lib/api/files';
 
 class PlexIntegrationManager {
   private isInitialized: boolean = false;
 
-  // Initialize the manager with Plex token
-  async initialize(plexToken: string): Promise<boolean> {
+  // Initialize the manager with Plex token and settings
+  async initialize(plexToken: string, plexSettings?: AppSettings['plex']): Promise<boolean> {
     try {
       plexService.setToken(plexToken);
+      
+      // Initialize organization service if settings provided
+      if (plexSettings) {
+        plexOrganizationService.initialize(plexSettings);
+      }
+      
       this.isInitialized = true;
       return true;
     } catch (error) {
@@ -25,38 +33,68 @@ class PlexIntegrationManager {
 
   // Handle download completion event
   async onDownloadComplete(download: Download, completedFiles: CompletedFile[]): Promise<boolean> {
+    console.log(`🔍 TRACE: PlexIntegrationManager.onDownloadComplete called`);
+    console.log(`🔍 TRACE: Download:`, JSON.stringify(download, null, 2));
+    console.log(`🔍 TRACE: Completed files:`, JSON.stringify(completedFiles, null, 2));
+    
     if (!this.isReady()) {
-      console.warn('PlexIntegrationManager not initialized');
+      console.error(`❌ TRACE: PlexIntegrationManager not initialized`);
       return false;
     }
 
+    console.log(`✅ TRACE: PlexIntegrationManager is ready, proceeding...`);
+
     try {
+      // INTEGRATION: Call PlexOrganizationService.organizeForPlex
+      console.log(`🔍 TRACE: Processing ${completedFiles.length} files for Plex organization`);
+      
+      // Organize files for Plex (symlinks for compatible, conversion for incompatible)
+      console.log(`🔍 TRACE: Calling plexOrganizationService.organizeForPlex...`);
+      const organizationResults = await plexOrganizationService.organizeForPlex(completedFiles);
+      console.log(`🔍 TRACE: Organization results:`, JSON.stringify(organizationResults, null, 2));
+      
+      const successfulOrganizations = organizationResults.filter(r => r.success).length;
+      
+      console.log(`✅ TRACE: Plex organization completed: ${successfulOrganizations}/${organizationResults.length} files processed successfully`);
+
       // Determine the correct library type based on downloaded files
       const libraryType = this.determineLibraryType(completedFiles);
+      console.log(`🔍 TRACE: Determined library type:`, libraryType);
+      
       if (!libraryType) {
-        console.warn('Could not determine library type for download:', download.name);
-        return false;
+        console.warn('❌ TRACE: Could not determine library type for download:', download.name);
+        // Still return true if organization was successful, even if we can't refresh
+        return successfulOrganizations > 0;
       }
 
+      // PRESERVE: Existing library refresh functionality
       // Find the appropriate library
+      console.log(`🔍 TRACE: Getting Plex libraries...`);
       const libraries = await plexService.getLibraries();
+      console.log(`🔍 TRACE: Available libraries:`, JSON.stringify(libraries, null, 2));
+      
       const targetLibrary = libraries.find(lib => lib.type === libraryType);
+      console.log(`🔍 TRACE: Target library:`, JSON.stringify(targetLibrary, null, 2));
       
       if (!targetLibrary) {
         console.warn(`No ${libraryType} library found in Plex`);
-        return false;
+        // Still return true if organization was successful
+        return successfulOrganizations > 0;
       }
 
       // Trigger library refresh
-      const success = await plexService.refreshLibrary(targetLibrary.id);
+      console.log(`🔍 TRACE: Attempting to refresh library ${targetLibrary.id} (${targetLibrary.title})...`);
+      const refreshSuccess = await plexService.refreshLibrary(targetLibrary.id);
+      console.log(`🔍 TRACE: Library refresh result:`, refreshSuccess);
       
-      if (success) {
-        console.log(`Successfully triggered Plex library refresh for ${targetLibrary.title}`);
+      if (refreshSuccess) {
+        console.log(`✅ TRACE: Successfully triggered Plex library refresh for ${targetLibrary.title}`);
       } else {
-        console.error(`Failed to trigger Plex library refresh for ${targetLibrary.title}`);
+        console.error(`❌ TRACE: Failed to trigger Plex library refresh for ${targetLibrary.title}`);
       }
       
-      return success;
+      // Return true if either organization or refresh was successful
+      return successfulOrganizations > 0 || refreshSuccess;
     } catch (error) {
       console.error('Error handling download completion for Plex integration:', error);
       return false;

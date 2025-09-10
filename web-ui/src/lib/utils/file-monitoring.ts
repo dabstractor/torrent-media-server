@@ -3,7 +3,9 @@ import path from 'path'
 import { promises as fs } from 'fs'
 import { getFileHistoryDB } from '@/lib/db/file-history'
 import type { CompletedFile, DownloadHistoryEntry } from '@/lib/types/file-history'
+import type { Download } from '@/lib/types'
 import { getMediaType, isPlexCompatible, extractQuality } from '@/lib/api/files'
+import { plexIntegrationManager } from '@/lib/managers/PlexIntegrationManager'
 import { v4 as uuidv4 } from 'uuid'
 
 interface FileMonitorOptions {
@@ -166,16 +168,16 @@ export class FileMonitor {
       if (existing) {
         // File already exists, this might be a modification
         console.log(`Updating existing file: ${fileName}`)
-        // Database will handle the update via INSERT OR REPLACE
       } else {
         console.log(`Adding new completed file: ${fileName}`)
       }
 
       this.db.addCompletedFile(fileInfo)
 
-      // Check if this might be part of a torrent completion
-      if (event === 'add') {
-        this.checkForTorrentCompletion(filePath, fileInfo)
+      // TRIGGER: Auto-organize new files in downloads directory for Plex
+      if (event === 'add' && filePath.includes('/downloads')) {
+        console.log(`🎬 New download detected: ${fileName}`);
+        await this.handleNewDownloadFile(filePath, fileInfo);
       }
 
     } catch (error) {
@@ -296,8 +298,90 @@ export class FileMonitor {
       
       console.log(`Created history entry for: ${name} (${files.length} files)`)
       
+      // TRIGGER: Plex media organization for completed download
+      await this.triggerPlexOrganization(historyEntry, files)
+      
     } catch (error) {
       console.error(`Error creating history entry for ${name}:`, error)
+    }
+  }
+
+  private async handleNewDownloadFile(filePath: string, fileInfo: CompletedFile): Promise<void> {
+    try {
+      // Only process media files for Plex
+      if (!fileInfo.mediaType || fileInfo.mediaType === 'document') {
+        console.log(`Skipping non-media file: ${fileInfo.name}`);
+        return;
+      }
+
+      console.log(`🔍 TRACE: Processing new media file for Plex: ${fileInfo.name}`);
+      console.log(`🔍 TRACE: File info:`, JSON.stringify(fileInfo, null, 2));
+
+      // Create a synthetic download entry for this individual file
+      const now = new Date();
+      const download: Download = {
+        hash: `file-${Date.now()}`,
+        name: path.basename(fileInfo.name, path.extname(fileInfo.name)),
+        state: 'completed',
+        progress: 1.0,
+        size: fileInfo.size,
+        downloadSpeed: 0,
+        uploadSpeed: 0,
+        eta: 0,
+        priority: 1,
+        category: 'auto-detected',
+        addedTime: now.getTime() - 60000, // 1 minute ago
+        completedTime: now.getTime(),
+      };
+
+      console.log(`🔍 TRACE: Created download object:`, JSON.stringify(download, null, 2));
+      console.log(`🔍 TRACE: Calling plexIntegrationManager.onDownloadComplete...`);
+      
+      // Trigger Plex organization process for this single file
+      const success = await plexIntegrationManager.onDownloadComplete(download, [fileInfo]);
+      
+      console.log(`🔍 TRACE: onDownloadComplete returned:`, success);
+      
+      if (success) {
+        console.log(`✅ TRACE: Plex organization completed for: ${fileInfo.name}`);
+      } else {
+        console.error(`❌ TRACE: Plex organization failed for: ${fileInfo.name}`);
+      }
+      
+    } catch (error) {
+      console.error(`❌ Error processing new download file ${fileInfo.name}:`, error);
+    }
+  }
+
+  private async triggerPlexOrganization(historyEntry: DownloadHistoryEntry, files: CompletedFile[]): Promise<void> {
+    try {
+      // Convert DownloadHistoryEntry to Download type for PlexIntegrationManager
+      const download: Download = {
+        hash: historyEntry.torrentHash,
+        name: historyEntry.name,
+        state: 'completed',
+        progress: 1.0,
+        size: historyEntry.originalSize,
+        downloadSpeed: 0,
+        uploadSpeed: 0,
+        eta: 0,
+        priority: 1,
+        category: historyEntry.category,
+        addedTime: historyEntry.startedAt.getTime(),
+        completedTime: historyEntry.completedAt?.getTime(),
+      }
+      
+      // Trigger Plex organization process
+      const success = await plexIntegrationManager.onDownloadComplete(download, files)
+      
+      if (success) {
+        console.log(`✓ Plex organization completed for: ${historyEntry.name}`)
+      } else {
+        console.warn(`⚠️ Plex organization failed for: ${historyEntry.name}`)
+      }
+      
+    } catch (error) {
+      console.error(`❌ Error triggering Plex organization for ${historyEntry.name}:`, error)
     }
   }
 
@@ -362,8 +446,8 @@ export function getFileMonitor(): FileMonitor {
   if (!fileMonitorInstance) {
     fileMonitorInstance = new FileMonitor({
       watchPaths: [
-        path.join(process.cwd(), '../data/downloads/complete'),
-        path.join(process.cwd(), '../data/media'),
+        '/downloads',  // Watch actual downloads directory in container
+        '/media',      // Watch media directory for changes
       ],
     })
   }
