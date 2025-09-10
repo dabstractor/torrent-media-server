@@ -60,6 +60,13 @@ export interface AppSettings {
     enabled: boolean;
     token: string;
     url: string;
+    movieLibrary: string;
+    tvLibrary: string;
+    mediaPath: string;           // NEW: Base path for organized media
+    autoUpdate: boolean;
+    refreshDelay: number;
+    scanAllLibraries: boolean;
+    organizationEnabled: boolean; // NEW: Enable/disable organization
     updateLibraryOnComplete: boolean;
     categories: string[]; // Categories to sync with Plex
   };
@@ -376,6 +383,13 @@ const DEFAULT_SETTINGS: AppSettings = {
     enabled: false,
     token: '',
     url: '',
+    movieLibrary: 'Movies',
+    tvLibrary: 'TV Shows',
+    mediaPath: '/media',           // NEW: Base path for organized media
+    autoUpdate: true,
+    refreshDelay: 10,
+    scanAllLibraries: false,
+    organizationEnabled: false,    // NEW: Enable/disable organization
     updateLibraryOnComplete: false,
     categories: [],
   },
