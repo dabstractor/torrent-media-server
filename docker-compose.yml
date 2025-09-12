@@ -94,6 +94,8 @@ services:
       - QBT_EULA=accept
     volumes:
       - ./config/qbittorrent:/config
+      - ./config/templates/qbittorrent:/templates:ro
+      - ./scripts:/custom-cont-init.d:ro
       - ${DOWNLOADS_ROOT:-./data/downloads}:/downloads
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${QBITTORRENT_PORT:-8080}"]
@@ -116,6 +118,8 @@ services:
       - PLEX_CLAIM=${PLEX_CLAIM_TOKEN}
     volumes:
       - ./config/plex:/config
+      - ./config/templates/plex:/templates:ro
+      - ./scripts:/custom-cont-init.d:ro
       - ${MEDIA_ROOT:-./data/media}:/media
       - ${DOWNLOADS_ROOT:-./data/downloads}:/downloads
     ports:
@@ -143,6 +147,8 @@ services:
       - TZ=${TZ:-America/New_York}
     volumes:
       - ./config/sonarr:/config
+      - ./config/templates/sonarr:/templates:ro
+      - ./scripts:/custom-cont-init.d:ro
       - ${MEDIA_ROOT:-./data/media}/tv:/tv
       - ${DOWNLOADS_ROOT:-./data/downloads}:/downloads
     healthcheck:
@@ -169,6 +175,8 @@ services:
       - TZ=${TZ:-America/New_York}
     volumes:
       - ./config/radarr:/config
+      - ./config/templates/radarr:/templates:ro
+      - ./scripts:/custom-cont-init.d:ro
       - ${MEDIA_ROOT:-./data/media}/movies:/movies
       - ${DOWNLOADS_ROOT:-./data/downloads}:/downloads
     healthcheck:
@@ -267,6 +275,8 @@ services:
       - TZ=${TZ:-America/New_York}
     volumes:
       - ./config/prowlarr:/config
+      - ./config/templates/prowlarr:/templates:ro
+      - ./scripts:/custom-cont-init.d:ro
     healthcheck:
       test: ["CMD-SHELL", "curl -f -H \"X-Api-Key: $$PROWLARR_API_KEY\" http://localhost:9696/api/v1/system/status"]
       interval: 30s
