@@ -5,13 +5,13 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: ${NETWORK_SUBNET:-172.27.0.0/16}
+        - subnet: ${MEDIA_NETWORK_SUBNET:-172.27.0.0/16}
   vpn_network:
     driver: bridge
     internal: true  # RESTORE: Complete isolation - no direct internet access
     ipam:
       config:
-        - subnet: 172.28.0.0/16
+        - subnet: ${VPN_NETWORK_SUBNET:-172.29.0.0/16}
 
 # Logging configuration
 x-logging: &default-logging
@@ -27,7 +27,7 @@ services:
   # To use PIA instead: docker-compose -f docker-compose.yml -f docker-compose.pia.yml up -d
   vpn:
     image: caomingjun/warp:latest
-    container_name: vpn
+    container_name: ${CONTAINER_PREFIX:-torrents-}vpn
     env_file:
       - .env
     cap_add:
@@ -35,15 +35,15 @@ services:
       - SYS_MODULE
     privileged: true  # Required for iptables and routing setup
     ports:
-      - "6881:6881"     # qBittorrent BitTorrent port
-      - "6881:6881/udp" # qBittorrent BitTorrent port UDP
+      - "${VPN_BITTORRENT_PORT:-16881}:6881"     # qBittorrent BitTorrent port
+      - "${VPN_BITTORRENT_PORT:-16881}:6881/udp" # qBittorrent BitTorrent port UDP
     environment:
       - WARP_SLEEP=2
       - TZ=${TZ:-America/New_York}
     networks:
       default:
       vpn_network:
-        ipv4_address: 172.28.0.2
+        ipv4_address: ${VPN_SERVICE_IP:-172.29.0.2}
     volumes:
       - ./setup-vpn-routing.sh:/usr/local/bin/setup-vpn-routing.sh:ro
     sysctls:
@@ -61,12 +61,12 @@ services:
   # FlareSolverr - CloudFlare bypass proxy for Prowlarr indexers
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
-    container_name: flaresolverr
+    container_name: ${CONTAINER_PREFIX:-torrents-}flaresolverr
     networks:
       - media_network
       - vpn_network
     ports:
-      - "8191:8191"
+      - "${FLARESOLVERR_PORT:-18191}:8191"
     depends_on:
       vpn:
         condition: service_healthy
@@ -85,8 +85,8 @@ services:
   # qBittorrent - Torrent download client running through VPN
   qbittorrent:
     image: qbittorrentofficial/qbittorrent-nox:latest
-    container_name: qbittorrent
-    network_mode: "container:vpn"  # Share VPN container's network stack (most secure isolation)
+    container_name: ${CONTAINER_PREFIX:-torrents-}qbittorrent
+    network_mode: "container:${CONTAINER_PREFIX:-torrents-}vpn"  # Share VPN container's network stack (most secure isolation)
     # Port removed - access through Web-UI proxy only
     depends_on:
       vpn:
@@ -115,7 +115,7 @@ services:
   # Plex Media Server
   plex:
     image: ghcr.io/linuxserver/plex
-    container_name: plex
+    container_name: ${CONTAINER_PREFIX:-torrents-}plex
     network_mode: host  # Required for discovery and direct play
     environment:
       - PUID=1000
@@ -128,7 +128,7 @@ services:
       - ${MEDIA_ROOT:-./data/media}:/media
       - ${DOWNLOADS_ROOT:-./data/downloads}:/downloads
     ports:
-      - ${PLEX_EXTERNAL_PORT:-32400}:32400
+      - ${PLEX_PORT:-42400}:32400
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:32400/web/index.html"]
       interval: 60s
@@ -140,7 +140,7 @@ services:
   # Sonarr - TV Series Management
   sonarr:
     image: ghcr.io/linuxserver/sonarr
-    container_name: sonarr
+    container_name: ${CONTAINER_PREFIX:-torrents-}sonarr
     networks:
       - vpn_network
     depends_on:
@@ -167,7 +167,7 @@ services:
   # Radarr - Movie Management
   radarr:
     image: ghcr.io/linuxserver/radarr
-    container_name: radarr
+    container_name: ${CONTAINER_PREFIX:-torrents-}radarr
     networks:
       - vpn_network
     depends_on:
@@ -194,13 +194,13 @@ services:
   # Nginx Reverse Proxy - Secure bridge for accessing isolated services
   nginx-proxy:
     image: nginx:alpine
-    container_name: nginx-proxy
+    container_name: ${CONTAINER_PREFIX:-torrents-}nginx-proxy
     networks:
       - media_network
       - vpn_network
     ports:
-      - "8080:8080"   # qBittorrent proxy
-      - "9696:9696"   # Prowlarr proxy
+      - "${NGINX_QBITTORRENT_PORT:-18080}:8080"   # qBittorrent proxy
+      - "${NGINX_PROWLARR_PORT:-19696}:9696"   # Prowlarr proxy
     volumes:
       - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
@@ -219,12 +219,12 @@ services:
   # Web UI - React frontend for managing the entire stack
   web-ui:
     build: ./web-ui
-    container_name: web-ui
+    container_name: ${CONTAINER_PREFIX:-torrents-}web-ui
     networks:
       - media_network
       - vpn_network
     ports:
-      - "${WEB_UI_PORT:-8787}:${WEB_UI_PORT:-8787}"
+      - "${WEB_UI_PORT:-18787}:3000"
     user: "1000:1000"  # Run as current user to match file ownership
     env_file:
       - .env
@@ -239,7 +239,7 @@ services:
         condition: service_healthy
     environment:
       - NODE_ENV=production
-      - PORT=${WEB_UI_PORT:-8787}
+      - PORT=3000
       - PROWLARR_URL=http://prowlarr:9696
       - QBITTORRENT_URL=http://qbittorrent:${QBITTORRENT_PORT:-8080}
       - NEXT_TELEMETRY_DISABLED=1
@@ -251,7 +251,7 @@ services:
       - ${DOWNLOADS_ROOT:-./data/downloads}:/downloads
       - ${MEDIA_ROOT:-./data/media}:/media
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:${WEB_UI_PORT:-3000}/health"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -263,7 +263,7 @@ services:
   # Prowlarr - Torrent Indexer
   prowlarr:
     image: ghcr.io/linuxserver/prowlarr
-    container_name: prowlarr
+    container_name: ${CONTAINER_PREFIX:-torrents-}prowlarr
     entrypoint: ["/scripts/prowlarr-entrypoint.sh"]
     networks:
       - media_network
