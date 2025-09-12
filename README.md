@@ -192,6 +192,33 @@ Your setup is working correctly when:
 - ✅ Directory structure created with proper permissions
 - ✅ Services can communicate via Docker network
 
+## 🛠️ Manual Processing Scripts
+
+Convenience scripts are available for manual triggering of media processing:
+
+### Trigger Plex Organization
+```bash
+./scripts/trigger-plex-organization.sh [filename]
+```
+- Triggers the full Plex organization process for a specific file
+- Without arguments, lists all available files for processing
+
+### Refresh Plex Library
+```bash
+./scripts/refresh-plex-library.sh [library_id]
+```
+- Manually triggers a Plex library refresh
+- Without arguments, lists all available libraries with their IDs
+
+### Process Recent Downloads
+```bash
+./scripts/process-recent-downloads.sh
+```
+- Processes all media files in the downloads directory
+- Runs the full organization pipeline for each file
+
+See `scripts/` directory for detailed usage of each script.
+
 ## 📚 Additional Resources
 
 - [Plex Documentation](https://support.plex.tv/)
