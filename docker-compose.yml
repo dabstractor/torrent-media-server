@@ -101,6 +101,8 @@ services:
       - ./config/qbittorrent:/config
       - ./config/templates/qbittorrent:/templates:ro
       - ${DOWNLOADS_ROOT:-./data/downloads}:/downloads
+      - ./data:/data
+      - ./scripts:/scripts:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${QBITTORRENT_PORT:-8080}"]
       interval: 30s
@@ -207,7 +209,7 @@ services:
       prowlarr:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -262,6 +264,7 @@ services:
   prowlarr:
     image: ghcr.io/linuxserver/prowlarr
     container_name: prowlarr
+    entrypoint: ["/scripts/prowlarr-entrypoint.sh"]
     networks:
       - media_network
       - vpn_network
@@ -278,6 +281,7 @@ services:
     volumes:
       - ./config/prowlarr:/config
       - ./config/templates/prowlarr:/templates:ro
+      - ./scripts:/scripts:ro
     healthcheck:
       test: ["CMD-SHELL", "curl -f -H \"X-Api-Key: $$PROWLARR_API_KEY\" http://localhost:9696/api/v1/system/status"]
       interval: 30s
