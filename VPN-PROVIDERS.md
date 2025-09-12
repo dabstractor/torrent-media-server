@@ -120,7 +120,7 @@ services:
 docker-compose logs vpn
 
 # Check if traffic is routed through VPN
-docker exec transmission curl -s ipinfo.io/ip
+docker exec qbittorrent curl -s ipinfo.io/ip
 docker exec sonarr curl -s ipinfo.io/ip
 ```
 

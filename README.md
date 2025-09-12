@@ -20,7 +20,7 @@ A complete self-hosted torrent management and media streaming solution with VPN-
 3. **Access Services**
    - **Plex**: http://localhost:32400 (Media streaming)
    - **Prowlarr**: http://localhost:9696 (Torrent indexer aggregation)
-   - **Transmission**: http://localhost:9091 (Torrent client)
+   - **qBittorrent**: http://localhost:8080 (Torrent client)
    - **Sonarr**: http://localhost:8989 (TV series management)  
    - **Radarr**: http://localhost:7878 (Movie management)
    - **Web UI**: http://localhost:3000 (Dashboard - configurable port via WEB_UI_PORT)
@@ -52,8 +52,8 @@ VPN_CONFIG_PATH=./config/vpn
 VPN_PORT=51820
 
 # Torrent Client
-TRANSMISSION_USERNAME=admin
-TRANSMISSION_PASSWORD=your_secure_password
+QBITTORRENT_USERNAME=admin
+QBITTORRENT_PASSWORD=your_secure_password
 
 # Media Directories  
 MEDIA_ROOT=./data/media
@@ -79,7 +79,7 @@ torrents/
 ├── config/                # Persistent service configurations
 │   ├── plex/             # Plex Media Server settings
 │   ├── prowlarr/         # Indexer configurations
-│   ├── transmission/     # Torrent client settings
+│   ├── qbittorrent/     # Torrent client settings
 │   ├── sonarr/           # TV series automation
 │   ├── radarr/           # Movie automation
 │   └── vpn/              # VPN configuration files
@@ -130,7 +130,7 @@ docker-compose restart [service-name]
 docker logs vpn
 
 # Verify VPN is working
-docker exec transmission curl ipinfo.io
+docker exec qbittorrent curl ipinfo.io
 
 # Should show VPN provider's IP, not your real IP
 ```
@@ -176,7 +176,7 @@ docker-compose up -d --build web-ui
 ## 🔐 Security Notes
 
 - **VPN Required**: Never run without VPN - torrent traffic should always be protected
-- **Change Default Passwords**: Update Transmission password in `.env`
+- **Change Default Passwords**: Update qBittorrent password in `.env`
 - **Local Network Only**: Services are configured for LAN access only
 - **Regular Updates**: Keep containers updated with `docker-compose pull`
 
@@ -188,7 +188,7 @@ Your setup is working correctly when:
 - ✅ VPN connection is active (different IP from host)
 - ✅ Plex accessible at localhost:32400  
 - ✅ Prowlarr accessible at localhost:9696
-- ✅ Transmission accessible at localhost:9091
+- ✅ qBittorrent accessible at localhost:8080
 - ✅ Directory structure created with proper permissions
 - ✅ Services can communicate via Docker network
 
@@ -224,7 +224,7 @@ See `scripts/` directory for detailed usage of each script.
 - [Plex Documentation](https://support.plex.tv/)
 - [Prowlarr Wiki](https://wiki.servarr.com/prowlarr)
 - [Sonarr/Radarr Setup](https://wiki.servarr.com/)
-- [Transmission Guide](https://github.com/transmission/transmission/wiki)
+- [qBittorrent Guide](https://github.com/qbittorrent/qBittorrent/wiki)
 
 ## 🤝 Contributing
 
