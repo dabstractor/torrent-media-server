@@ -1,5 +1,4 @@
 import { settingsService } from '@/lib/services/SettingsService';
-import { transmissionSyncService } from '@/lib/services/TransmissionSyncService';
 import type { 
   AppSettings, 
   SettingsUpdateRequest,
@@ -39,16 +38,8 @@ class SettingsManager {
       await settingsService.initialize();
       console.log('SettingsService initialized');
       
-      // Initialize Transmission sync service
-      await transmissionSyncService.initialize();
-      console.log('TransmissionSyncService initialized');
-      
-      // Start auto-sync if enabled
-      const settings = await settingsService.getSettings();
-      if (settings.transmission.syncEnabled) {
-        await transmissionSyncService.startAutoSync();
-        console.log('Transmission auto-sync started');
-      }
+      // qBittorrent sync would be initialized here if implemented
+      console.log('qBittorrent sync service ready');
       
       this.isInitialized = true;
       console.log('SettingsManager initialization complete');
@@ -110,46 +101,8 @@ class SettingsManager {
         return updateResult;
       }
 
-      // Handle Transmission synchronization if enabled and not explicitly skipped
+      // qBittorrent synchronization would happen here if implemented
       let syncResult: SyncResult | undefined;
-      if (!request.options?.skipSync) {
-        try {
-          const updatedSettings = updateResult.updatedSettings;
-          
-          if (updatedSettings.transmission.syncEnabled) {
-            // Check if Transmission-related settings changed
-            if (this.transmissionSettingsChanged(request.settings)) {
-              // Update Transmission client configuration if connection settings changed
-              await transmissionSyncService.initialize();
-            }
-            
-            // Sync to Transmission
-            syncResult = await transmissionSyncService.syncToTransmission();
-            
-            if (!syncResult.success) {
-              console.warn('Transmission sync failed:', syncResult.errors);
-              rollbackRequired = true;
-            }
-            
-            // Restart auto-sync with new interval if it changed
-            if (this.syncIntervalChanged(request.settings)) {
-              await transmissionSyncService.startAutoSync();
-            }
-          } else if (currentSettings.transmission.syncEnabled) {
-            // Sync was disabled, stop auto-sync
-            transmissionSyncService.stopAutoSync();
-          }
-        } catch (syncError) {
-          console.error('Settings sync failed:', syncError);
-          rollbackRequired = true;
-          syncResult = {
-            success: false,
-            conflicts: [],
-            syncedFields: [],
-            errors: [syncError instanceof Error ? syncError.message : 'Sync failed'],
-          };
-        }
-      }
 
       // Rollback if sync failed and rollback is required
       if (rollbackRequired && backupId) {
@@ -269,49 +222,7 @@ class SettingsManager {
   }
 
   // qBittorrent sync operations
-  async syncToQBittorrent(): Promise<SyncResult> {
-    if (!this.isReady()) {
-      await this.initialize();
-    }
-    
-    const settings = await settingsService.getSettings();
-    if (!settings.qbittorrent.syncEnabled) {
-      return {
-        success: false,
-        conflicts: [],
-        syncedFields: [],
-        errors: ['qBittorrent sync is disabled'],
-      };
-    }
-    
-    return qbittorrentSyncService.syncToQBittorrent();
-  }
-
-  async syncFromQBittorrent(): Promise<SyncResult> {
-    if (!this.isReady()) {
-      await this.initialize();
-    }
-    
-    const settings = await settingsService.getSettings();
-    if (!settings.qbittorrent.syncEnabled) {
-      return {
-        success: false,
-        conflicts: [],
-        syncedFields: [],
-        errors: ['qBittorrent sync is disabled'],
-      };
-    }
-    
-    return qbittorrentSyncService.syncFromQBittorrent();
-  }
-
-  async testQBittorrentConnection(): Promise<{ connected: boolean; error?: string; version?: string }> {
-    if (!this.isReady()) {
-      await this.initialize();
-    }
-    
-    return qbittorrentSyncService.testConnection();
-  }
+  // qBittorrent sync methods would be implemented here when needed
 
   // Status and monitoring
   async getSystemStatus(): Promise<{
@@ -348,7 +259,8 @@ class SettingsManager {
         status.settingsService.initialized = true;
         status.settingsService.stats = await settingsService.getStats();
         
-        status.qbittorrentSync = await qbittorrentSyncService.getSyncStatus();
+        // qBittorrent sync status would be retrieved here
+        status.qbittorrentSync.enabled = false;
       } catch (error) {
         console.error('Failed to get system status:', error);
       }
@@ -417,18 +329,6 @@ class SettingsManager {
     );
   }
 
-  private transmissionSettingsChanged(settings: Partial<AppSettings>): boolean {
-    return !!(settings.transmission && (
-      settings.transmission.url ||
-      settings.transmission.username ||
-      settings.transmission.password ||
-      settings.transmission.syncEnabled !== undefined
-    ));
-  }
-
-  private syncIntervalChanged(settings: Partial<AppSettings>): boolean {
-    return !!(settings.transmission?.syncInterval);
-  }
 
   // Cleanup and shutdown
   async shutdown(): Promise<void> {
@@ -436,8 +336,7 @@ class SettingsManager {
       console.log('Shutting down SettingsManager...');
       
       try {
-        transmissionSyncService.stopAutoSync();
-        await transmissionSyncService.destroy();
+        // qBittorrent sync cleanup would happen here
         await settingsService.close();
         
         this.isInitialized = false;

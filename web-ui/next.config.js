@@ -25,8 +25,8 @@ const nextConfig = {
         destination: '/api/prowlarr/:path*', // Handle via API routes
       },
       {
-        source: '/api/transmission/:path*',
-        destination: '/api/transmission/:path*', // Handle via API routes
+        source: '/api/qbittorrent/:path*',
+        destination: '/api/qbittorrent/:path*', // Handle via API routes
       },
     ]
   },
