@@ -10,22 +10,32 @@ if [ -f /config/.secrets-complete ]; then
     exit 0
 fi
 
+# Generate random hex string function using /dev/urandom
+generate_hex() {
+    tr -dc 'a-f0-9' < /dev/urandom | head -c ${1:-32}
+}
+
+# Generate random base64 string function using /dev/urandom
+generate_base64() {
+    tr -dc 'A-Za-z0-9' < /dev/urandom | head -c ${1:-16}
+}
+
 # Generate API keys if not provided via environment
-export SONARR_API_KEY=${SONARR_API_KEY:-$(openssl rand -hex 16)}
-export RADARR_API_KEY=${RADARR_API_KEY:-$(openssl rand -hex 16)}
-export PROWLARR_API_KEY=${PROWLARR_API_KEY:-$(openssl rand -hex 16)}
+export SONARR_API_KEY=${SONARR_API_KEY:-$(generate_hex 32)}
+export RADARR_API_KEY=${RADARR_API_KEY:-$(generate_hex 32)}
+export PROWLARR_API_KEY=${PROWLARR_API_KEY:-$(generate_hex 32)}
 
 # Generate passwords if not provided
-TRANSMISSION_PASSWORD=${TRANSMISSION_PASSWORD:-$(openssl rand -base64 16)}
-QBITTORRENT_PASSWORD=${QBITTORRENT_PASSWORD:-$(openssl rand -base64 16)}
+TRANSMISSION_PASSWORD=${TRANSMISSION_PASSWORD:-$(generate_base64 16)}
+QBITTORRENT_PASSWORD=${QBITTORRENT_PASSWORD:-$(generate_base64 16)}
 
 # Generate password hashes for applications that require them
 # Transmission uses SHA1 salt format
 TRANSMISSION_PASSWORD_HASH=$(echo -n "${TRANSMISSION_PASSWORD}" | sha1sum | cut -d' ' -f1)
-export TRANSMISSION_PASSWORD_HASH="{$(openssl rand -hex 8)$TRANSMISSION_PASSWORD_HASH"
+export TRANSMISSION_PASSWORD_HASH="{$(generate_hex 16)$TRANSMISSION_PASSWORD_HASH"
 
-# qBittorrent uses PBKDF2
-export QBITTORRENT_PASSWORD_HASH=$(python3 -c "import hashlib; import os; import base64; salt=os.urandom(8); print('@ByteArray(' + base64.b64encode(hashlib.pbkdf2_hmac('sha512', b'$QBITTORRENT_PASSWORD', salt, 100000)).decode() + ')')")
+# qBittorrent uses simple password - hash generation not needed for basic auth
+export QBITTORRENT_PASSWORD_HASH="$QBITTORRENT_PASSWORD"
 
 # Store generated secrets for reference
 cat > /config/generated/.secrets << EOF
