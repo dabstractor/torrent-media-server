@@ -95,7 +95,7 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=${TZ:-America/New_York}
-      - QBT_WEBUI_PORT=${QBITTORRENT_PORT:-8080}
+      - QBT_WEBUI_PORT=${QBITTORRENT_INTERNAL_PORT:-8081}
       - QBT_LEGAL_NOTICE=confirm
     volumes:
       - ./config/qbittorrent:/config
@@ -105,7 +105,7 @@ services:
       - ./scripts:/scripts:ro
     entrypoint: ["/scripts/qbittorrent-wrapper.sh"]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${QBITTORRENT_PORT:-8080}"]
+      test: ["CMD", "curl", "-f", "http://localhost:${QBITTORRENT_INTERNAL_PORT:-8081}"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -242,7 +242,7 @@ services:
       - NODE_ENV=production
       - PORT=${WEB_UI_PORT:-8787}
       - PROWLARR_URL=http://prowlarr:9696
-      - QBITTORRENT_URL=http://qbittorrent:${QBITTORRENT_PORT:-8080}
+      - QBITTORRENT_URL=http://vpn:${QBITTORRENT_INTERNAL_PORT:-8081}
       - NEXT_TELEMETRY_DISABLED=1
       # Reverse proxy configuration for secure access
       - ENABLE_REVERSE_PROXY=true
