@@ -32,6 +32,11 @@ services:
       - .env
     cap_add:
       - NET_ADMIN
+      - SYS_MODULE
+    privileged: true  # Required for iptables and routing setup
+    ports:
+      - "6881:6881"     # qBittorrent BitTorrent port
+      - "6881:6881/udp" # qBittorrent BitTorrent port UDP
     environment:
       - WARP_SLEEP=2
       - TZ=${TZ:-America/New_York}
@@ -45,8 +50,6 @@ services:
       - net.ipv6.conf.all.disable_ipv6=0
       - net.ipv4.conf.all.src_valid_mark=1
       - net.ipv4.ip_forward=1
-    ports:
-      - "8191:8191"
     healthcheck:
       test: ["CMD", "sh", "-c", "warp-cli --accept-tos status | grep -q 'Connected'"]
       interval: 60s
@@ -60,7 +63,10 @@ services:
     image: ghcr.io/flaresolverr/flaresolverr:latest
     container_name: flaresolverr
     networks:
+      - media_network
       - vpn_network
+    ports:
+      - "8191:8191"
     depends_on:
       vpn:
         condition: service_healthy
@@ -80,8 +86,7 @@ services:
   qbittorrent:
     image: qbittorrentofficial/qbittorrent-nox:latest
     container_name: qbittorrent
-    networks:
-      - vpn_network
+    network_mode: "container:vpn"  # Share VPN container's network stack (most secure isolation)
     # Port removed - access through Web-UI proxy only
     depends_on:
       vpn:
@@ -262,6 +267,7 @@ services:
     image: ghcr.io/linuxserver/prowlarr
     container_name: prowlarr
     networks:
+      - media_network
       - vpn_network
     # Port removed - access through Web-UI proxy only  
     depends_on:
