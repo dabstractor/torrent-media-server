@@ -1,0 +1,450 @@
+PROJECT REQUIREMENTS DOCUMENT
+==============================
+
+Project Name: Secure Container Network Architecture
+Date: September 2025
+Priority: CRITICAL - Security Vulnerability
+Status: Requirements Definition
+
+EXECUTIVE SUMMARY
+=================
+The current Docker container architecture has a critical security vulnerability that resulted in a DMCA notice. The namespace sharing approach allows processes to leak onto the host system, potentially exposing the real IP address even when VPN is active. This PRD defines requirements for a complete architectural redesign that makes IP exposure technically impossible while maintaining all existing functionality.
+
+PROBLEM STATEMENT
+=================
+Current State:
+- qBittorrent container processes are escaping to the host system
+- The network_mode: service:vpn approach with s6-overlay creates namespace leaks
+- Processes visible on host with PIDs 2853, 314154, 319295, 324610 during testing
+- Mixed namespace state: correct network namespace but wrong PID namespace
+- User received DMCA notice, proving real IP was exposed
+- Current mitigations (removing nohup, stop_grace_period) are insufficient
+
+Root Cause:
+- Linuxserver.io containers use s6-overlay for process supervision
+- When combined with network_mode: service:vpn, s6 loses track of processes
+- Processes can re-parent to host's init system
+- If VPN drops, leaked processes may use host network
+
+Impact:
+- Legal liability from copyright violations
+- Privacy compromise
+- Loss of user trust
+- Potential ISP service termination
+
+OBJECTIVES
+==========
+Primary Objectives:
+1. Guarantee zero possibility of IP exposure under any failure condition
+2. Maintain all existing service communication and functionality
+3. Implement multiple independent layers of protection
+4. Provide real-time monitoring and automatic remediation
+
+Secondary Objectives:
+1. Improve overall system reliability
+2. Simplify troubleshooting and maintenance
+3. Enable provider-agnostic VPN configuration
+4. Create reusable patterns for secure container networking
+
+SCOPE
+=====
+In Scope:
+- Complete Docker Compose architecture redesign
+- Network isolation implementation
+- Kill switch at network level
+- Service proxy layer for web-ui
+- Monitoring and alerting system
+- Migration from current architecture
+- Validation and testing procedures
+
+Out of Scope:
+- VPN provider selection (use existing)
+- Application-level changes to *arr services
+- Plex transcoding optimization
+- Storage architecture changes
+- Backup/restore functionality
+
+FUNCTIONAL REQUIREMENTS
+=======================
+
+FR1: Network Architecture
+- FR1.1: System SHALL use isolated Docker networks instead of namespace sharing
+- FR1.2: System SHALL implement dedicated VPN network with no host routing
+- FR1.3: System SHALL enforce network isolation at kernel level using iptables
+- FR1.4: System SHALL prevent containers from accessing multiple networks
+- FR1.5: System SHALL use bridge networks with custom subnets
+
+FR2: VPN Container
+- FR2.1: System SHALL use purpose-built VPN container (e.g., Gluetun)
+- FR2.2: VPN container SHALL implement automatic kill switch
+- FR2.3: VPN container SHALL handle all DNS queries
+- FR2.4: VPN container SHALL support health checks
+- FR2.5: VPN container SHALL support multiple VPN providers
+
+FR3: Service Connectivity
+- FR3.1: Web-UI SHALL access all services through proxy layer
+- FR3.2: Services SHALL communicate using container names
+- FR3.3: Plex SHALL remain accessible for streaming
+- FR3.4: API communication between *arr services SHALL be maintained
+- FR3.5: FlareSolverr SHALL remain accessible to Prowlarr
+
+FR4: Monitoring
+- FR4.1: System SHALL check external IP every 30 seconds
+- FR4.2: System SHALL log all IP checks with timestamps
+- FR4.3: System SHALL detect and alert on IP leaks immediately
+- FR4.4: System SHALL provide status dashboard
+- FR4.5: System SHALL generate daily leak reports
+
+FR5: Failure Handling
+- FR5.1: System SHALL stop all torrenting if VPN fails
+- FR5.2: Kill switch SHALL activate within 5 seconds
+- FR5.3: System SHALL prevent DNS leaks during VPN failure
+- FR5.4: System SHALL auto-recover when VPN reconnects
+- FR5.5: System SHALL log all failure events
+
+NON-FUNCTIONAL REQUIREMENTS
+===========================
+
+NFR1: Security
+- NFR1.1: Zero IP leaks in 30+ days of operation
+- NFR1.2: No processes from protected containers visible on host
+- NFR1.3: All traffic encrypted through VPN tunnel
+- NFR1.4: No plaintext credentials in configuration
+- NFR1.5: Principle of least privilege for all containers
+
+NFR2: Performance
+- NFR2.1: Download speeds within 95% of VPN maximum
+- NFR2.2: Service response time under 2 seconds
+- NFR2.3: Container startup under 60 seconds
+- NFR2.4: Memory usage under 4GB total
+- NFR2.5: CPU usage under 20% during normal operation
+
+NFR3: Reliability
+- NFR3.1: 99.9% uptime for VPN connection
+- NFR3.2: Automatic recovery from failures
+- NFR3.3: No manual intervention required
+- NFR3.4: Graceful degradation on component failure
+- NFR3.5: Clean shutdown without orphaned processes
+
+NFR4: Maintainability
+- NFR4.1: All configuration in docker-compose.yml
+- NFR4.2: Environment variables for secrets
+- NFR4.3: Comprehensive logging for troubleshooting
+- NFR4.4: Clear service dependencies
+- NFR4.5: Documented runbooks for common issues
+
+NFR5: Compatibility
+- NFR5.1: Support Cloudflare WARP and PIA VPN
+- NFR5.2: Work with existing config directories
+- NFR5.3: Preserve existing port mappings
+- NFR5.4: Compatible with ARM and x86_64
+- NFR5.5: Support Docker Compose v2
+
+USER STORIES
+============
+
+US1: As a user, I want torrent traffic to never expose my real IP
+- Given the VPN is configured
+- When I download torrents
+- Then my real IP is never visible to peers
+- And DMCA notices are impossible
+
+US2: As a user, I want automatic protection from VPN failures
+- Given I'm downloading torrents
+- When the VPN connection drops
+- Then all torrent traffic stops immediately
+- And no packets leak to my real connection
+
+US3: As a user, I want to monitor VPN protection status
+- Given the system is running
+- When I check the dashboard
+- Then I see current VPN IP
+- And confirmation that protection is active
+
+US4: As a user, I want web-ui to work seamlessly
+- Given the new architecture is deployed
+- When I access web-ui
+- Then I can control all services
+- And performance is not degraded
+
+US5: As an admin, I want clear alerts on security issues
+- Given monitoring is active
+- When an IP leak is detected
+- Then I receive immediate notification
+- And affected services are stopped
+
+TECHNICAL ARCHITECTURE
+======================
+
+Current (Vulnerable) Architecture:
+```
+Host System
+    └── VPN Container (namespace shared)
+            ├── qBittorrent (can leak)
+            ├── Prowlarr (can leak)
+            ├── Sonarr (can leak)
+            ├── Radarr (can leak)
+            └── FlareSolverr (can leak)
+```
+
+Proposed (Secure) Architecture:
+```
+Host System
+    ├── Media Network (Bridge)
+    │   ├── Web-UI (Proxy)
+    │   └── Plex
+    └── VPN Network (Isolated)
+        ├── Gluetun (Gateway)
+        ├── qBittorrent
+        ├── Prowlarr
+        ├── Sonarr
+        ├── Radarr
+        └── FlareSolverr
+```
+
+Key Components:
+1. Gluetun VPN Container
+   - Built-in kill switch
+   - iptables firewall rules
+   - Health monitoring
+   - Multi-provider support
+
+2. Network Segmentation
+   - vpn_network: Internal only, no external routing
+   - media_network: Bridge for non-VPN services
+   - No cross-network container access
+
+3. Web-UI Proxy Layer
+   - Nginx reverse proxy
+   - Service endpoint mapping
+   - WebSocket support
+   - Authentication passthrough
+
+4. IP Monitor Service
+   - Continuous checking
+   - Leak detection
+   - Automatic remediation
+   - Persistent logging
+
+IMPLEMENTATION PHASES
+====================
+
+Phase 1: Preparation (Day 1)
+- Backup current configuration
+- Document service dependencies
+- Test rollback procedure
+- Set up development environment
+
+Phase 2: VPN Container (Day 2)
+- Deploy Gluetun container
+- Configure VPN provider
+- Test kill switch
+- Verify health checks
+
+Phase 3: Network Isolation (Day 3-4)
+- Create isolated networks
+- Migrate services
+- Remove namespace sharing
+- Test network policies
+
+Phase 4: Service Connectivity (Day 5-6)
+- Implement web-ui proxy
+- Configure service discovery
+- Test all integrations
+- Verify API communication
+
+Phase 5: Monitoring (Day 7)
+- Deploy IP monitor
+- Configure alerting
+- Test leak detection
+- Set up dashboards
+
+Phase 6: Validation (Day 8-9)
+- Run security tests
+- 24-hour leak test
+- Performance testing
+- Documentation
+
+Phase 7: Production (Day 10)
+- Final backup
+- Production deployment
+- Monitor for 48 hours
+- User acceptance
+
+SUCCESS CRITERIA
+================
+
+Must Have (Launch Blockers):
+- Zero processes visible on host from containers
+- Kill switch activates in under 5 seconds
+- No IP leaks in 24-hour test
+- All services accessible through web-ui
+- Automatic VPN recovery
+
+Should Have:
+- Real-time monitoring dashboard
+- Automated daily reports
+- Performance within 5% of current
+- Alert notifications
+- One-command deployment
+
+Nice to Have:
+- Multiple VPN provider support
+- Automatic VPN server selection
+- Bandwidth monitoring
+- Historical IP logs
+- Grafana dashboards
+
+RISKS AND MITIGATIONS
+=====================
+
+Risk 1: Service Communication Failure
+- Impact: High - Services cannot function
+- Probability: Medium
+- Mitigation: Extensive testing, gradual migration, rollback plan
+
+Risk 2: Performance Degradation
+- Impact: Medium - Poor user experience
+- Probability: Low
+- Mitigation: Benchmark before/after, optimize proxy configuration
+
+Risk 3: VPN Provider Incompatibility
+- Impact: High - Cannot establish VPN
+- Probability: Low
+- Mitigation: Test with multiple providers, have fallback options
+
+Risk 4: Complex Troubleshooting
+- Impact: Medium - Difficult to maintain
+- Probability: Medium
+- Mitigation: Comprehensive logging, clear documentation, runbooks
+
+Risk 5: Data Loss During Migration
+- Impact: High - Lost downloads/configuration
+- Probability: Very Low
+- Mitigation: Full backup, test restore, staged migration
+
+VALIDATION REQUIREMENTS
+=======================
+
+Security Tests:
+1. Process isolation verification
+2. Network namespace inspection
+3. Kill switch activation test
+4. DNS leak test
+5. 24-hour continuous monitoring
+
+Functional Tests:
+1. Service endpoint accessibility
+2. Inter-service communication
+3. Download functionality
+4. Web-UI proxy operations
+5. Plex streaming
+
+Performance Tests:
+1. Download speed comparison
+2. Service response times
+3. Container resource usage
+4. Network latency
+5. Concurrent connection handling
+
+Failure Tests:
+1. VPN disconnect simulation
+2. Container crash recovery
+3. Network partition test
+4. DNS failure handling
+5. Cascading failure prevention
+
+ACCEPTANCE CRITERIA
+==================
+
+The solution is acceptable when:
+1. No IP leaks detected in 30 days
+2. No processes visible on host
+3. All services fully functional
+4. Performance within 5% of baseline
+5. Zero manual intervention required
+6. Kill switch proven effective
+7. Monitoring operational 24/7
+8. Documentation complete
+9. Rollback procedure tested
+10. User confirms confidence in security
+
+DEPENDENCIES
+============
+
+External Dependencies:
+- Docker Engine 20.10+
+- Docker Compose v2
+- VPN provider account
+- Linux kernel 4.9+ (for network features)
+
+Internal Dependencies:
+- Existing configuration files
+- Media storage locations
+- Download directories
+- Port availability
+
+CONSTRAINTS
+===========
+
+Technical Constraints:
+- Must use Docker containers
+- Cannot modify *arr applications
+- Must preserve existing ports
+- Limited to 4GB RAM on host
+
+Business Constraints:
+- Must be completed within 2 weeks
+- Zero downtime migration preferred
+- No additional paid services
+- Must work with existing VPN subscription
+
+ASSUMPTIONS
+===========
+
+1. Docker and Docker Compose are properly installed
+2. VPN credentials are valid and working
+3. Host system has stable internet connection
+4. Sufficient disk space for downloads
+5. User has sudo/root access for iptables
+6. Current backup is available
+7. Test environment matches production
+
+APPENDICES
+==========
+
+A. Current Configuration Files
+- docker-compose.yml (vulnerable version)
+- Individual service configurations
+- Environment variables
+
+B. Reference Documentation
+- Gluetun documentation
+- Docker networking guide
+- iptables documentation
+- VPN provider APIs
+
+C. Testing Scripts
+- validate_network_isolation.sh
+- continuous_leak_monitor.sh
+- service_connectivity_test.sh
+- performance_benchmark.sh
+
+D. Monitoring Queries
+- Prometheus metrics
+- Log aggregation patterns
+- Alert rule definitions
+
+E. Rollback Procedures
+- Step-by-step rollback guide
+- Configuration restore process
+- Data recovery steps
+
+APPROVAL
+========
+
+Technical Lead: ___________________ Date: ___________
+Security Review: __________________ Date: ___________
+User Acceptance: __________________ Date: ___________
+
+END OF DOCUMENT
