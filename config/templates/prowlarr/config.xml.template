@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Config>
+  <LogLevel>${LOG_LEVEL:-info}</LogLevel>
+  <EnableSsl>False</EnableSsl>
+  <Port>9696</Port>
+  <SslPort>6969</SslPort>
+  <UrlBase></UrlBase>
+  <BindAddress>*</BindAddress>
+  <ApplicationUrl></ApplicationUrl>
+  <InstanceName>${PROWLARR_INSTANCE_NAME:-Prowlarr}</InstanceName>
+  <Theme>auto</Theme>
+  <ApiKey>${PROWLARR_API_KEY}</ApiKey>
+  <AuthenticationMethod>${AUTH_METHOD:-None}</AuthenticationMethod>
+  <AuthenticationRequired>${AUTH_REQUIRED:-DisabledForLocalAddresses}</AuthenticationRequired>
+  <Branch>master</Branch>
+  <LaunchBrowser>True</LaunchBrowser>
+  <UpdateMechanism>Docker</UpdateMechanism>
+</Config>

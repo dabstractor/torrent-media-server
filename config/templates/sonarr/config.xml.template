@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Config>
+  <LogLevel>${LOG_LEVEL:-info}</LogLevel>
+  <EnableSsl>False</EnableSsl>
+  <Port>8989</Port>
+  <SslPort>9898</SslPort>
+  <UrlBase></UrlBase>
+  <BindAddress>*</BindAddress>
+  <ApplicationUrl></ApplicationUrl>
+  <InstanceName>${SONARR_INSTANCE_NAME:-Sonarr}</InstanceName>
+  <Theme>auto</Theme>
+  <ApiKey>${SONARR_API_KEY}</ApiKey>
+  <AuthenticationMethod>${AUTH_METHOD:-None}</AuthenticationMethod>
+  <AuthenticationRequired>${AUTH_REQUIRED:-DisabledForLocalAddresses}</AuthenticationRequired>
+  <Branch>main</Branch>
+  <LaunchBrowser>True</LaunchBrowser>
+  <UpdateMechanism>Docker</UpdateMechanism>
+</Config>
