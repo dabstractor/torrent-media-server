@@ -1,71 +1,187 @@
-# Logs
-logs
+# Environment and Secret Files - CRITICAL SECURITY
+.env
+.env.local
+.env.production
+.env.development
+
+# Current config directory (contains sensitive runtime data)
+# Exclude all runtime config data
+config/plex/
+config/prowlarr/
+config/qbittorrent/ 
+config/radarr/
+config/sonarr/
+config/transmission/
+config/vpn/
+# Only preserve templates for secure configuration generation
+!config/templates/
+
+# All generated configuration files
+config/*/config.xml
+config/*/settings.json
+config/*/qBittorrent.conf
+config/*/Preferences.xml
+
+# Runtime generated directories and files
+config/*/.initialized
+config/*/.init-directories-complete
+config/*/.secrets-complete
+config/*/.configs-complete
+config/*/.static-content-complete
+config/*/generated/
+config/*/logs/
+config/*/cache/
+
+# Additional initialization markers that could be created
+.container-initialized
+.setup-complete
+.first-run-complete
+
+# Database files (contain operational data and secrets)
+config/**/*.db
+config/**/*.db-shm
+config/**/*.db-wal
+config/**/*.sqlite
+config/**/*.sqlite3
+
+# ASP.NET Core Data Protection Keys (cryptographic secrets)
+config/**/asp/
+config/**/*key*.xml
+config/**/keys/
+
+# Log files
+config/**/*.log
+config/**/*.log.*
 *.log
+logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 dev-debug.log
 
-# Dependency directories
+# Plex-specific runtime files
+config/plex/Library/Application Support/Plex Media Server/Preferences.xml
+config/plex/Library/Application Support/Plex Media Server/plexmediaserver.pid
+config/plex/Library/Application Support/Plex Media Server/Logs/
+config/plex/Library/Application Support/Plex Media Server/Cache/
+config/plex/Library/Application Support/Plex Media Server/Crash Reports/
+config/plex/Library/Application Support/Plex Media Server/Diagnostics/
+config/plex/Library/Application Support/Plex Media Server/Media/
+config/plex/Library/Application Support/Plex Media Server/Metadata/
+config/plex/Library/Application Support/Plex Media Server/Plug-ins/
+config/plex/Library/Application Support/Plex Media Server/Updates/
+config/plex/Library/Application Support/Plex Media Server/.LocalAdminToken
+config/plex/Library/Application Support/Plex Media Server/Plug-in Support
+
+# Prowlarr-specific excludes (preserve Definitions/ but exclude runtime config)
+config/prowlarr/config.xml
+config/prowlarr/nzbs.xml
+config/prowlarr/logs.db*
+config/prowlarr/Sentry/
+config/prowlarr/*.pid
+config/prowlarr/Backups/
+
+# Sonarr/Radarr excludes
+config/sonarr/config.xml
+config/sonarr/logs/
+config/sonarr/*.db*
+config/sonarr/*.pid
+config/sonarr/Backups/
+config/radarr/config.xml
+config/radarr/logs/
+config/radarr/*.db*
+config/radarr/*.pid
+config/radarr/Backups/
+
+# Torrent client temporary files
+config/transmission/resume/
+config/transmission/torrents/
+config/transmission/blocklists/
+config/transmission/*.dat
+config/transmission/*.json
+config/transmission/dht.dat
+config/qbittorrent/BT_backup/
+config/qbittorrent/GeoDB/
+config/qbittorrent/logs/
+config/qbittorrent/nova3/
+config/qbittorrent/rss/
+
+# Media and download data (too large for Git)
+data/
+downloads/
+media/
+
+# Backup files
+*.bundle
+backup-*.bundle
+*.backup
+*.bak
+
+# Implementation and testing artifacts
+.env.test
+test-config/
+*-test.env
+
+# Node.js and React build artifacts
 node_modules/
+.next/
+out/
+build/
+dist/
+package-lock.json
 
-# Environment variables
-.env
-
-# Editor directories and files
-.idea
+# Development files
+.DS_Store
 .vscode
+.idea
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.swp
+*.swo
+*~
 
-# OS specific
-.DS_Store
+# Task Master and other tool runtime directories
+.taskmaster/state.json
+.taskmaster/tasks/
+.taskmaster/docs/research/
+.cursor/
+.playwright-mcp/
 
-# Docker-generated config files
-config/prowlarr/asp/
-config/prowlarr/logs/
-config/prowlarr/Sentry/
-config/prowlarr/*.db*
-config/prowlarr/*.pid
-config/prowlarr/config.xml
-config/prowlarr/Definitions/
-config/prowlarr/Backups/
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
 
-config/transmission/blocklists/
-config/transmission/resume/
-config/transmission/torrents/
-config/transmission/*.dat
-config/transmission/*.json
-config/transmission/dht.dat
+# Development and debugging files
+*.debug
+debug-*.txt
+validation-*.log
+test-*.xml
+test-*.json
+test-*.conf
 
-config/radarr/asp/
-config/radarr/logs/
-config/radarr/*.db*
-config/radarr/*.pid
-config/radarr/config.xml
-config/radarr/Backups/
+# Additional runtime directories and files
+nginx-proxy.conf
+web-ui/node_modules/
+web-ui/.next/
+web-ui/dist/
+web-ui/build/
 
-config/sonarr/asp/
-config/sonarr/logs/
-config/sonarr/*.db*
-config/sonarr/*.pid
-config/sonarr/config.xml
-config/sonarr/Backups/
+# Keep only templates and scripts for secure deployment
+!config/templates/
+!scripts/
+!.gitignore
+!README.md
+!docker-compose.yml
+!docker-compose.*.yml
+!.env.example
 
-config/plex/Library/Application Support/Plex Media Server/Logs
-config/plex/Library/Application Support/Plex Media Server/Cache
-config/plex/Library/Application Support/Plex Media Server/Crash Reports
-config/plex/Library/Application Support/Plex Media Server/Plug-in Support
-config/plex/Library/Application Support/Plex Media Server/.LocalAdminToken
-config/plex/Library/Application Support/Plex Media Server/plexmediaserver.pid
-
-# qBittorrent runtime files
-config/qbittorrent/
-
-# Task files
-# tasks.json
-# tasks/ 
-data/*
+# Exclude test and temporary docker compose files
+docker-compose.test.yml
+docker-compose.dev.yml
+docker-compose.debug.yml
+docker-compose.override.yml
