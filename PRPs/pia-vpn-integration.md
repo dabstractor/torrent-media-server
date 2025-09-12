@@ -13,7 +13,7 @@ description: |
 **Deliverable**: Modified Docker Compose configuration and supporting scripts that automatically configure WireGuard using PIA credentials, ensuring all torrent traffic is routed through PIA's VPN servers with proper authentication.
 
 **Success Definition**: 
-- All torrent services (Transmission, Sonarr, Radarr, Prowlarr) route traffic through PIA VPN
+- All torrent services (qBittorrent, Sonarr, Radarr, Prowlarr) route traffic through PIA VPN
 - VPN connection automatically established using PIA username/password
 - WireGuard configuration generated dynamically from PIA API
 - Port forwarding enabled for torrent client functionality
@@ -24,7 +24,7 @@ description: |
 
 **Target User**: Self-hosted media server administrator seeking secure, automated torrent downloads through a commercial VPN provider
 
-**Use Case**: Protecting torrent traffic through PIA VPN while maintaining the existing media automation stack (Sonarr/Radarr/Prowlarr/Transmission/Plex)
+**Use Case**: Protecting torrent traffic through PIA VPN while maintaining the existing media automation stack (Sonarr/Radarr/Prowlarr/qBittorrent/Plex)
 
 **User Journey**:
 1. Configure PIA credentials in environment variables
@@ -70,7 +70,7 @@ Replace the current generic WireGuard container (`ghcr.io/linuxserver/wireguard`
 ### Success Criteria
 - [ ] VPN container successfully authenticates with PIA using credentials
 - [ ] WireGuard configuration generated automatically from PIA API
-- [ ] All dependent containers (transmission, sonarr, radarr, prowlarr) route through VPN
+- [ ] All dependent containers (qbittorrent, sonarr, radarr, prowlarr) route through VPN
 - [ ] IP verification shows PIA server address, not host IP
 - [ ] Port forwarding enabled and working for torrent client
 - [ ] VPN reconnects automatically on failure or 24-hour token expiration
@@ -171,7 +171,7 @@ torrents/
 # Container must handle token refresh without breaking dependent services
 
 # CRITICAL: Port forwarding requirement
-# Transmission requires incoming ports for optimal performance
+# qBittorrent requires incoming ports for optimal performance
 # PIA port forwarding must be enabled and configured properly
 
 # CRITICAL: DNS configuration
@@ -251,7 +251,7 @@ Task 7: IMPLEMENT health monitoring
   - ALERT: Health check failures for dependent services
 
 Task 8: VALIDATE dependent service integration  
-  - VERIFY: transmission, sonarr, radarr, prowlarr route through VPN
+  - VERIFY: qbittorrent, sonarr, radarr, prowlarr route through VPN
   - TEST: network_mode: service:vpn still functions correctly
   - CONFIRM: Port forwarding works for torrent functionality
   - VALIDATE: File permissions maintained with PUID/PGID
@@ -284,7 +284,7 @@ services:
   vpn:                                     # MUST keep name "vpn" 
     container_name: vpn                    # Required by dependent services
     network_mode: bridge                   # Standard network mode
-  transmission:
+  qbittorrent:
     network_mode: service:vpn              # Routes through VPN container
     depends_on:
       vpn:
@@ -346,8 +346,8 @@ docker logs vpn                         # Check for successful PIA authenticatio
 docker exec vpn curl -s ipinfo.io       # Verify IP shows PIA server, not host
 
 # Dependent service routing validation
-docker-compose up -d transmission       # Start dependent service
-docker exec transmission curl -s ipinfo.io  # Verify transmission uses VPN IP
+docker-compose up -d qbittorrent       # Start dependent service
+docker exec qbittorrent curl -s ipinfo.io  # Verify qbittorrent uses VPN IP
 docker exec sonarr curl -s ipinfo.io    # Verify sonarr uses VPN IP
 docker exec radarr curl -s ipinfo.io    # Verify radarr uses VPN IP
 
@@ -367,18 +367,18 @@ sleep 60                                      # Allow full initialization
 
 # Service health verification
 docker-compose ps                       # All services should show "healthy" status
-curl -f http://localhost:9091           # Transmission web interface accessible
+curl -f http://localhost:8080           # qBittorrent web interface accessible
 curl -f http://localhost:8989           # Sonarr accessible  
 curl -f http://localhost:7878           # Radarr accessible
 curl -f http://localhost:9696           # Prowlarr accessible
 
 # VPN functionality validation
-docker exec transmission curl -s https://ipinfo.io/json | jq .org  # Should show PIA
+docker exec qbittorrent curl -s https://ipinfo.io/json | jq .org  # Should show PIA
 docker exec vpn ping -c 3 8.8.8.8      # Internet connectivity through VPN
 docker logs vpn | grep -i "connected"   # VPN connection established
 
 # Torrent functionality validation
-# Add a test torrent through transmission web interface
+# Add a test torrent through qbittorrent web interface
 # Verify download starts and progresses properly
 # Check that incoming connections work (port forwarding)
 
@@ -396,7 +396,7 @@ docker logs vpn | grep -i "token"                   # Token refresh events logge
 # Security Validation  
 # Ensure no IP leaks when VPN disconnects
 docker stop vpn && sleep 5                          # Simulate VPN failure
-docker exec transmission curl -s ipinfo.io 2>&1 | grep -i "resolve\|network"  # Should fail
+docker exec qbittorrent curl -s ipinfo.io 2>&1 | grep -i "resolve\|network"  # Should fail
 docker start vpn && sleep 30                        # Restart VPN
 
 # Performance Testing

@@ -51,7 +51,6 @@ process_template "Prowlarr" "/templates/prowlarr/config.xml.template" "/config/c
 process_template "Sonarr" "/templates/sonarr/config.xml.template" "/config/config.xml" 
 process_template "Radarr" "/templates/radarr/config.xml.template" "/config/config.xml"
 process_template "Plex" "/templates/plex/Preferences.xml.template" "/config/Library/Application Support/Plex Media Server/Preferences.xml"
-process_template "Transmission" "/templates/transmission/settings.json.template" "/config/settings.json"
 process_template "qBittorrent" "/templates/qbittorrent/qBittorrent.conf.template" "/config/qBittorrent/qBittorrent.conf"
 
 # Create Plex directory structure

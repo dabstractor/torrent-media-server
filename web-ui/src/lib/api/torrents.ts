@@ -24,7 +24,7 @@ export const searchTorrents = async (
   throw new Error(response.error || 'Search failed');
 }
 
-// Add torrent to Transmission
+// Add torrent to qBittorrent
 export const addTorrent = async (
   torrent: Pick<TorrentResult, 'downloadUrl' | 'magnetUrl'>,
   category?: string

@@ -14,7 +14,6 @@ const navigationItems: NavigationItem[] = [
   { href: '/settings', label: 'General', exact: true },
   { href: '/settings/downloads', label: 'Downloads' },
   { href: '/settings/bandwidth', label: 'Bandwidth' },
-  { href: '/settings/transmission', label: 'Transmission' },
   { href: '/settings/plex', label: 'Plex Integration' },
   { href: '/settings/advanced', label: 'Advanced' },
   { href: '/settings/backup', label: 'Backup & Restore' },

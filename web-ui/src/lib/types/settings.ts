@@ -36,24 +36,6 @@ export interface AppSettings {
   scheduleToMin: number;
   scheduleDays: number; // Bitmask: 1=Mon, 2=Tue, 4=Wed, etc.
 
-  // Transmission Integration
-  transmission: {
-    url: string;
-    username: string;
-    password: string;
-    syncEnabled: boolean;
-    syncInterval: number; // seconds
-    autoLogin: boolean;
-    trustSelfSignedCerts: boolean;
-    scheduler: {
-      enabled: boolean;
-      fromHour: number;
-      fromMin: number;
-      toHour: number;
-      toMin: number;
-      days: number; // Bitmask: 1=Sunday, 2=Monday, 4=Tuesday...
-    };
-  };
 
   // Plex Integration
   plex: {
@@ -154,25 +136,6 @@ export interface SettingsConflict {
   timestamp: Date;
 }
 
-export interface TransmissionPreferences {
-  'speed-limit-down-enabled': boolean;
-  'speed-limit-down': number;
-  'speed-limit-up-enabled': boolean;
-  'speed-limit-up': number;
-  'alt-speed-enabled': boolean;
-  'alt-speed-down': number;
-  'alt-speed-up': number;
-  'alt-speed-time-enabled': boolean;
-  'alt-speed-time-begin': number; // minutes since midnight
-  'alt-speed-time-end': number;
-  'alt-speed-time-day': number; // bitmask
-  'download-queue-enabled': boolean;
-  'download-queue-size': number;
-  'seed-queue-enabled': boolean;
-  'seed-queue-size': number;
-  'start-added-torrents': boolean;
-  'download-dir': string;
-}
 
 export interface QBPreferences {
   // Core qBittorrent preferences mapping to AppSettings
@@ -219,7 +182,6 @@ export type SettingsCategory =
   | 'general'
   | 'download' 
   | 'bandwidth'
-  | 'transmission'
   | 'qbittorrent'
   | 'plex'
   | 'advanced';
@@ -362,23 +324,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   scheduleToHour: 20,
   scheduleToMin: 0,
   scheduleDays: 127, // All days
-  transmission: {
-    url: 'http://localhost:9091',
-    username: 'admin',
-    password: 'adminpass123',
-    syncEnabled: true,
-    syncInterval: 30,
-    autoLogin: true,
-    trustSelfSignedCerts: false,
-    scheduler: {
-      enabled: false,
-      fromHour: 8,
-      fromMin: 0,
-      toHour: 20,
-      toMin: 0,
-      days: 127, // All days
-    },
-  },
   plex: {
     enabled: false,
     token: '',
@@ -454,13 +399,6 @@ export const SETTINGS_CATEGORIES: SettingsCategoryInfo[] = [
       'scheduleToMin',
       'scheduleDays',
     ],
-  },
-  {
-    id: 'transmission',
-    name: 'Transmission',
-    description: 'Connection settings, sync preferences, and authentication',
-    icon: 'link',
-    fields: ['transmission'],
   },
   {
     id: 'plex',

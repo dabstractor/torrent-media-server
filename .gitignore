@@ -11,7 +11,6 @@ config/prowlarr/
 config/qbittorrent/ 
 config/radarr/
 config/sonarr/
-config/transmission/
 config/vpn/
 # Only preserve templates for secure configuration generation
 !config/templates/
@@ -94,12 +93,12 @@ config/radarr/*.pid
 config/radarr/Backups/
 
 # Torrent client temporary files
-config/transmission/resume/
-config/transmission/torrents/
-config/transmission/blocklists/
-config/transmission/*.dat
-config/transmission/*.json
-config/transmission/dht.dat
+config//resume/
+config//torrents/
+config//blocklists/
+config//*.dat
+config//*.json
+config//dht.dat
 config/qbittorrent/BT_backup/
 config/qbittorrent/GeoDB/
 config/qbittorrent/logs/
