@@ -7,6 +7,20 @@
 #
 # This file overrides the default WARP VPN with PIA's WireGuard service
 
+# Custom networks for service isolation (inheriting from main compose file)
+networks:
+  media_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${MEDIA_NETWORK_SUBNET:-172.27.0.0/16}
+  vpn_network:
+    driver: bridge
+    internal: true  # RESTORE: Complete isolation - no direct internet access
+    ipam:
+      config:
+        - subnet: ${VPN_NETWORK_SUBNET:-172.29.0.0/16}
+
 services:
   vpn:
     image: thrnz/docker-wireguard-pia:latest
@@ -28,11 +42,23 @@ services:
       
     ports:
       # WireGuard port for PIA
-      - 51820:51820/udp
+      - ${PIA_WIREGUARD_PORT:-51821}:51820/udp
       # Exposed services through VPN
-      - "9696:9696"
-      - "8191:8191"
+      - "${PIA_PROWLARR_PORT:-19696}:9696"
+      - "${PIA_FLARESOLVERR_PORT:-18191}:8191"
       
+    # Network configuration - VPN service needs both networks
+    networks:
+      default:
+      vpn_network:
+        ipv4_address: ${VPN_SERVICE_IP:-172.29.0.2}
+    
+    # Sysctls for network configuration
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv4.ip_forward=1
+    
     # Health check for PIA VPN - test connectivity through the tunnel
     healthcheck:
       test: ["CMD-SHELL", "curl -f --max-time 10 https://ipinfo.io/ip || exit 1"]
@@ -40,3 +66,5 @@ services:
       timeout: 15s
       retries: 3
       start_period: 90s
+    
+    restart: unless-stopped
