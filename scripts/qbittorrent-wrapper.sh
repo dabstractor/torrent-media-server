@@ -5,9 +5,25 @@
 echo "=== qBittorrent Authentication Bypass Wrapper ==="
 
 # Configuration
-WEBUI_PORT="${QBT_WEBUI_PORT:-8080}"
+WEBUI_PORT="${QBT_WEBUI_PORT:-8081}"
 PROFILE_PATH="/config"
 LOG_FILE="/tmp/qbt_startup.log"
+
+# Process configuration template if it exists and config doesn't exist
+if [ -f "/templates/qBittorrent.conf.template" ] && [ ! -f "$PROFILE_PATH/qBittorrent/qBittorrent.conf" ]; then
+    echo "Processing qBittorrent configuration template..."
+    mkdir -p "$PROFILE_PATH/qBittorrent"
+    
+    # Use envsubst to process template with environment variables
+    if command -v envsubst >/dev/null 2>&1; then
+        envsubst < "/templates/qBittorrent.conf.template" > "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+        echo "✓ Configuration generated from template"
+    else
+        # Fallback: simple copy if envsubst not available
+        cp "/templates/qBittorrent.conf.template" "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+        echo "✓ Configuration copied from template (envsubst not available)"
+    fi
+fi
 
 # Start qBittorrent and capture output
 echo "Starting qBittorrent..."
@@ -16,77 +32,37 @@ QBIT_PID=$!
 
 echo "qBittorrent PID: $QBIT_PID"
 
-# Wait for password to appear in output
-echo "Waiting for qBittorrent to generate temporary password..."
-TEMP_PASS=""
-COUNTER=0
-
-while [ -z "$TEMP_PASS" ] && [ $COUNTER -lt 30 ]; do
-    # Check if process is still running
-    if ! kill -0 $QBIT_PID 2>/dev/null; then
-        echo "ERROR: qBittorrent process died"
-        exit 1
-    fi
-    
-    # Look for temporary password in log file
-    if [ -f "$LOG_FILE" ]; then
-        # Extract password using sed
-        TEMP_PASS=$(grep "temporary password" "$LOG_FILE" | sed 's/.*temporary password.*: //g' | head -1)
-    fi
-    
-    if [ -n "$TEMP_PASS" ]; then
-        echo "✓ Found temporary password: $TEMP_PASS"
-        break
-    fi
-    
-    sleep 1
-    COUNTER=$((COUNTER + 1))
-done
-
-if [ -z "$TEMP_PASS" ]; then
-    echo "ERROR: Could not capture temporary password"
-    echo "qBittorrent will require manual authentication"
-    wait $QBIT_PID
-    exit 0
-fi
-
 # Wait for WebUI to be ready
 echo "Waiting for WebUI to be available..."
 COUNTER=0
 while [ $COUNTER -lt 60 ]; do
-    if curl -sf "http://localhost:${WEBUI_PORT}/api/v2/auth/login" >/dev/null 2>&1; then
+    # Check if WebUI responds (even with auth error - means it's running)
+    if curl -s "http://localhost:${WEBUI_PORT}/" | grep -q "qBittorrent" >/dev/null 2>&1; then
         echo "✓ WebUI is ready"
         break
     fi
-    sleep 1
-    COUNTER=$((COUNTER + 1))
+    # Also check if API endpoint responds (even with 401/403)
+    if curl -s -o /dev/null -w "%{http_code}" "http://localhost:${WEBUI_PORT}/api/v2/app/version" | grep -E "^(200|401|403)$" >/dev/null 2>&1; then
+        echo "✓ WebUI is ready (API responding)"
+        break
+    fi
+    sleep 2
+    COUNTER=$((COUNTER + 2))
 done
 
-# Login and configure bypass
-echo "Configuring authentication bypass..."
-
-# Login with temporary password
-curl -c /tmp/qbt_cookies.txt \
-    -d "username=admin&password=${TEMP_PASS}" \
-    -X POST "http://localhost:${WEBUI_PORT}/api/v2/auth/login" >/dev/null 2>&1
-
-# Set authentication bypass
-curl -b /tmp/qbt_cookies.txt \
-    -X POST "http://localhost:${WEBUI_PORT}/api/v2/app/setPreferences" \
-    -d 'json={"bypass_local_auth":true,"bypass_auth_subnet_whitelist":"0.0.0.0/0,::/0","bypass_auth_subnet_whitelist_enabled":true}' >/dev/null 2>&1
-
-# Clean up
-rm -f /tmp/qbt_cookies.txt
-rm -f "$LOG_FILE"
-
-# Test if bypass works
-sleep 2
-if curl -sf "http://localhost:${WEBUI_PORT}/api/v2/app/version" | grep -q "^v"; then
-    echo "✓ Authentication bypass is working!"
-    echo "✓ qBittorrent is accessible without authentication"
+# Configure authentication bypass using dedicated script
+if [ -f "/scripts/qbittorrent-auth-bypass.sh" ]; then
+    echo "Launching authentication bypass configuration..."
+    /scripts/qbittorrent-auth-bypass.sh "$WEBUI_PORT" "$LOG_FILE" &
+    BYPASS_PID=$!
+    echo "Bypass configuration running in background (PID: $BYPASS_PID)"
 else
-    echo "WARNING: Authentication bypass may not be configured"
+    echo "⚠ Authentication bypass script not found"
 fi
+
+# Clean up log file after script has access to it
+sleep 2
+rm -f "$LOG_FILE"
 
 echo "=== qBittorrent is running ==="
 echo "WebUI accessible at: http://localhost:${WEBUI_PORT}"
