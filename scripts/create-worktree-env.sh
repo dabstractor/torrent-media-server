@@ -44,7 +44,6 @@ print_usage() {
     echo "  - Create git worktree at ../[project-name]-[worktree-name]"
     echo "  - Generate .env with randomized ports (avoiding conflicts)"
     echo "  - Set CONTAINER_PREFIX to [worktree-name]-"
-    echo "  - Update docker-compose.yml container names"
 }
 
 log_info() {
@@ -151,7 +150,7 @@ generate_unique_subnets() {
         local second_octet=$((RANDOM % 200 + 50))  # Range 50-249 to avoid common conflicts
         
         if ! echo "$used_subnets" | grep -q "^${second_octet}$"; then
-            subnets+=("NETWORK_SUBNET=${base_ip}.${second_octet}.0.0/16")
+            subnets+=("MEDIA_NETWORK_SUBNET=${base_ip}.${second_octet}.0.0/16")
             used_subnets="$used_subnets"$'\n'"$second_octet"
             break
         fi
@@ -306,16 +305,26 @@ create_env_file() {
         fi
     done <<< "$port_config"
     
+    # Handle legacy NETWORK_SUBNET -> MEDIA_NETWORK_SUBNET migration
+    if grep -q "^NETWORK_SUBNET=" "$env_file"; then
+        log_info "Migrating legacy NETWORK_SUBNET to MEDIA_NETWORK_SUBNET"
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "s/^NETWORK_SUBNET=/MEDIA_NETWORK_SUBNET=/" "$env_file"
+        else
+            sed -i "s/^NETWORK_SUBNET=/MEDIA_NETWORK_SUBNET=/" "$env_file"
+        fi
+    fi
+
     # Update network subnet configurations
     while IFS= read -r network_line; do
         local network_name=$(echo "$network_line" | cut -d'=' -f1)
         local network_value=$(echo "$network_line" | cut -d'=' -f2)
-        
+
         if grep -q "^$network_name=" "$env_file"; then
             if [[ "$OSTYPE" == "darwin"* ]]; then
-                sed -i '' "s/^$network_name=.*/$network_name=$network_value/" "$env_file"
+                sed -i '' "s|^$network_name=.*|$network_name=$network_value|" "$env_file"
             else
-                sed -i "s/^$network_name=.*/$network_name=$network_value/" "$env_file"
+                sed -i "s|^$network_name=.*|$network_name=$network_value|" "$env_file"
             fi
         else
             echo "$network_name=$network_value" >> "$env_file"
@@ -325,88 +334,8 @@ create_env_file() {
     log_success "Created .env with container prefix: $container_prefix"
 }
 
-# Update docker-compose.yml with new container prefix and network subnets
-update_compose_file() {
-    local worktree_path="$1"
-    local worktree_name="$2"
-    local network_config="$3"
-    
-    log_step "Updating docker-compose.yml container names and network subnets"
-    
-    local compose_file="$worktree_path/docker-compose.yml"
-    local container_prefix="$worktree_name-"
-    local container_name_pattern="\${CONTAINER_PREFIX:-$container_prefix}"
-    
-    # Services to update
-    local services=("vpn" "flaresolverr" "qbittorrent" "plex" "sonarr" "radarr" "nginx-proxy" "web-ui" "prowlarr")
-    
-    # Update container names
-    for service in "${services[@]}"; do
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' "/^  $service:/,/^  [a-z]/ s/container_name: .*/container_name: $container_name_pattern$service/" "$compose_file"
-        else
-            sed -i "/^  $service:/,/^  [a-z]/ s/container_name: .*/container_name: $container_name_pattern$service/" "$compose_file"
-        fi
-    done
-    
-    # Update hardcoded container references (e.g., network_mode: "container:vpn")
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        sed -i '' "s/container:vpn/container:${container_prefix}vpn/g" "$compose_file"
-    else
-        sed -i "s/container:vpn/container:${container_prefix}vpn/g" "$compose_file"
-    fi
-    
-    # Extract network values from network_config
-    local media_subnet vpn_subnet vpn_ip
-    while IFS= read -r network_line; do
-        local network_name=$(echo "$network_line" | cut -d'=' -f1)
-        local network_value=$(echo "$network_line" | cut -d'=' -f2)
-        
-        case "$network_name" in
-            "NETWORK_SUBNET")
-                media_subnet="$network_value"
-                ;;
-            "VPN_NETWORK_SUBNET")
-                vpn_subnet="$network_value"
-                ;;
-            "VPN_IP_ADDRESS")
-                vpn_ip="$network_value"
-                ;;
-        esac
-    done <<< "$network_config"
-    
-    # Update media network subnet in docker-compose.yml (first occurrence)
-    if [[ -n "$media_subnet" ]]; then
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' "s|- subnet: \${NETWORK_SUBNET:-172\.27\.0\.0/16}|- subnet: $media_subnet|" "$compose_file"
-            sed -i '' "0,/- subnet: [0-9]*\.[0-9]*\.0\.0\/16/s//- subnet: $media_subnet/" "$compose_file"
-        else
-            sed -i "s|- subnet: \${NETWORK_SUBNET:-172\.27\.0\.0/16}|- subnet: $media_subnet|" "$compose_file"
-            sed -i "0,/- subnet: [0-9]*\.[0-9]*\.0\.0\/16/s//- subnet: $media_subnet/" "$compose_file"
-        fi
-    fi
-    
-    # Update VPN network subnet in docker-compose.yml (remaining occurrences)
-    if [[ -n "$vpn_subnet" ]]; then
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' "s|- subnet: [0-9]*\.[0-9]*\.0\.0/16|- subnet: $vpn_subnet|g" "$compose_file"
-        else
-            sed -i "s|- subnet: [0-9]*\.[0-9]*\.0\.0/16|- subnet: $vpn_subnet|g" "$compose_file"
-        fi
-    fi
-    
-    # Update VPN IP address in docker-compose.yml
-    if [[ -n "$vpn_ip" ]]; then
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' "s|ipv4_address: [0-9]*\.[0-9]*\.0\.2|ipv4_address: $vpn_ip|" "$compose_file"
-        else
-            sed -i "s|ipv4_address: [0-9]*\.[0-9]*\.0\.2|ipv4_address: $vpn_ip|" "$compose_file"
-        fi
-    fi
-    
-    log_success "Updated container names with prefix: $container_prefix"
-    log_success "Updated network subnets: MEDIA=$media_subnet, VPN=$vpn_subnet"
-}
+# This function has been removed - docker-compose.yml should not be modified.
+# The .env file with CONTAINER_PREFIX handles container naming via environment variables.
 
 # Show summary of created environment
 show_summary() {
@@ -524,13 +453,6 @@ main() {
         exit 1
     }
     
-    # Update docker-compose.yml
-    update_compose_file "$worktree_path" "$worktree_name" "$network_config" || {
-        log_error "Failed to update docker-compose.yml"
-        log_warning "Cleaning up worktree..."
-        git worktree remove "$worktree_path" --force 2>/dev/null || true
-        exit 1
-    }
     
     # Show summary
     show_summary "$worktree_path" "$worktree_name" "$port_config" "$network_config"
