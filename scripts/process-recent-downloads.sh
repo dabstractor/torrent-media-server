@@ -5,10 +5,16 @@
 
 set -e
 
+# Load environment variables from .env file
+if [ -f ".env" ]; then
+    # Parse .env file and export variables, ignoring comments and empty lines
+    export $(grep -v '^#' .env | grep -v '^$' | xargs)
+fi
+
 # Configuration
-WEB_UI_PORT=${WEB_UI_PORT:-8787}
+WEB_UI_PORT=${WEB_UI_PORT}
 BASE_URL="http://localhost:${WEB_UI_PORT}"
-DOWNLOADS_DIR="./data/downloads"
+DOWNLOADS_DIR="${DOWNLOADS_ROOT:-./data/downloads}"
 
 # Colors for output
 RED='\033[0;31m'

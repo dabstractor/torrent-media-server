@@ -1,4 +1,32 @@
-# Torrent Management Web UI Architecture
+# Torrent Management System Architecture
+
+## Container Network Isolation
+
+### VPN-Isolated Containers (Maximum Security)
+- **qBittorrent**: Routes ALL traffic through VPN container via `network_mode: "container:vpn"`
+- No direct internet access - prevents IP leaks during torrenting
+- Accessed via nginx proxy at port 18080
+
+### Direct Internet Access (Supporting Services)
+- **FlareSolverr**: Direct internet access for CloudFlare bypass (port 18191)
+- **Prowlarr**: Direct internet access for indexer communication (port 9696)
+- **Sonarr/Radarr**: Direct internet access for metadata/notifications
+- **Plex**: Host networking for discovery and direct play (port 32400)
+- **Web-UI**: Central dashboard with direct access (port 18787)
+
+### Critical Security Rules
+- **qBittorrent ONLY** requires VPN isolation to prevent IP leaks
+- **NO SOCKS5 proxy** for supporting containers (causes timeouts)
+- **Prowlarr database**: Ensure `proxyenabled=False` to prevent FlareSolverr timeouts
+- **FlareSolverr**: Must bypass all proxies for CloudFlare handling
+
+### Network Bridges
+- **media_network** (172.27.0.0/16): Supporting services communication
+- **vpn_network** (172.29.0.0/16): VPN container isolation
+
+---
+
+# Web UI Architecture
 
 ## Tech Stack Recommendations
 

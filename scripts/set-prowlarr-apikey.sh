@@ -3,8 +3,14 @@
 # Script to set fixed Prowlarr API key
 # This should be run after Prowlarr container is healthy
 
-CONFIG_FILE="./config/prowlarr/config.xml"
-DESIRED_API_KEY="2feed2fe71424878bb7945ead222f367"
+# Load environment variables from .env file
+if [ -f ".env" ]; then
+    # Parse .env file and export variables, ignoring comments and empty lines
+    export $(grep -v '^#' .env | grep -v '^$' | xargs)
+fi
+
+CONFIG_FILE="${CONFIG_ROOT:-./config}/prowlarr/config.xml"
+DESIRED_API_KEY="${PROWLARR_API_KEY:-2feed2fe71424878bb7945ead222f367}"
 
 if [ -f "$CONFIG_FILE" ]; then
     # Get current API key

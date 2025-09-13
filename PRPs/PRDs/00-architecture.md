@@ -9,10 +9,15 @@
 │                                                                 │
 │  ┌──────────────┐    ┌──────────────┐    ┌─────────────────┐   │
 │  │   Web UI     │    │   Prowlarr   │    │   qBittorrent   │   │
-│  │   (React)    │────│  (Indexer)   │    │   + VPN         │   │
-│  │   :3000      │    │   :9696      │    │   :8080         │   │
+│  │   (React)    │────│  (Indexer)   │    │   [VPN-ONLY]    │   │
+│  │   :18787     │    │   :9696      │    │   via nginx     │   │
 │  └──────────────┘    └──────────────┘    └─────────────────┘   │
 │         │                    │                     │           │
+│         │             ┌──────────────┐             │           │
+│         │             │ FlareSolverr │             │           │
+│         │             │ (CF Bypass)  │             │           │
+│         │             │   :18191     │             │           │
+│         │             └──────────────┘             │           │
 │         │                    │                     │           │
 │         └────────────────────┼─────────────────────┘           │
 │                              │                                 │
@@ -30,23 +35,29 @@
 1. **Prowlarr** (Indexer Service)
    - Port: 9696
    - Purpose: Aggregate public torrent indexers
-   - Dependencies: None (starts first)
+   - Dependencies: FlareSolverr for CloudFlare bypass
    - Health Check: HTTP GET /api/v1/system/status
 
-2. **qBittorrent + VPN** (Download Service)
-   - Port: 8080
-   - Purpose: VPN-protected torrent client
-   - Dependencies: None (independent startup)
-   - Health Check: HTTP GET /api/v2/app/version
-   - Network: Isolated VPN container
+2. **FlareSolverr** (CloudFlare Bypass)
+   - Port: 18191
+   - Purpose: Bypass CloudFlare protection for indexers
+   - Dependencies: None (direct internet access required)
+   - Health Check: HTTP GET /
 
-3. **Web UI** (Frontend Service)
-   - Port: 3000
+3. **qBittorrent + VPN** (Download Service)
+   - Port: 18080 (via nginx proxy)
+   - Purpose: VPN-protected torrent client
+   - Dependencies: VPN container
+   - Health Check: HTTP GET / (proxied)
+   - Network: Isolated VPN container ONLY
+
+4. **Web UI** (Frontend Service)
+   - Port: 18787
    - Purpose: Mobile-first search and management interface
-   - Dependencies: prowlarr, qbittorrent
+   - Dependencies: prowlarr, qbittorrent, flaresolverr
    - Health Check: HTTP GET /health
 
-4. **Plex** (Media Server)
+5. **Plex** (Media Server)
    - Port: 32400
    - Purpose: Stream completed downloads
    - Dependencies: None (reads from shared volume)
@@ -85,10 +96,24 @@ Plex → Scans Volume → Updates Library → Available for Streaming
 
 ## Network Architecture
 
-- **Default Bridge Network**: All services communicate internally
-- **Host Network Access**: Web UI accessible at host:3000, Plex at host:32400
-- **VPN Isolation**: qBittorrent traffic routed through VPN container
-- **API Communication**: Internal HTTP APIs between services
+### Container Network Isolation
+- **VPN-Isolated**: qBittorrent routes ALL traffic through VPN container via `network_mode: "container:vpn"`
+- **Direct Internet Access**: FlareSolverr, Prowlarr, Sonarr, Radarr require direct internet access
+- **Host Network**: Plex uses host networking for discovery and direct play
+- **Bridge Networks**:
+  - `media_network` (172.27.0.0/16): Supporting services communication
+  - `vpn_network` (172.29.0.0/16): VPN container isolation
+
+### Critical Security Rules
+- **qBittorrent ONLY** requires VPN isolation to prevent IP leaks
+- **NO SOCKS5 proxy** for supporting containers (causes timeouts)
+- **Prowlarr database**: Ensure `proxyenabled=False` to prevent FlareSolverr timeouts
+- **FlareSolverr**: Must bypass all proxies for CloudFlare handling
+
+### Access Patterns
+- **Direct Ports**: Plex (32400), Prowlarr (9696), Sonarr (8989), Radarr (7878)
+- **Proxied Access**: qBittorrent via nginx (18080)
+- **Web UI Dashboard**: Central interface (18787)
 
 ## Security Considerations
 
