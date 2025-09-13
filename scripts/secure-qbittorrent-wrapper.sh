@@ -161,9 +161,9 @@ SECURITY_PREFS='{
     "upnp": false,
     "encryption": 2,
     "anonymous_mode": true,
-    "proxy_type": 2,
-    "proxy_ip": "172.28.0.2",
-    "proxy_port": 1080,
+    "proxy_type": 0,
+    "proxy_ip": "",
+    "proxy_port": 8080,
     "proxy_torrents_only": false
 }'
 
