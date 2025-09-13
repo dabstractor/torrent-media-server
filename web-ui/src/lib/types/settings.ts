@@ -329,7 +329,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     token: '',
     url: '',
     movieLibrary: 'Movies',
-    tvLibrary: 'TV Shows',
+    tvLibrary: 'tv',
     mediaPath: '/media',           // NEW: Base path for organized media
     autoUpdate: true,
     refreshDelay: 10,

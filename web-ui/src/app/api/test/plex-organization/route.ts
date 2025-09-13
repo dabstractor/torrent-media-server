@@ -20,7 +20,11 @@ export async function POST(request: NextRequest) {
     }
     
     // Create a synthetic download and file for testing
-    const filePath = path.join('/downloads', testFile)
+    // In production, use mounted path; in development use relative path
+    const downloadDir = process.env.NODE_ENV === 'production'
+      ? '/downloads'
+      : (process.env.DOWNLOADS_ROOT || './data/downloads')
+    const filePath = path.join(downloadDir, testFile)
     
     console.log(`🔍 Looking for file: ${filePath}`)
     
@@ -29,7 +33,7 @@ export async function POST(request: NextRequest) {
       const stats = await fs.stat(filePath)
       
       const completedFile: CompletedFile = {
-        path: `downloads/${testFile}`,
+        path: path.relative('./', filePath),
         name: testFile,
         size: stats.size,
         modifiedDate: stats.mtime,
@@ -59,15 +63,7 @@ export async function POST(request: NextRequest) {
       
       // Initialize PlexIntegrationManager with test settings
       const settings = await settingsService.getSettings()
-      const testPlexSettings = {
-        ...settings.plex,
-        enabled: true,
-        organizationEnabled: true,  // Force enable for testing
-        mediaPath: '/media',
-        movieLibrary: 'Movies',
-        tvLibrary: 'TV Shows'
-      }
-      await plexIntegrationManager.initialize(testPlexSettings)
+      await plexIntegrationManager.initialize(settings.plex.token)
       
       // Trigger the Plex organization process
       const success = await plexIntegrationManager.onDownloadComplete(download, [completedFile])
@@ -76,7 +72,8 @@ export async function POST(request: NextRequest) {
         success: true,
         data: {
           file: testFile,
-          organizationSuccess: success,
+          libraryRefreshSuccess: success,
+          note: 'Organization is now handled by Sonarr/Radarr, this test only triggers library refresh',
           fileInfo: {
             size: `${Math.round(stats.size / 1024 / 1024)}MB`,
             mediaType: completedFile.mediaType,
@@ -105,7 +102,10 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   try {
     // List available test files
-    const downloadDir = '/downloads'
+    // In production, use mounted path; in development use relative path
+    const downloadDir = process.env.NODE_ENV === 'production'
+      ? '/downloads'
+      : (process.env.DOWNLOADS_ROOT || './data/downloads')
     const files = await fs.readdir(downloadDir)
     
     const mediaFiles = files.filter(file => 
@@ -118,7 +118,8 @@ export async function GET() {
       success: true,
       data: {
         availableFiles: mediaFiles,
-        usage: 'POST /api/test/plex-organization?file=filename.mkv'
+        usage: 'POST /api/test/plex-organization?file=filename.mkv',
+        note: 'Tests only Plex library refresh - file organization is handled by Sonarr/Radarr'
       }
     })
     

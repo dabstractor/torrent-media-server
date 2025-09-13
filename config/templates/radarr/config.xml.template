@@ -10,7 +10,7 @@
   <InstanceName>${RADARR_INSTANCE_NAME:-Radarr}</InstanceName>
   <Theme>auto</Theme>
   <ApiKey>${RADARR_API_KEY}</ApiKey>
-  <AuthenticationMethod>${AUTH_METHOD:-None}</AuthenticationMethod>
+  <AuthenticationMethod>${AUTH_METHOD:-Forms}</AuthenticationMethod>
   <AuthenticationRequired>${AUTH_REQUIRED:-DisabledForLocalAddresses}</AuthenticationRequired>
   <Branch>master</Branch>
   <LaunchBrowser>True</LaunchBrowser>

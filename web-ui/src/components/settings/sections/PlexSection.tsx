@@ -246,7 +246,7 @@ const PlexSection: React.FC<PlexSectionProps> = ({
               type="text"
               value={settings.plex.tvLibrary}
               onChange={(e) => handleLibraryChange('tvLibrary', e.target.value)}
-              placeholder="TV Shows"
+              placeholder="tv"
               disabled={isLoading}
               className={`
                 input w-full
@@ -394,7 +394,7 @@ const PlexSection: React.FC<PlexSectionProps> = ({
               </p>
             ) : (
               <p className="text-xs text-gray-600 dark:text-gray-400">
-                Base directory where organized media will be stored (Movies/, TV Shows/ subdirectories will be created)
+                Base directory where organized media will be stored (movies/, tv/ subdirectories will be created)
               </p>
             )}
           </div>

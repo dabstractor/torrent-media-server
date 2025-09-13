@@ -31,10 +31,10 @@ export class SettingsDatabase {
   private getConflictsStmt!: Database.Statement;
 
   constructor(dbPath?: string) {
-    const defaultPath = path.join(
-      process.cwd(),
-      "data/settings.db"
-    );
+    // Use mounted volumes path for persistence, fallback to temp location
+    const defaultPath = process.env.NODE_ENV === 'production'
+      ? '/downloads/.web-ui/settings.db'  // Use mounted downloads volume
+      : path.join(process.cwd(), "data/settings.db");
     const actualPath = dbPath || defaultPath;
 
     // Ensure directory exists
