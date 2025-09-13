@@ -107,8 +107,7 @@ config/qbittorrent/rss/
 
 # Media and download data (too large for Git)
 data/
-downloads/
-media/
+./media/
 
 # Backup files
 *.bundle

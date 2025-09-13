@@ -1,127 +1,47 @@
 import { NextRequest } from 'next/server'
 
-const TRANSMISSION_URL = process.env.TRANSMISSION_URL || 'http://transmission:9091'
-const TRANSMISSION_USER = process.env.TRANSMISSION_USERNAME || 'admin'
-const TRANSMISSION_PASSWORD = process.env.TRANSMISSION_PASSWORD || 'adminpass123'
-
-let cachedSessionId: string | null = null
-let sessionTimestamp = 0
-const SESSION_TIMEOUT = 30 * 60 * 1000 // 30 minutes
-
-async function makeTransmissionRequest(method: string, args: any = {}) {
-  const now = Date.now()
-  
-  // Check if we need to refresh session
-  if (!cachedSessionId || (now - sessionTimestamp) > SESSION_TIMEOUT) {
-    cachedSessionId = null
-  }
-
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json'
-  }
-
-  // Add authentication
-  if (TRANSMISSION_USER && TRANSMISSION_PASSWORD) {
-    headers['Authorization'] = `Basic ${btoa(`${TRANSMISSION_USER}:${TRANSMISSION_PASSWORD}`)}`
-  }
-
-  // Add session ID if we have one
-  if (cachedSessionId) {
-    headers['X-Transmission-Session-Id'] = cachedSessionId
-  }
-
-  const requestBody = {
-    method,
-    arguments: args
-  }
-
-  const response = await fetch(`${TRANSMISSION_URL}/transmission/rpc`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(requestBody),
-    signal: AbortSignal.timeout(30000)
-  })
-
-  // Handle session ID requirement
-  if (response.status === 409) {
-    const newSessionId = response.headers.get('X-Transmission-Session-Id')
-    if (newSessionId) {
-      cachedSessionId = newSessionId
-      sessionTimestamp = now
-      
-      // Retry with new session ID
-      const retryHeaders = {
-        ...headers,
-        'X-Transmission-Session-Id': newSessionId
-      }
-
-      const retryResponse = await fetch(`${TRANSMISSION_URL}/transmission/rpc`, {
-        method: 'POST',
-        headers: retryHeaders,
-        body: JSON.stringify(requestBody),
-        signal: AbortSignal.timeout(30000)
-      })
-
-      if (!retryResponse.ok) {
-        throw new Error(`Transmission RPC error: ${retryResponse.statusText}`)
-      }
-
-      return await retryResponse.json()
-    } else {
-      throw new Error('Failed to obtain session ID from Transmission')
-    }
-  }
-
-  if (!response.ok) {
-    throw new Error(`Transmission RPC error: ${response.statusText}`)
-  }
-
-  return await response.json()
-}
+const QBITTORRENT_URL = process.env.QBITTORRENT_URL || 'http://qbittorrent:8080'
 
 export async function GET() {
   try {
-    // Get torrent list from Transmission
-    const response = await makeTransmissionRequest('torrent-get', {
-      fields: [
-        'id', 'name', 'totalSize', 'percentDone', 'status',
-        'rateDownload', 'rateUpload', 'eta', 'downloadedEver',
-        'uploadedEver', 'uploadRatio', 'addedDate', 'doneDate',
-        'seedRatioLimit', 'peersSendingToUs', 'peersGettingFromUs'
-      ]
+    // Use qBittorrent API directly through the configured URL
+    const response = await fetch(`${QBITTORRENT_URL}/api/v2/torrents/info`, {
+      signal: AbortSignal.timeout(30000)
     })
 
-    if (!response.arguments || !response.arguments.torrents) {
-      return Response.json({ error: 'Invalid response from Transmission' }, { status: 503 })
+    if (!response.ok) {
+      throw new Error(`qBittorrent proxy error: ${response.statusText}`)
     }
 
-    const torrents = response.arguments.torrents
+    const torrents = await response.json()
 
-    // Transform Transmission data to expected format
+    // Transform qBittorrent data to expected format
     const downloads = torrents.map((torrent: any) => ({
-      hash: torrent.id.toString(), // Transmission uses numeric IDs
+      hash: torrent.hash,
       name: torrent.name,
-      size: torrent.totalSize,
-      progress: torrent.percentDone,
-      state: getStateString(torrent.status),
-      eta: torrent.eta > 0 ? torrent.eta : -1,
-      downloaded: torrent.downloadedEver,
-      uploaded: torrent.uploadedEver,
-      priority: 'normal', // Transmission doesn't have global priority like qBittorrent
-      seeds: torrent.peersSendingToUs || 0,
-      peers: torrent.peersGettingFromUs || 0,
-      ratio: torrent.uploadRatio,
-      addedOn: torrent.addedDate,
-      completedOn: torrent.doneDate,
+      size: torrent.size,
+      progress: torrent.progress,
+      state: mapQBittorrentState(torrent.state),
+      eta: torrent.eta > 8640000 ? -1 : torrent.eta, // qBittorrent returns 8640000 for infinity
+      downloadSpeed: torrent.dlspeed || 0,
+      uploadSpeed: torrent.upspeed || 0,
+      downloaded: torrent.downloaded,
+      uploaded: torrent.uploaded,
+      priority: torrent.priority || 1,
+      seeds: torrent.num_seeds || 0,
+      peers: torrent.num_leechs || 0,
+      ratio: torrent.ratio || 0,
+      addedOn: torrent.added_on,
+      completedOn: torrent.completion_on,
+      category: torrent.category || undefined,
     }))
 
-    // Calculate stats based on Transmission status codes
+    // Calculate stats in the format the frontend expects
     const stats = {
-      downloading: downloads.filter((d: any) => d.state === 'downloading').length,
-      seeding: downloads.filter((d: any) => d.state === 'seeding').length,
-      paused: downloads.filter((d: any) => d.state === 'stopped').length,
-      completed: downloads.filter((d: any) => d.progress >= 1).length,
-      total: downloads.length,
+      totalSize: downloads.reduce((sum: number, d: any) => sum + (d.size || 0), 0),
+      downloadSpeed: downloads.reduce((sum: number, d: any) => sum + (d.downloadSpeed || 0), 0),
+      uploadSpeed: downloads.reduce((sum: number, d: any) => sum + (d.uploadSpeed || 0), 0),
+      activeCount: downloads.filter((d: any) => d.state === 'downloading' || d.state === 'seeding').length,
     }
 
     return Response.json({
@@ -137,22 +57,30 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const { magnet, category, priority } = await request.json()
-    
+
     if (!magnet) {
       return Response.json({ error: 'Missing magnet URL' }, { status: 400 })
     }
-    
-    // Add torrent to Transmission
-    const response = await makeTransmissionRequest('torrent-add', {
-      filename: magnet,
-      // Transmission doesn't have categories like qBittorrent, but we can use labels
-      labels: category ? [category] : undefined
+
+    // Use the internal qBittorrent proxy route
+    const formData = new URLSearchParams()
+    formData.append('urls', magnet)
+    if (category) formData.append('category', category)
+    formData.append('paused', 'false')
+
+    const response = await fetch(`${QBITTORRENT_URL}/api/v2/torrents/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData,
+      signal: AbortSignal.timeout(30000)
     })
 
-    if (response.result !== 'success') {
-      return Response.json({ error: 'Failed to add torrent' }, { status: 503 })
+    if (!response.ok) {
+      throw new Error(`qBittorrent proxy error: ${response.statusText}`)
     }
-    
+
     return Response.json({ success: true })
   } catch (error) {
     console.error('Error adding torrent:', error)
@@ -160,16 +88,30 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Helper function to convert Transmission status codes to readable strings
-function getStateString(status: number): string {
-  switch (status) {
-    case 0: return 'stopped'
-    case 1: return 'checking'
-    case 2: return 'checking'  
-    case 3: return 'downloading'
-    case 4: return 'downloading'
-    case 5: return 'seeding'
-    case 6: return 'seeding'
-    default: return 'unknown'
+// Helper function to convert qBittorrent state strings to our expected format
+function mapQBittorrentState(qbState: string): string {
+  switch (qbState) {
+    case 'downloading':
+    case 'stalledDL':
+    case 'metaDL':
+      return 'downloading'
+    case 'uploading':
+    case 'stalledUP':
+      return 'seeding'
+    case 'pausedDL':
+    case 'pausedUP':
+      return 'paused'
+    case 'queuedDL':
+    case 'queuedUP':
+      return 'queued'
+    case 'error':
+    case 'missingFiles':
+      return 'error'
+    case 'checkingDL':
+    case 'checkingUP':
+    case 'checkingResumeData':
+      return 'checking'
+    default:
+      return 'unknown'
   }
 }

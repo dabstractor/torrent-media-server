@@ -9,3 +9,4 @@
 **CRITICAL**: qBittorrent MUST remain fully VPN-isolated via `network_mode: "container:vpn"` to prevent IP leaks during torrenting. Other services do not require this. Any network configuration changes risk exposing the real IP address.
 
 Ensure `proxyenabled=False` in Prowlarr database to prevent timeouts.
+Ensure `proxyenabled=False` in Prowlarr database to prevent timeouts.
