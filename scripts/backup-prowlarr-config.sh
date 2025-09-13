@@ -1,9 +1,16 @@
 #!/bin/bash
 
 # Script to backup complete Prowlarr configuration
-BACKUP_DIR="./config/templates/prowlarr"
-DB_FILE="./config/prowlarr/prowlarr.db"
-CONFIG_FILE="./config/prowlarr/config.xml"
+
+# Load environment variables from .env file
+if [ -f ".env" ]; then
+    # Parse .env file and export variables, ignoring comments and empty lines
+    export $(grep -v '^#' .env | grep -v '^$' | xargs)
+fi
+
+BACKUP_DIR="${CONFIG_ROOT:-./config}/templates/prowlarr"
+DB_FILE="${CONFIG_ROOT:-./config}/prowlarr/prowlarr.db"
+CONFIG_FILE="${CONFIG_ROOT:-./config}/prowlarr/config.xml"
 
 echo "Backing up complete Prowlarr configuration..."
 

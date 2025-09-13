@@ -1,9 +1,16 @@
 #!/bin/bash
 
 # Script to restore complete Prowlarr configuration with fixed API key
-TEMPLATE_DIR="./config/templates/prowlarr"
-CONFIG_DIR="./config/prowlarr"
-DESIRED_API_KEY="2feed2fe71424878bb7945ead222f367"
+
+# Load environment variables from .env file
+if [ -f ".env" ]; then
+    # Parse .env file and export variables, ignoring comments and empty lines
+    export $(grep -v '^#' .env | grep -v '^$' | xargs)
+fi
+
+TEMPLATE_DIR="${CONFIG_ROOT:-./config}/templates/prowlarr"
+CONFIG_DIR="${CONFIG_ROOT:-./config}/prowlarr"
+DESIRED_API_KEY="${PROWLARR_API_KEY:-2feed2fe71424878bb7945ead222f367}"
 
 echo "Restoring complete Prowlarr configuration..."
 

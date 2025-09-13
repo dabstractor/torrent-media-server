@@ -5,9 +5,15 @@
 
 set -e
 
+# Load environment variables from .env file
+if [ -f ".env" ]; then
+    # Parse .env file and export variables, ignoring comments and empty lines
+    export $(grep -v '^#' .env | grep -v '^$' | xargs)
+fi
+
 # Configuration
 PLEX_PORT=${PLEX_EXTERNAL_PORT:-32400}
-PLEX_TOKEN=$(grep -o 'PlexOnlineToken="[^"]*"' ./config/plex/Library/Application\ Support/Plex\ Media\ Server/Preferences.xml | cut -d'"' -f2)
+PLEX_TOKEN=$(grep -o 'PlexOnlineToken="[^"]*"' "${CONFIG_ROOT:-./config}"/plex/Library/Application\ Support/Plex\ Media\ Server/Preferences.xml | cut -d'"' -f2)
 BASE_URL="http://localhost:${PLEX_PORT}"
 
 # Colors for output

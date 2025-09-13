@@ -8,7 +8,6 @@ networks:
         - subnet: ${MEDIA_NETWORK_SUBNET:-172.27.0.0/16}
   vpn_network:
     driver: bridge
-    internal: true  # RESTORE: Complete isolation - no direct internet access
     ipam:
       config:
         - subnet: ${VPN_NETWORK_SUBNET:-172.29.0.0/16}
@@ -27,7 +26,7 @@ services:
   # To use PIA instead: docker-compose -f docker-compose.yml -f docker-compose.pia.yml up -d
   vpn:
     image: caomingjun/warp:latest
-    container_name: ${CONTAINER_PREFIX:-torrents-}vpn
+    container_name: ${CONTAINER_PREFIX}vpn
     env_file:
       - .env
     cap_add:
@@ -61,10 +60,9 @@ services:
   # FlareSolverr - CloudFlare bypass proxy for Prowlarr indexers
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
-    container_name: ${CONTAINER_PREFIX:-torrents-}flaresolverr
+    container_name: ${CONTAINER_PREFIX}flaresolverr
     networks:
       - media_network
-      - vpn_network
     ports:
       - "${FLARESOLVERR_PORT:-18191}:8191"
     depends_on:
@@ -85,8 +83,8 @@ services:
   # qBittorrent - Torrent download client running through VPN
   qbittorrent:
     image: qbittorrentofficial/qbittorrent-nox:latest
-    container_name: ${CONTAINER_PREFIX:-torrents-}qbittorrent
-    network_mode: "container:${CONTAINER_PREFIX:-torrents-}vpn"  # Share VPN container's network stack (most secure isolation)
+    container_name: ${CONTAINER_PREFIX}qbittorrent
+    network_mode: "container:${CONTAINER_PREFIX}vpn"  # Share VPN container's network stack (most secure isolation)
     # Port removed - access through Web-UI proxy only
     depends_on:
       vpn:
@@ -116,7 +114,7 @@ services:
   # Plex Media Server
   plex:
     image: ghcr.io/linuxserver/plex
-    container_name: ${CONTAINER_PREFIX:-torrents-}plex
+    container_name: ${CONTAINER_PREFIX}plex
     network_mode: host  # Required for discovery and direct play
     environment:
       - PUID=1000
@@ -141,9 +139,9 @@ services:
   # Sonarr - TV Series Management
   sonarr:
     image: ghcr.io/linuxserver/sonarr
-    container_name: ${CONTAINER_PREFIX:-torrents-}sonarr
+    container_name: ${CONTAINER_PREFIX}sonarr
     networks:
-      - vpn_network
+      - media_network
     depends_on:
       prowlarr:
         condition: service_healthy
@@ -168,9 +166,9 @@ services:
   # Radarr - Movie Management
   radarr:
     image: ghcr.io/linuxserver/radarr
-    container_name: ${CONTAINER_PREFIX:-torrents-}radarr
+    container_name: ${CONTAINER_PREFIX}radarr
     networks:
-      - vpn_network
+      - media_network
     depends_on:
       prowlarr:
         condition: service_healthy
@@ -195,7 +193,7 @@ services:
   # Nginx Reverse Proxy - Secure bridge for accessing isolated services
   nginx-proxy:
     image: nginx:alpine
-    container_name: ${CONTAINER_PREFIX:-torrents-}nginx-proxy
+    container_name: ${CONTAINER_PREFIX}nginx-proxy
     networks:
       - media_network
       - vpn_network
@@ -220,7 +218,7 @@ services:
   # Web UI - React frontend for managing the entire stack
   web-ui:
     build: ./web-ui
-    container_name: ${CONTAINER_PREFIX:-torrents-}web-ui
+    container_name: ${CONTAINER_PREFIX}web-ui
     networks:
       - media_network
       - vpn_network
@@ -264,12 +262,12 @@ services:
   # Prowlarr - Torrent Indexer
   prowlarr:
     image: ghcr.io/linuxserver/prowlarr
-    container_name: ${CONTAINER_PREFIX:-torrents-}prowlarr
+    container_name: ${CONTAINER_PREFIX}prowlarr
     entrypoint: ["/scripts/prowlarr-entrypoint.sh"]
     networks:
       - media_network
-      - vpn_network
-    # Port removed - access through Web-UI proxy only  
+    ports:
+      - "${PROWLARR_PORT:-9696}:9696"
     depends_on:
       vpn:
         condition: service_healthy
