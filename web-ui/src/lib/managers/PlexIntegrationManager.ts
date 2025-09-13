@@ -1,23 +1,15 @@
 import { plexService } from '@/lib/services/PlexService';
-import { plexOrganizationService } from '@/lib/services/PlexOrganizationService';
 import type { Download } from '@/lib/types';
 import type { CompletedFile } from '@/lib/types/file-history';
 import type { AppSettings } from '@/lib/types/settings';
-import { getMediaType } from '@/lib/api/files';
 
 class PlexIntegrationManager {
   private isInitialized: boolean = false;
 
-  // Initialize the manager with Plex token and settings
-  async initialize(plexToken: string, plexSettings?: AppSettings['plex']): Promise<boolean> {
+  // Initialize the manager with Plex token
+  async initialize(plexToken: string): Promise<boolean> {
     try {
       plexService.setToken(plexToken);
-      
-      // Initialize organization service if settings provided
-      if (plexSettings) {
-        plexOrganizationService.initialize(plexSettings);
-      }
-      
       this.isInitialized = true;
       return true;
     } catch (error) {
@@ -31,74 +23,97 @@ class PlexIntegrationManager {
     return this.isInitialized;
   }
 
-  // Handle download completion event
+  // Handle download completion event - trigger library refresh only (Sonarr/Radarr handle organization)
   async onDownloadComplete(download: Download, completedFiles: CompletedFile[]): Promise<boolean> {
     console.log(`🔍 TRACE: PlexIntegrationManager.onDownloadComplete called`);
     console.log(`🔍 TRACE: Download:`, JSON.stringify(download, null, 2));
-    console.log(`🔍 TRACE: Completed files:`, JSON.stringify(completedFiles, null, 2));
-    
+
     if (!this.isReady()) {
       console.error(`❌ TRACE: PlexIntegrationManager not initialized`);
       return false;
     }
 
-    console.log(`✅ TRACE: PlexIntegrationManager is ready, proceeding...`);
+    console.log(`✅ TRACE: PlexIntegrationManager is ready, proceeding with library refresh...`);
 
     try {
-      // INTEGRATION: Call PlexOrganizationService.organizeForPlex
-      console.log(`🔍 TRACE: Processing ${completedFiles.length} files for Plex organization`);
-      
-      // Organize files for Plex (symlinks for compatible, conversion for incompatible)
-      console.log(`🔍 TRACE: Calling plexOrganizationService.organizeForPlex...`);
-      const organizationResults = await plexOrganizationService.organizeForPlex(completedFiles);
-      console.log(`🔍 TRACE: Organization results:`, JSON.stringify(organizationResults, null, 2));
-      
-      const successfulOrganizations = organizationResults.filter(r => r.success).length;
-      
-      console.log(`✅ TRACE: Plex organization completed: ${successfulOrganizations}/${organizationResults.length} files processed successfully`);
+      // Determine the correct library type based on download category
+      const libraryType = this.determineLibraryTypeFromCategory(download.category);
+      console.log(`🔍 TRACE: Determined library type from category '${download.category}':`, libraryType);
 
-      // Determine the correct library type based on downloaded files
-      const libraryType = this.determineLibraryType(completedFiles);
-      console.log(`🔍 TRACE: Determined library type:`, libraryType);
-      
       if (!libraryType) {
-        console.warn('❌ TRACE: Could not determine library type for download:', download.name);
-        // Still return true if organization was successful, even if we can't refresh
-        return successfulOrganizations > 0;
+        // Fallback to file-based detection
+        const fileBasedType = this.determineLibraryType(completedFiles);
+        console.log(`🔍 TRACE: Fallback library type from files:`, fileBasedType);
+
+        if (!fileBasedType) {
+          console.warn('❌ TRACE: Could not determine library type for download:', download.name);
+          return false;
+        }
+
+        return await this.refreshLibrary(fileBasedType);
       }
 
-      // PRESERVE: Existing library refresh functionality
+      return await this.refreshLibrary(libraryType);
+    } catch (error) {
+      console.error('Error handling download completion for Plex integration:', error);
+      return false;
+    }
+  }
+
+  // Refresh specific library type
+  private async refreshLibrary(libraryType: 'movie' | 'show' | 'music'): Promise<boolean> {
+    try {
       // Find the appropriate library
       console.log(`🔍 TRACE: Getting Plex libraries...`);
       const libraries = await plexService.getLibraries();
       console.log(`🔍 TRACE: Available libraries:`, JSON.stringify(libraries, null, 2));
-      
+
       const targetLibrary = libraries.find(lib => lib.type === libraryType);
       console.log(`🔍 TRACE: Target library:`, JSON.stringify(targetLibrary, null, 2));
-      
+
       if (!targetLibrary) {
         console.warn(`No ${libraryType} library found in Plex`);
-        // Still return true if organization was successful
-        return successfulOrganizations > 0;
+        return false;
       }
 
       // Trigger library refresh
       console.log(`🔍 TRACE: Attempting to refresh library ${targetLibrary.id} (${targetLibrary.title})...`);
       const refreshSuccess = await plexService.refreshLibrary(targetLibrary.id);
       console.log(`🔍 TRACE: Library refresh result:`, refreshSuccess);
-      
+
       if (refreshSuccess) {
         console.log(`✅ TRACE: Successfully triggered Plex library refresh for ${targetLibrary.title}`);
       } else {
         console.error(`❌ TRACE: Failed to trigger Plex library refresh for ${targetLibrary.title}`);
       }
-      
-      // Return true if either organization or refresh was successful
-      return successfulOrganizations > 0 || refreshSuccess;
+
+      return refreshSuccess;
     } catch (error) {
-      console.error('Error handling download completion for Plex integration:', error);
+      console.error('Error refreshing Plex library:', error);
       return false;
     }
+  }
+
+  // Determine library type from qBittorrent category (set by Sonarr/Radarr)
+  private determineLibraryTypeFromCategory(category?: string): 'movie' | 'show' | 'music' | null {
+    if (!category) return null;
+
+    const lowerCategory = category.toLowerCase();
+
+    // Common categories set by Sonarr/Radarr
+    if (lowerCategory.includes('tv') || lowerCategory.includes('show') || lowerCategory.includes('series')) {
+      return 'show';
+    }
+
+    if (lowerCategory.includes('movie') || lowerCategory.includes('film')) {
+      return 'movie';
+    }
+
+    if (lowerCategory.includes('music') || lowerCategory.includes('audio')) {
+      return 'music';
+    }
+
+    return null;
   }
 
   // Determine library type based on file types

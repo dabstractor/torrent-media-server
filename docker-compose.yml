@@ -140,11 +140,14 @@ services:
   sonarr:
     image: ghcr.io/linuxserver/sonarr
     container_name: ${CONTAINER_PREFIX}sonarr
+    entrypoint: ["/scripts/sonarr-entrypoint.sh"]
     networks:
       - media_network
     depends_on:
       prowlarr:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
       - PUID=1000
       - PGID=1000
@@ -152,6 +155,7 @@ services:
     volumes:
       - ./config/sonarr:/config
       - ./config/templates/sonarr:/templates:ro
+      - ./scripts:/scripts:ro
       - ${MEDIA_ROOT:-./data/media}/tv:/tv
       - ${DOWNLOADS_ROOT:-./data/downloads}:/downloads
     healthcheck:
@@ -167,11 +171,14 @@ services:
   radarr:
     image: ghcr.io/linuxserver/radarr
     container_name: ${CONTAINER_PREFIX}radarr
+    entrypoint: ["/scripts/radarr-entrypoint.sh"]
     networks:
       - media_network
     depends_on:
       prowlarr:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
       - PUID=1000
       - PGID=1000
@@ -179,6 +186,7 @@ services:
     volumes:
       - ./config/radarr:/config
       - ./config/templates/radarr:/templates:ro
+      - ./scripts:/scripts:ro
       - ${MEDIA_ROOT:-./data/media}/movies:/movies
       - ${DOWNLOADS_ROOT:-./data/downloads}:/downloads
     healthcheck:
@@ -200,12 +208,18 @@ services:
     ports:
       - "${NGINX_QBITTORRENT_PORT:-18080}:8080"   # qBittorrent proxy
       - "${NGINX_PROWLARR_PORT:-19696}:9696"   # Prowlarr proxy
+      - "${NGINX_SONARR_PORT:-18989}:8989"   # Sonarr proxy
+      - "${NGINX_RADARR_PORT:-17878}:7878"   # Radarr proxy
     volumes:
       - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       qbittorrent:
         condition: service_healthy
       prowlarr:
+        condition: service_healthy
+      sonarr:
+        condition: service_healthy
+      radarr:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080"]

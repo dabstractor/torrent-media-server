@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       token: 'oKYPzYJozUhkMV2_oFNs',
       url: 'http://localhost:32400',
       movieLibrary: 'Movies',
-      tvLibrary: 'TV Shows',
+      tvLibrary: 'tv',
       mediaPath: '/media',
       autoUpdate: true,
       refreshDelay: 10,
