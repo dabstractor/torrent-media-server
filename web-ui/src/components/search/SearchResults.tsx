@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import TorrentCard from './TorrentCard'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
 import ErrorMessage from '@/components/common/ErrorMessage'
+import PaginationControls from './PaginationControls'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import type { TorrentResult } from '@/lib/types'
 
 interface SearchResultsProps {
@@ -11,8 +13,11 @@ interface SearchResultsProps {
   isLoading: boolean
   error: string | null
   onAddTorrent: (torrent: TorrentResult) => Promise<boolean>
-  onLoadMore?: () => void
-  hasMore?: boolean
+  currentPage?: number
+  totalPages?: number
+  pageSize?: number
+  onPageSizeChange?: (size: number) => void
+  onPageChange?: (page: number) => void
 }
 
 const SearchResults: React.FC<SearchResultsProps> = ({
@@ -22,17 +27,13 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   isLoading,
   error,
   onAddTorrent,
-  onLoadMore,
-  hasMore = false
+  currentPage = 1,
+  totalPages = 1,
+  pageSize = DEFAULT_PAGE_SIZE,
+  onPageSizeChange,
+  onPageChange
 }) => {
   const [addingTorrents, setAddingTorrents] = useState<Set<string>>(new Set())
-
-  // Monitoring functionality removed with TMDB removal
-  const canMonitorSeries = false // TODO: Implement series monitoring without TMDB dependency
-  const isMonitoringSeries = false
-  const seriesError: string | null = null
-  const clearSeriesError = () => {}
-
   const handleAddTorrent = async (torrent: TorrentResult) => {
     setAddingTorrents(prev => new Set([...prev, torrent.id]))
 
@@ -52,9 +53,6 @@ const SearchResults: React.FC<SearchResultsProps> = ({
       })
     }
   }
-
-
-
   // Show loading state
   if (isLoading && results.length === 0) {
     return (
@@ -94,56 +92,39 @@ const SearchResults: React.FC<SearchResultsProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Monitoring errors */}
-
-      {seriesError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-start">
-            <div className="flex-shrink-0">
-              <span className="text-red-400">❌</span>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-red-800">Series Monitoring Error</p>
-              <p className="mt-1 text-sm text-red-700">{seriesError}</p>
-              <button
-                onClick={clearSeriesError}
-                className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Top pagination controls */}
+      {(onPageSizeChange || onPageChange) && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          onPageSizeChange={onPageSizeChange || (() => {})}
+          onPageChange={onPageChange || (() => {})}
+          total={total}
+          currentCount={results.length}
+        />
       )}
 
-      {/* Results summary */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="text-sm text-gray-600">
-          Showing <span className="font-medium">{results.length}</span> of{' '}
-          <span className="font-medium">{total}</span> results
-          {indexers.length > 0 && (
-            <>
-              {' from '}
-              <span className="font-medium">{indexers.length}</span>{' '}
-              indexer{indexers.length !== 1 ? 's' : ''}
-            </>
-          )}
-        </div>
-
-        {/* Indexer list */}
-        {indexers.length > 0 && (
+      {/* Indexer list */}
+      {indexers.length > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            Results from{' '}
+            <span className="font-medium">{indexers.length}</span>{' '}
+            indexer{indexers.length !== 1 ? 's' : ''}
+          </div>
           <div className="flex flex-wrap gap-1">
             {indexers.map((indexer) => (
               <span
                 key={indexer}
-                className="inline-flex px-2 py-1 text-xs rounded-md bg-gray-100 text-gray-700"
+                className="inline-flex px-2 py-1 text-xs rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
               >
                 {indexer}
               </span>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Results grid */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
@@ -152,40 +133,22 @@ const SearchResults: React.FC<SearchResultsProps> = ({
             key={torrent.id}
             torrent={torrent}
             onAdd={handleAddTorrent}
-            onMonitorMovie={undefined}
-            onMonitorSeries={undefined}
             isAdding={addingTorrents.has(torrent.id)}
-            isMonitoring={isMonitoringSeries}
-            showMonitorOptions={canMonitorSeries}
           />
         ))}
       </div>
 
-      {/* Loading more indicator */}
-      {isLoading && results.length > 0 && (
-        <div className="flex justify-center py-8">
-          <LoadingSpinner />
-          <span className="ml-3 text-gray-600">Loading more results...</span>
-        </div>
-      )}
-
-      {/* Load more button */}
-      {!isLoading && hasMore && onLoadMore && (
-        <div className="flex justify-center py-6">
-          <button
-            onClick={onLoadMore}
-            className="btn btn-secondary min-h-[44px] px-8"
-          >
-            Load More Results
-          </button>
-        </div>
-      )}
-
-      {/* End of results indicator */}
-      {!isLoading && !hasMore && results.length > 0 && total > results.length && (
-        <div className="text-center py-6 text-sm text-gray-500">
-          End of results. Try refining your search to find more torrents.
-        </div>
+      {/* Bottom pagination controls */}
+      {(onPageSizeChange || onPageChange) && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          onPageSizeChange={onPageSizeChange || (() => {})}
+          onPageChange={onPageChange || (() => {})}
+          total={total}
+          currentCount={results.length}
+        />
       )}
     </div>
   )
