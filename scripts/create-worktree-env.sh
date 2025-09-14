@@ -107,6 +107,16 @@ get_env_ports() {
     uniq || true
 }
 
+# Get network subnets from existing .env files in sibling directories
+get_env_subnets() {
+    find "$PARENT_DIR" -maxdepth 2 -name ".env" -type f 2>/dev/null | \
+    xargs grep -h "NETWORK_SUBNET=" 2>/dev/null | \
+    grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+' | \
+    cut -d'.' -f3 | \
+    sort -n | \
+    uniq || true
+}
+
 # Generate a random port that's not in use
 generate_random_port() {
     local used_ports="$1"
@@ -446,7 +456,12 @@ main() {
     # Gather all used network subnets
     log_info "Checking for network subnet conflicts..."
     local used_subnets
-    used_subnets=$(get_used_subnets)
+    used_subnets=$(
+        {
+            get_used_subnets
+            get_env_subnets
+        } | sort -n | uniq
+    )
     
     local subnet_count
     subnet_count=$(echo "$used_subnets" | wc -l)
