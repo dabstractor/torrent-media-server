@@ -193,10 +193,13 @@ generate_port_configuration() {
     # Port names in order
     local port_names=(
         "VPN_BITTORRENT_PORT"
-        "FLARESOLVERR_PORT" 
+        "FLARESOLVERR_PORT"
         "PLEX_PORT"
         "NGINX_QBITTORRENT_PORT"
         "NGINX_PROWLARR_PORT"
+        "NGINX_SONARR_PORT"
+        "NGINX_RADARR_PORT"
+        "PROWLARR_PORT"
         "WEB_UI_PORT"
         "PIA_WIREGUARD_PORT"
         "PIA_FLARESOLVERR_PORT"
@@ -315,7 +318,7 @@ create_env_file() {
         fi
     fi
 
-    # Update network subnet configurations
+    # Update network subnet configurations - these are required for docker-compose
     while IFS= read -r network_line; do
         local network_name=$(echo "$network_line" | cut -d'=' -f1)
         local network_value=$(echo "$network_line" | cut -d'=' -f2)
@@ -330,6 +333,22 @@ create_env_file() {
             echo "$network_name=$network_value" >> "$env_file"
         fi
     done <<< "$network_config"
+
+    # Ensure all required network variables exist - these are mandatory for docker-compose
+    local required_network_vars=("MEDIA_NETWORK_SUBNET" "VPN_NETWORK_SUBNET" "VPN_IP_ADDRESS")
+    for var_name in "${required_network_vars[@]}"; do
+        if ! grep -q "^$var_name=" "$env_file"; then
+            log_warning "Required network variable $var_name missing, adding with generated value"
+            # Extract the generated value from network_config if available
+            local found_value=$(echo "$network_config" | grep "^$var_name=" | head -1 | cut -d'=' -f2)
+            if [[ -n "$found_value" ]]; then
+                echo "$var_name=$found_value" >> "$env_file"
+            else
+                log_error "Could not generate required network variable: $var_name"
+                return 1
+            fi
+        fi
+    done
     
     log_success "Created .env with container prefix: $container_prefix"
 }
