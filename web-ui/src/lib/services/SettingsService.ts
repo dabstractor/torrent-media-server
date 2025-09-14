@@ -29,9 +29,23 @@ class SettingsService {
       // Ensure database is ready and load initial cache
       await this.refreshCache();
       this.isInitialized = true;
+      console.log('SettingsService initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize SettingsService:', error);
-      throw new Error('Settings service initialization failed');
+      console.error('Failed to initialize SettingsService with database:', error);
+
+      // Fallback: Initialize with in-memory defaults if database fails
+      try {
+        console.log('Falling back to in-memory settings cache');
+        this.cache = {
+          settings: { ...DEFAULT_SETTINGS },
+          timestamp: Date.now(),
+        };
+        this.isInitialized = true;
+        console.log('SettingsService initialized with fallback mode');
+      } catch (fallbackError) {
+        console.error('Even fallback initialization failed:', fallbackError);
+        throw new Error('Settings service initialization failed completely');
+      }
     }
   }
 

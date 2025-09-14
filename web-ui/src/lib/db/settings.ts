@@ -31,24 +31,65 @@ export class SettingsDatabase {
   private getConflictsStmt!: Database.Statement;
 
   constructor(dbPath?: string) {
-    // Use mounted volumes path for persistence, fallback to temp location
-    const defaultPath = process.env.NODE_ENV === 'production'
-      ? '/downloads/.web-ui/settings.db'  // Use mounted downloads volume
-      : path.join(process.cwd(), "data/settings.db");
-    const actualPath = dbPath || defaultPath;
+    // Use a writable location that works in both dev and production
+    let defaultPath: string;
 
-    // Ensure directory exists
-    const dir = path.dirname(actualPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    if (dbPath) {
+      defaultPath = dbPath;
+    } else if (process.env.NODE_ENV === 'production') {
+      // Try multiple writable locations in order of preference
+      const candidates = [
+        '/tmp/web-ui/settings.db',      // Temporary but always writable
+        path.join(process.cwd(), '.next/cache/settings.db'), // Next.js cache dir
+        '/app/data/settings.db',        // App directory
+      ];
+
+      defaultPath = candidates[0]; // Default to tmp for guaranteed write access
+
+      // Try to use a more persistent location if possible
+      for (const candidate of candidates.slice(1)) {
+        try {
+          const dir = path.dirname(candidate);
+          fs.mkdirSync(dir, { recursive: true });
+          // Test write access
+          fs.writeFileSync(path.join(dir, '.write-test'), 'test');
+          fs.unlinkSync(path.join(dir, '.write-test'));
+          defaultPath = candidate;
+          break;
+        } catch (error) {
+          console.warn(`Cannot write to ${candidate}, trying next option:`, error);
+        }
+      }
+    } else {
+      // Development mode
+      defaultPath = path.join(process.cwd(), "data/settings.db");
     }
 
-    this.db = new Database(actualPath);
-    // Enable foreign key constraints
-    this.db.pragma('foreign_keys = ON');
-    this.initializeTables();
-    this.prepareStatements();
-    this.ensureDefaultSettings();
+    console.log(`Settings database path: ${defaultPath}`);
+
+    // Ensure directory exists
+    const dir = path.dirname(defaultPath);
+    try {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    } catch (error) {
+      console.error(`Failed to create database directory ${dir}:`, error);
+      throw new Error(`Cannot create database directory: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+
+    try {
+      this.db = new Database(defaultPath);
+      // Enable foreign key constraints
+      this.db.pragma('foreign_keys = ON');
+      this.initializeTables();
+      this.prepareStatements();
+      this.ensureDefaultSettings();
+      console.log('Settings database initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize settings database:', error);
+      throw new Error(`Database initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   private initializeTables(): void {
@@ -517,10 +558,22 @@ export class SettingsDatabase {
 
 // Singleton instance
 let dbInstance: SettingsDatabase | null = null;
+let dbInstanceError: Error | null = null;
 
 export function getSettingsDB(): SettingsDatabase {
-  if (!dbInstance) {
-    dbInstance = new SettingsDatabase();
+  if (!dbInstance && !dbInstanceError) {
+    try {
+      dbInstance = new SettingsDatabase();
+    } catch (error) {
+      dbInstanceError = error instanceof Error ? error : new Error('Database initialization failed');
+      console.error('Failed to create settings database instance:', dbInstanceError);
+      throw dbInstanceError;
+    }
   }
-  return dbInstance;
+
+  if (dbInstanceError) {
+    throw dbInstanceError;
+  }
+
+  return dbInstance!;
 }

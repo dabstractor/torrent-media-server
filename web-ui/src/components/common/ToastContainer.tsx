@@ -8,16 +8,16 @@ const ToastContainer: React.FC = () => {
   if (notifications.length === 0) return null
 
   return (
-    <div 
+    <div
       aria-live="polite"
       aria-atomic="true"
-      className="fixed inset-0 z-[9999] pointer-events-none"
+      className="fixed top-4 right-4 z-[9999] pointer-events-none max-w-md"
     >
-      <div className="absolute top-4 right-4 space-y-4">
+      <div className="space-y-4">
         {notifications.map((notification) => (
-          <ToastNotification 
-            key={notification.id} 
-            notification={notification} 
+          <ToastNotification
+            key={notification.id}
+            notification={notification}
           />
         ))}
       </div>

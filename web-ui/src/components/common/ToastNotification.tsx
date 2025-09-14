@@ -10,13 +10,20 @@ const ToastNotification: React.FC<ToastNotificationProps> = ({ notification }) =
   
   useEffect(() => {
     if (!notification.persistent) {
+      const duration = notification.duration || 5000;
+      console.log(`Setting auto-dismiss timer for notification ${notification.id} (${duration}ms)`);
+
       const timer = setTimeout(() => {
-        removeNotification(notification.id)
-      }, notification.duration || 5000)
-      
-      return () => clearTimeout(timer)
+        console.log(`Auto-dismissing notification ${notification.id}`);
+        removeNotification(notification.id);
+      }, duration);
+
+      return () => {
+        console.log(`Clearing timer for notification ${notification.id}`);
+        clearTimeout(timer);
+      };
     }
-  }, [notification, removeNotification])
+  }, [notification.id, notification.persistent, notification.duration, removeNotification])
 
   const getIcon = () => {
     switch (notification.type) {
@@ -95,26 +102,32 @@ const ToastNotification: React.FC<ToastNotificationProps> = ({ notification }) =
   }
 
   return (
-    <div className={`max-w-sm w-full rounded-lg shadow-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden border ${getBackgroundColor()}`}>
+    <div className={`min-w-80 max-w-md w-full rounded-lg shadow-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden border ${getBackgroundColor()}`}>
       <div className="p-4">
         <div className="flex items-start">
           <div className="flex-shrink-0">
             {getIcon()}
           </div>
-          <div className="ml-3 w-0 flex-1 pt-0.5">
-            <p className={`text-sm font-medium ${getTitleColor()}`}>
+          <div className="ml-3 flex-1 pt-0.5 min-w-0">
+            <p className={`text-sm font-medium ${getTitleColor()} break-words`}>
               {notification.title}
             </p>
             {notification.message && (
-              <p className={`mt-1 text-sm ${getMessageColor()}`}>
+              <p className={`mt-1 text-sm ${getMessageColor()} break-words`}>
                 {notification.message}
               </p>
             )}
           </div>
           <div className="ml-4 flex-shrink-0 flex">
             <button
-              className="rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none"
-              onClick={() => removeNotification(notification.id)}
+              type="button"
+              className="rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors p-1"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                removeNotification(notification.id);
+              }}
+              aria-label="Close notification"
             >
               <span className="sr-only">Close</span>
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
