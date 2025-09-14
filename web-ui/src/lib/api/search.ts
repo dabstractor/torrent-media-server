@@ -74,9 +74,7 @@ export async function searchTorrents(params: SearchRequest): Promise<ApiResponse
   try {
     // Build query parameters for Prowlarr API
     const queryParams = new URLSearchParams({
-      query: params.query,
-      offset: params.offset?.toString() || '0',
-      limit: params.limit?.toString() || '50'
+      query: params.query
     })
 
     if (params.categories && params.categories.length > 0) {
@@ -88,10 +86,10 @@ export async function searchTorrents(params: SearchRequest): Promise<ApiResponse
     }
 
     // Determine base URL for server-side calls
-    const baseUrl = typeof window === 'undefined' 
+    const baseUrl = typeof window === 'undefined'
       ? process.env.NEXTAUTH_URL || 'http://localhost:3000'
       : ''
-    
+
     // Call Prowlarr directly via proxy route for authentication and proper headers
     const response = await fetch(`${baseUrl}/api/prowlarr/search?${queryParams}`, {
       method: 'GET',
@@ -107,30 +105,24 @@ export async function searchTorrents(params: SearchRequest): Promise<ApiResponse
     }
 
     const rawData = await response.json()
-    
+
     // Handle both response formats: array directly or structured object
-    let prowlarrData: ProwlarrSearchResponse;
+    let allResults: ProwlarrSearchResult[];
     if (Array.isArray(rawData)) {
-      // Prowlarr returned just an array (likely empty or when no indexers configured)
-      prowlarrData = {
-        results: rawData,
-        offset: params.offset || 0,
-        limit: params.limit || 50,
-        total: rawData.length
-      }
+      allResults = rawData;
     } else {
       // Prowlarr returned structured response
-      prowlarrData = rawData as ProwlarrSearchResponse
+      allResults = (rawData as ProwlarrSearchResponse).results || [];
     }
-    
-    // Normalize results to match our TorrentResult interface
-    const normalizedResults: TorrentResult[] = prowlarrData.results.map(normalizeTorrentResult)
-    
+
+    // Normalize all results to match our TorrentResult interface
+    const allNormalizedResults: TorrentResult[] = allResults.map(normalizeTorrentResult)
+
     // Apply client-side sorting if specified
     if (params.sortBy) {
-      normalizedResults.sort((a, b) => {
+      allNormalizedResults.sort((a, b) => {
         let aValue: number, bValue: number
-        
+
         switch (params.sortBy) {
           case 'seeders':
             aValue = a.seeders
@@ -147,18 +139,18 @@ export async function searchTorrents(params: SearchRequest): Promise<ApiResponse
           default:
             return 0 // relevance - keep original order
         }
-        
+
         const result = params.sortOrder === 'desc' ? bValue - aValue : aValue - bValue
         return result
       })
     }
 
-    // Get unique indexers from results
-    const indexers = Array.from(new Set(normalizedResults.map(result => result.indexer)))
+    // Get unique indexers from all results
+    const indexers = Array.from(new Set(allNormalizedResults.map(result => result.indexer)))
 
     const searchResponse: SearchResponse = {
-      results: normalizedResults,
-      total: prowlarrData.total,
+      results: allNormalizedResults,
+      total: allNormalizedResults.length,
       indexers
     }
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import type { SearchRequest } from '@/lib/api/search'
 import { useSearchURL } from '@/hooks/use-search-url'
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from '@/constants/pagination'
 
 interface SearchFormProps {
   onSearch: (params: SearchRequest) => void
@@ -13,6 +14,7 @@ interface FormData {
   minSeeders: number
   sortBy: 'seeders' | 'size' | 'date' | 'relevance'
   sortOrder: 'asc' | 'desc'
+  limit: number
 }
 
 // Common torrent categories based on standard category IDs
@@ -24,10 +26,7 @@ const CATEGORIES = [
   { id: '7000', label: 'Books' }
 ]
 
-const SearchForm: React.FC<SearchFormProps> = ({
-  onSearch,
-  isLoading = false
-}) => {
+const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading = false }) => {
   // Use URL state for form data synchronization
   const { searchState, updateURL, isInitialized } = useSearchURL()
   
@@ -37,7 +36,8 @@ const SearchForm: React.FC<SearchFormProps> = ({
     categories: [],
     minSeeders: 0,
     sortBy: 'seeders',
-    sortOrder: 'desc'
+    sortOrder: 'desc',
+    limit: DEFAULT_PAGE_SIZE
   })
 
   // Sync form data with URL state when it changes
@@ -48,30 +48,28 @@ const SearchForm: React.FC<SearchFormProps> = ({
         categories: searchState.categories || [],
         minSeeders: searchState.minSeeders || 0,
         sortBy: searchState.sortBy || 'seeders',
-        sortOrder: searchState.sortOrder || 'desc'
+        sortOrder: searchState.sortOrder || 'desc',
+        limit: searchState.limit || DEFAULT_PAGE_SIZE
       })
     }
   }, [searchState, isInitialized])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!formData.query.trim()) {
       return
     }
-
-    const searchParams: SearchRequest = {
+    // Call parent's search handler which will update URL and trigger search
+    onSearch({
       query: formData.query.trim(),
       categories: formData.categories.length > 0 ? formData.categories : undefined,
       minSeeders: formData.minSeeders > 0 ? formData.minSeeders : undefined,
       sortBy: formData.sortBy,
       sortOrder: formData.sortOrder,
-      limit: 50,
+      limit: formData.limit,
       offset: 0
-    }
-
-    // Update URL which will trigger search through the useSearch hook
-    updateURL(searchParams)
+    })
   }
 
   const handleInputChange = (field: keyof FormData, value: string | number | string[]) => {
@@ -85,14 +83,16 @@ const SearchForm: React.FC<SearchFormProps> = ({
     // For non-query fields, update URL immediately for instant filtering
     // For query field, only update on submit to avoid excessive API calls
     if (field !== 'query') {
-      const searchParams: Partial<SearchRequest> = {
+      const searchParams = {
         query: updatedData.query || undefined,
         categories: updatedData.categories.length > 0 ? updatedData.categories : undefined,
         minSeeders: updatedData.minSeeders > 0 ? updatedData.minSeeders : undefined,
         sortBy: updatedData.sortBy,
         sortOrder: updatedData.sortOrder,
+        limit: updatedData.limit,
+        page: 1 // Reset page when changing filters
       }
-      
+
       updateURL(searchParams)
     }
   }
@@ -106,12 +106,14 @@ const SearchForm: React.FC<SearchFormProps> = ({
       const updatedData = { ...prev, categories }
       
       // Update URL immediately for instant category filtering
-      const searchParams: Partial<SearchRequest> = {
+      const searchParams = {
         query: updatedData.query || undefined,
         categories: updatedData.categories.length > 0 ? updatedData.categories : undefined,
         minSeeders: updatedData.minSeeders > 0 ? updatedData.minSeeders : undefined,
         sortBy: updatedData.sortBy,
         sortOrder: updatedData.sortOrder,
+        limit: updatedData.limit,
+        page: 1 // Reset page when changing categories
       }
       
       updateURL(searchParams)
@@ -121,10 +123,8 @@ const SearchForm: React.FC<SearchFormProps> = ({
   }
 
   return (
-    <div className="space-y-4">
-      {/* Torrent search form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="flex flex-col sm:flex-row gap-4">
         {/* Main search input */}
         <div className="flex-1">
           <input
@@ -223,9 +223,28 @@ const SearchForm: React.FC<SearchFormProps> = ({
             <option value="asc">Low to High</option>
           </select>
         </div>
+
+        {/* Results per page */}
+        <div className="flex items-center gap-2">
+          <label htmlFor="limit" className="text-gray-700 dark:text-gray-300">
+            Results per page:
+          </label>
+          <select
+            id="limit"
+            value={formData.limit}
+            onChange={(e) => handleInputChange('limit', parseInt(e.target.value))}
+            className="input min-h-[36px] pr-8"
+            disabled={isLoading}
+          >
+            {PAGE_SIZE_OPTIONS.map((size) => (
+              <option key={size} value={size}>
+                {size}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
-        </form>
-    </div>
+    </form>
   )
 }
 
