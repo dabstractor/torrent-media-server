@@ -5,12 +5,12 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: ${MEDIA_NETWORK_SUBNET:-172.27.0.0/16}
+        - subnet: ${MEDIA_NETWORK_SUBNET}
   vpn_network:
     driver: bridge
     ipam:
       config:
-        - subnet: ${VPN_NETWORK_SUBNET:-172.29.0.0/16}
+        - subnet: ${VPN_NETWORK_SUBNET}
 
 # Logging configuration
 x-logging: &default-logging
@@ -42,7 +42,7 @@ services:
     networks:
       default:
       vpn_network:
-        ipv4_address: ${VPN_SERVICE_IP:-172.29.0.2}
+        ipv4_address: ${VPN_IP_ADDRESS}
     volumes:
       - ./setup-vpn-routing.sh:/usr/local/bin/setup-vpn-routing.sh:ro
     sysctls:
