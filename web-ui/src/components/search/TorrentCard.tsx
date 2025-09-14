@@ -4,17 +4,57 @@ import type { TorrentResult } from '@/lib/types'
 interface TorrentCardProps {
   torrent: TorrentResult
   onAdd: (torrent: TorrentResult) => void
+  onMonitorMovie?: (torrent: TorrentResult) => void
+  onMonitorSeries?: (torrent: TorrentResult) => void
   isAdding?: boolean
+  isMonitoring?: boolean
+  showMonitorOptions?: boolean
+  radarrAvailable?: boolean
+  sonarrAvailable?: boolean
 }
 
 const TorrentCard: React.FC<TorrentCardProps> = ({
   torrent,
   onAdd,
-  isAdding = false
+  onMonitorMovie,
+  onMonitorSeries,
+  isAdding = false,
+  isMonitoring = false,
+  showMonitorOptions = false,
+  radarrAvailable = false,
+  sonarrAvailable = false
 }) => {
   const handleAddClick = () => {
     onAdd(torrent)
   }
+
+  const handleMonitorMovie = () => {
+    if (onMonitorMovie) {
+      onMonitorMovie(torrent)
+    }
+  }
+
+  const handleMonitorSeries = () => {
+    if (onMonitorSeries) {
+      onMonitorSeries(torrent)
+    }
+  }
+
+  // Determine if this appears to be a movie or TV series based on title
+  const isMovie = !torrent.title.match(/S\d{2}E\d{2}|Season|Episode|\b\d{1,2}x\d{1,2}\b/i)
+  const isSeries = !isMovie
+
+  // Debug monitoring props
+  console.log('🎭 TorrentCard monitoring props:', {
+    title: torrent.title,
+    isMovie,
+    isSeries,
+    showMonitorOptions,
+    onMonitorMovie: !!onMonitorMovie,
+    onMonitorSeries: !!onMonitorSeries,
+    radarrAvailable,
+    sonarrAvailable
+  })
 
   const formatDate = (dateString: string) => {
     try {
@@ -106,13 +146,13 @@ const TorrentCard: React.FC<TorrentCardProps> = ({
         </div>
 
         {/* Action buttons */}
-        <div className="flex gap-2 pt-2 border-t border-gray-100">
+        <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
           {/* Download links */}
-          <div className="flex-1 flex gap-2">
+          <div className="flex gap-2">
             {torrent.magnetUrl && (
               <a
                 href={torrent.magnetUrl}
-                className="btn btn-secondary flex-1 min-h-[44px] text-xs"
+                className="btn btn-secondary flex-1 min-h-[40px] text-xs"
                 title="Open magnet link"
               >
                 🧲 Magnet
@@ -122,7 +162,7 @@ const TorrentCard: React.FC<TorrentCardProps> = ({
             {torrent.downloadUrl && (
               <a
                 href={torrent.downloadUrl}
-                className="btn btn-secondary flex-1 min-h-[44px] text-xs"
+                className="btn btn-secondary flex-1 min-h-[40px] text-xs"
                 title="Download torrent file"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -130,27 +170,78 @@ const TorrentCard: React.FC<TorrentCardProps> = ({
                 💾 .torrent
               </a>
             )}
+
+            {/* Add button */}
+            <button
+              onClick={handleAddClick}
+              disabled={isAdding || isMonitoring}
+              className="btn btn-primary min-h-[40px] px-4 text-sm"
+              title="Add to downloads"
+            >
+              {isAdding ? (
+                <>
+                  <span className="inline-block animate-spin">⏳</span>
+                  <span className="ml-1">Adding...</span>
+                </>
+              ) : (
+                <>
+                  <span>➕</span>
+                  <span className="ml-1">Add</span>
+                </>
+              )}
+            </button>
           </div>
 
-          {/* Add button */}
-          <button
-            onClick={handleAddClick}
-            disabled={isAdding}
-            className="btn btn-primary min-h-[44px] px-4 text-sm"
-            title="Add to downloads"
-          >
-            {isAdding ? (
-              <>
-                <span className="inline-block animate-spin">⏳</span>
-                <span className="ml-1">Adding...</span>
-              </>
-            ) : (
-              <>
-                <span>➕</span>
-                <span className="ml-1">Add</span>
-              </>
-            )}
-          </button>
+          {/* Monitoring buttons */}
+          {showMonitorOptions && (
+            <div className="flex gap-2">
+              {isMovie && onMonitorMovie && (
+                <button
+                  onClick={handleMonitorMovie}
+                  disabled={isMonitoring}
+                  className={`btn flex-1 min-h-[36px] text-xs ${
+                    radarrAvailable ? 'btn-outline' : 'btn-outline border-orange-300 text-orange-600'
+                  }`}
+                  title={radarrAvailable ? "Monitor movie with Radarr" : "Monitor movie with Radarr (service unavailable)"}
+                >
+                  {isMonitoring ? (
+                    <>
+                      <span className="inline-block animate-spin">⏳</span>
+                      <span className="ml-1">Monitoring...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>🎬</span>
+                      <span className="ml-1">Monitor Movie{!radarrAvailable ? ' ⚠️' : ''}</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              {isSeries && onMonitorSeries && (
+                <button
+                  onClick={handleMonitorSeries}
+                  disabled={isMonitoring}
+                  className={`btn flex-1 min-h-[36px] text-xs ${
+                    sonarrAvailable ? 'btn-outline' : 'btn-outline border-orange-300 text-orange-600'
+                  }`}
+                  title={sonarrAvailable ? "Monitor series with Sonarr" : "Monitor series with Sonarr (service unavailable)"}
+                >
+                  {isMonitoring ? (
+                    <>
+                      <span className="inline-block animate-spin">⏳</span>
+                      <span className="ml-1">Monitoring...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>📺</span>
+                      <span className="ml-1">Monitor Series{!sonarrAvailable ? ' ⚠️' : ''}</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

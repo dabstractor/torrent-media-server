@@ -3,6 +3,7 @@ import TorrentCard from './TorrentCard'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
 import ErrorMessage from '@/components/common/ErrorMessage'
 import PaginationControls from './PaginationControls'
+import { useMonitoring } from '@/hooks/use-monitoring'
 import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import type { TorrentResult } from '@/lib/types'
 
@@ -34,6 +35,32 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   onPageChange
 }) => {
   const [addingTorrents, setAddingTorrents] = useState<Set<string>>(new Set())
+
+  // Use monitoring hook for Radarr/Sonarr integration
+  const {
+    isMonitoringMovie,
+    isMonitoringSeries,
+    monitorMovie,
+    monitorSeries,
+    canMonitorMovies,
+    canMonitorSeries,
+    radarrAvailable,
+    sonarrAvailable,
+    movieError,
+    seriesError,
+    clearMovieError,
+    clearSeriesError
+  } = useMonitoring()
+
+  // Debug monitoring state
+  console.log('🎬 SearchResults monitoring state:', {
+    canMonitorMovies,
+    canMonitorSeries,
+    showMonitorOptions: canMonitorMovies || canMonitorSeries,
+    radarrAvailable,
+    sonarrAvailable
+  })
+
   const handleAddTorrent = async (torrent: TorrentResult) => {
     setAddingTorrents(prev => new Set([...prev, torrent.id]))
 
@@ -53,6 +80,97 @@ const SearchResults: React.FC<SearchResultsProps> = ({
       })
     }
   }
+
+  // Handler for monitoring movies - now works without TMDB, using direct title extraction
+  const handleMonitorMovie = async (torrent: TorrentResult) => {
+    // Clear any previous error
+    if (movieError) clearMovieError()
+
+    try {
+      // Extract basic movie info from torrent title
+      const yearMatch = torrent.title.match(/\((\d{4})\)/) || torrent.title.match(/(\d{4})/)
+      const year = yearMatch ? parseInt(yearMatch[1]) : undefined
+
+      // Clean the title for search
+      const cleanTitle = torrent.title
+        .replace(/\(\d{4}\)/g, '')
+        .replace(/\d{4}/g, '')
+        .replace(/\b(1080p|720p|480p|4k|uhd|bluray|webrip|webdl|dvdrip|hdtv|x264|x265|h264|h265)\b/gi, '')
+        .replace(/\b(mkv|mp4|avi)\b/gi, '')
+        .trim()
+
+      if (!cleanTitle) {
+        throw new Error('Could not extract movie title from torrent')
+      }
+
+      // Create a mock TMDBMovie object for the monitoring function
+      const movieData = {
+        id: 0, // Will need TMDB lookup in the API
+        title: cleanTitle,
+        release_date: year ? `${year}-01-01` : '',
+        overview: '',
+        poster_path: null,
+        backdrop_path: null,
+        vote_average: 0,
+        vote_count: 0,
+        genre_ids: [],
+        adult: false,
+        original_language: 'en',
+        original_title: cleanTitle,
+        popularity: 0,
+        video: false
+      }
+
+      // Monitor the movie - the API will handle TMDB lookup
+      const success = await monitorMovie(movieData)
+      if (success) {
+        console.log('Movie added to Radarr monitoring successfully')
+      }
+    } catch (error) {
+      console.error('Error monitoring movie:', error)
+    }
+  }
+
+  // Handler for monitoring series - directly monitor with extracted title/year
+  const handleMonitorSeries = async (torrent: TorrentResult) => {
+    // Clear any previous error
+    if (seriesError) clearSeriesError()
+
+    try {
+      // Extract basic series info from torrent title
+      const yearMatch = torrent.title.match(/\((\d{4})\)/) || torrent.title.match(/(\d{4})/)
+      const year = yearMatch ? yearMatch[1] : ''
+
+      // Clean the title for search
+      const cleanTitle = torrent.title
+        .replace(/S\d{2}E\d{2}/gi, '')
+        .replace(/\b\d{1,2}x\d{1,2}\b/gi, '')
+        .replace(/\((\d{4})\)/g, '')
+        .replace(/\d{4}/g, '')
+        .replace(/\b(1080p|720p|480p|4k|uhd|bluray|webrip|webdl|dvdrip|hdtv|x264|x265|h264|h265)\b/gi, '')
+        .replace(/\b(mkv|mp4|avi)\b/gi, '')
+        .trim()
+
+      if (!cleanTitle) {
+        throw new Error('Could not extract series title from torrent')
+      }
+
+      // Create a basic series object for monitoring
+      const seriesData = {
+        name: cleanTitle,
+        year: year
+      }
+
+      // Monitor the series directly with Sonarr
+      const success = await monitorSeries(seriesData)
+      if (success) {
+        console.log('Series added to Sonarr monitoring')
+      }
+    } catch (error) {
+      console.error('Error monitoring series:', error)
+    }
+  }
+
   // Show loading state
   if (isLoading && results.length === 0) {
     return (
@@ -92,6 +210,47 @@ const SearchResults: React.FC<SearchResultsProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Monitoring errors */}
+      {movieError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <span className="text-red-400">❌</span>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-red-800">Movie Monitoring Error</p>
+              <p className="mt-1 text-sm text-red-700">{movieError}</p>
+              <button
+                onClick={clearMovieError}
+                className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {seriesError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <span className="text-red-400">❌</span>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-red-800">Series Monitoring Error</p>
+              <p className="mt-1 text-sm text-red-700">{seriesError}</p>
+              <button
+                onClick={clearSeriesError}
+                className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top pagination controls */}
       {(onPageSizeChange || onPageChange) && (
         <PaginationControls
@@ -133,7 +292,13 @@ const SearchResults: React.FC<SearchResultsProps> = ({
             key={torrent.id}
             torrent={torrent}
             onAdd={handleAddTorrent}
+            onMonitorMovie={canMonitorMovies ? handleMonitorMovie : undefined}
+            onMonitorSeries={canMonitorSeries ? handleMonitorSeries : undefined}
             isAdding={addingTorrents.has(torrent.id)}
+            isMonitoring={isMonitoringMovie || isMonitoringSeries}
+            showMonitorOptions={canMonitorMovies || canMonitorSeries}
+            radarrAvailable={radarrAvailable}
+            sonarrAvailable={sonarrAvailable}
           />
         ))}
       </div>
