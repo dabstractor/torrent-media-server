@@ -7,14 +7,61 @@ interface DownloadCardProps {
   download: Download
   isSelected?: boolean
   onSelect: (hash: string, selected: boolean) => void
+  showSource?: boolean
 }
 
-const DownloadCard: React.FC<DownloadCardProps> = ({ 
-  download, 
+const DownloadCard: React.FC<DownloadCardProps> = ({
+  download,
   isSelected = false,
-  onSelect 
+  onSelect,
+  showSource = true
 }) => {
   const { pauseTorrent, resumeTorrent, deleteTorrent } = useTorrents()
+
+  // Detect download source based on available information
+  const detectDownloadSource = (): 'manual' | 'radarr' | 'sonarr' | 'unknown' => {
+    // Check category patterns that might indicate automation
+    if (download.category) {
+      const category = download.category.toLowerCase()
+      if (category.includes('radarr') || category.includes('movie-auto')) {
+        return 'radarr'
+      }
+      if (category.includes('sonarr') || category.includes('tv-auto') || category.includes('series-auto')) {
+        return 'sonarr'
+      }
+    }
+
+    // Check naming patterns that might indicate automation
+    const name = download.name.toLowerCase()
+    if (name.includes('radarr') || (name.match(/\(\d{4}\)/) && name.includes('1080p'))) {
+      // Likely automated movie download
+      return 'radarr'
+    }
+    if (name.match(/s\d{2}e\d{2}/i) && name.includes('1080p')) {
+      // Likely automated TV download
+      return 'sonarr'
+    }
+
+    // Default to manual for now (in a real implementation, this would come from the backend)
+    return 'manual'
+  }
+
+  const downloadSource = detectDownloadSource()
+
+  const getSourceInfo = (source: string) => {
+    switch (source) {
+      case 'radarr':
+        return { label: 'Radarr', icon: '🎬', color: 'bg-blue-100 text-blue-800' }
+      case 'sonarr':
+        return { label: 'Sonarr', icon: '📺', color: 'bg-green-100 text-green-800' }
+      case 'manual':
+        return { label: 'Manual', icon: '👤', color: 'bg-gray-100 text-gray-800' }
+      default:
+        return { label: 'Unknown', icon: '❓', color: 'bg-gray-100 text-gray-800' }
+    }
+  }
+
+  const sourceInfo = getSourceInfo(downloadSource)
 
   const handleSelect = () => {
     onSelect(download.hash, !isSelected)
@@ -136,14 +183,24 @@ const DownloadCard: React.FC<DownloadCardProps> = ({
               {download.name}
             </h3>
             
-            {/* State badge */}
-            <div className="mt-2">
+            {/* State badge and source */}
+            <div className="mt-2 flex flex-wrap gap-2 items-center">
               <span className={`inline-flex items-center px-2 py-1 text-xs rounded-full ${getStateColor(download.state)}`}>
                 <span className="mr-1">{getStateIcon(download.state)}</span>
                 {download.state.toUpperCase()}
               </span>
+
+              {/* Source badge */}
+              {showSource && (
+                <span className={`inline-flex items-center px-2 py-1 text-xs rounded-full ${sourceInfo.color}`}>
+                  <span className="mr-1">{sourceInfo.icon}</span>
+                  {sourceInfo.label}
+                </span>
+              )}
+
+              {/* Category badge */}
               {download.category && (
-                <span className="ml-2 inline-flex px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">
+                <span className="inline-flex px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">
                   {download.category}
                 </span>
               )}

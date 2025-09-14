@@ -4,17 +4,73 @@ import type { TorrentResult } from '@/lib/types'
 interface TorrentCardProps {
   torrent: TorrentResult
   onAdd: (torrent: TorrentResult) => void
+  onMonitorMovie?: (torrent: TorrentResult) => void
+  onMonitorSeries?: (torrent: TorrentResult) => void
   isAdding?: boolean
+  isMonitoring?: boolean
+  showMonitorOptions?: boolean
 }
 
 const TorrentCard: React.FC<TorrentCardProps> = ({
   torrent,
   onAdd,
-  isAdding = false
+  onMonitorMovie,
+  onMonitorSeries,
+  isAdding = false,
+  isMonitoring = false,
+  showMonitorOptions = true
 }) => {
   const handleAddClick = () => {
     onAdd(torrent)
   }
+
+  const handleMonitorMovieClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onMonitorMovie) {
+      onMonitorMovie(torrent)
+    }
+  }
+
+  const handleMonitorSeriesClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onMonitorSeries) {
+      onMonitorSeries(torrent)
+    }
+  }
+
+  // Content detection based on category and title
+  const detectContentType = (): 'movie' | 'tv' | 'other' => {
+    const category = torrent.category.toLowerCase()
+    const title = torrent.title.toLowerCase()
+
+    // Check category first
+    if (category.includes('movie') || category.includes('film')) {
+      return 'movie'
+    } else if (category.includes('tv') || category.includes('show') || category.includes('television')) {
+      return 'tv'
+    }
+
+    // Check title patterns for TV shows
+    if (title.match(/s\d{2}e\d{2}/i) || // S01E01 pattern
+        title.match(/\d{4}\.\d{2}\.\d{2}/i) || // Date pattern for daily shows
+        title.match(/season \d+/i) || // Season pattern
+        title.includes('complete series') ||
+        title.includes('all episodes')) {
+      return 'tv'
+    }
+
+    // Check title patterns for movies (year in parentheses or at end)
+    if (title.match(/\(\d{4}\)/i) || // (2023) pattern
+        title.match(/\d{4}$/) || // Year at end
+        title.match(/\d{4}\s+(1080p|720p|480p|4k|uhd|bluray|webrip|dvdrip)/i)) {
+      return 'movie'
+    }
+
+    return 'other'
+  }
+
+  const contentType = detectContentType()
+  const canMonitor = showMonitorOptions && contentType !== 'other'
 
   const formatDate = (dateString: string) => {
     try {
@@ -151,6 +207,49 @@ const TorrentCard: React.FC<TorrentCardProps> = ({
               </>
             )}
           </button>
+
+          {/* Optional monitoring buttons */}
+          {canMonitor && contentType === 'movie' && onMonitorMovie && (
+            <button
+              onClick={handleMonitorMovieClick}
+              disabled={isMonitoring}
+              className="btn btn-outline min-h-[44px] px-3 text-xs"
+              title="Monitor this movie with Radarr"
+            >
+              {isMonitoring ? (
+                <>
+                  <span className="inline-block animate-spin">⏳</span>
+                  <span className="ml-1">Adding...</span>
+                </>
+              ) : (
+                <>
+                  <span>🎬</span>
+                  <span className="ml-1">Monitor</span>
+                </>
+              )}
+            </button>
+          )}
+
+          {canMonitor && contentType === 'tv' && onMonitorSeries && (
+            <button
+              onClick={handleMonitorSeriesClick}
+              disabled={isMonitoring}
+              className="btn btn-outline min-h-[44px] px-3 text-xs"
+              title="Monitor this series with Sonarr"
+            >
+              {isMonitoring ? (
+                <>
+                  <span className="inline-block animate-spin">⏳</span>
+                  <span className="ml-1">Adding...</span>
+                </>
+              ) : (
+                <>
+                  <span>📺</span>
+                  <span className="ml-1">Monitor</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>

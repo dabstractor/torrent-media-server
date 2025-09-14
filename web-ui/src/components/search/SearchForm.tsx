@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from 'react'
 import type { SearchRequest } from '@/lib/api/search'
 import { useSearchURL } from '@/hooks/use-search-url'
+import MediaDiscoveryTab from './MediaDiscoveryTab'
+import type { TMDBMovie, TVDBSeries } from '@/lib/types/media'
+
+export type SearchMode = 'torrent' | 'media'
 
 interface SearchFormProps {
   onSearch: (params: SearchRequest) => void
+  onMovieSelect?: (movie: TMDBMovie) => void
+  onSeriesSelect?: (series: TVDBSeries) => void
   isLoading?: boolean
+  searchMode?: SearchMode
+  onSearchModeChange?: (mode: SearchMode) => void
 }
 
 interface FormData {
@@ -24,7 +32,14 @@ const CATEGORIES = [
   { id: '7000', label: 'Books' }
 ]
 
-const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading = false }) => {
+const SearchForm: React.FC<SearchFormProps> = ({
+  onSearch,
+  onMovieSelect,
+  onSeriesSelect,
+  isLoading = false,
+  searchMode = 'torrent',
+  onSearchModeChange
+}) => {
   // Use URL state for form data synchronization
   const { searchState, updateURL, isInitialized } = useSearchURL()
   
@@ -118,8 +133,35 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading = false }) 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-4">
+    <div className="space-y-4">
+      {/* Search mode toggle */}
+      <div className="flex gap-2 justify-center sm:justify-start">
+        <button
+          type="button"
+          onClick={() => onSearchModeChange?.('torrent')}
+          className={`btn min-h-[40px] px-4 ${
+            searchMode === 'torrent' ? 'btn-primary' : 'btn-secondary'
+          }`}
+          disabled={isLoading}
+        >
+          🔍 Torrent Search
+        </button>
+        <button
+          type="button"
+          onClick={() => onSearchModeChange?.('media')}
+          className={`btn min-h-[40px] px-4 ${
+            searchMode === 'media' ? 'btn-primary' : 'btn-secondary'
+          }`}
+          disabled={isLoading}
+        >
+          🎬 Media Discovery
+        </button>
+      </div>
+
+      {/* Torrent search form */}
+      {searchMode === 'torrent' && (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4">
         {/* Main search input */}
         <div className="flex-1">
           <input
@@ -219,7 +261,18 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading = false }) 
           </select>
         </div>
       </div>
-    </form>
+        </form>
+      )}
+
+      {/* Media discovery tab */}
+      {searchMode === 'media' && (
+        <MediaDiscoveryTab
+          onMovieSelect={onMovieSelect}
+          onSeriesSelect={onSeriesSelect}
+          isLoading={isLoading}
+        />
+      )}
+    </div>
   )
 }
 
