@@ -1,10 +1,15 @@
 #!/bin/bash
 # PIA WireGuard Configuration Setup Script
+#
+# Usage: Set PIA_USER and PIA_PASS environment variables before running:
+#   export PIA_USER="your_username"
+#   export PIA_PASS="your_password"
+#   ./setup-pia.sh
 
 set -e
 
-PIA_USER="REDACTED_USERNAME"
-PIA_PASS="REDACTED_PASSWORD"
+PIA_USER="${PIA_USER:-your_pia_username}"
+PIA_PASS="${PIA_PASS:-your_pia_password}"
 PIA_REGION="swiss"
 CONFIG_DIR="./config/vpn"
 
