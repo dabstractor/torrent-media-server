@@ -52,15 +52,6 @@ const SearchResults: React.FC<SearchResultsProps> = ({
     clearSeriesError
   } = useMonitoring()
 
-  // Debug monitoring state
-  console.log('🎬 SearchResults monitoring state:', {
-    canMonitorMovies,
-    canMonitorSeries,
-    showMonitorOptions: canMonitorMovies || canMonitorSeries,
-    radarrAvailable,
-    sonarrAvailable
-  })
-
   const handleAddTorrent = async (torrent: TorrentResult) => {
     setAddingTorrents(prev => new Set([...prev, torrent.id]))
 
@@ -257,8 +248,8 @@ const SearchResults: React.FC<SearchResultsProps> = ({
           currentPage={currentPage}
           totalPages={totalPages}
           pageSize={pageSize}
-          onPageSizeChange={onPageSizeChange || (() => {})}
-          onPageChange={onPageChange || (() => {})}
+          onPageSizeChange={onPageSizeChange || (() => { })}
+          onPageChange={onPageChange || (() => { })}
           total={total}
           currentCount={results.length}
         />
@@ -309,8 +300,8 @@ const SearchResults: React.FC<SearchResultsProps> = ({
           currentPage={currentPage}
           totalPages={totalPages}
           pageSize={pageSize}
-          onPageSizeChange={onPageSizeChange || (() => {})}
-          onPageChange={onPageChange || (() => {})}
+          onPageSizeChange={onPageSizeChange || (() => { })}
+          onPageChange={onPageChange || (() => { })}
           total={total}
           currentCount={results.length}
         />

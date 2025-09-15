@@ -44,18 +44,6 @@ const TorrentCard: React.FC<TorrentCardProps> = ({
   const isMovie = !torrent.title.match(/S\d{2}E\d{2}|Season|Episode|\b\d{1,2}x\d{1,2}\b/i)
   const isSeries = !isMovie
 
-  // Debug monitoring props
-  console.log('🎭 TorrentCard monitoring props:', {
-    title: torrent.title,
-    isMovie,
-    isSeries,
-    showMonitorOptions,
-    onMonitorMovie: !!onMonitorMovie,
-    onMonitorSeries: !!onMonitorSeries,
-    radarrAvailable,
-    sonarrAvailable
-  })
-
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString)
@@ -199,9 +187,8 @@ const TorrentCard: React.FC<TorrentCardProps> = ({
                 <button
                   onClick={handleMonitorMovie}
                   disabled={isMonitoring}
-                  className={`btn flex-1 min-h-[36px] text-xs ${
-                    radarrAvailable ? 'btn-outline' : 'btn-outline border-orange-300 text-orange-600'
-                  }`}
+                  className={`btn flex-1 min-h-[36px] text-xs ${radarrAvailable ? 'btn-outline' : 'btn-outline border-orange-300 text-orange-600'
+                    }`}
                   title={radarrAvailable ? "Monitor movie with Radarr" : "Monitor movie with Radarr (service unavailable)"}
                 >
                   {isMonitoring ? (
@@ -222,9 +209,8 @@ const TorrentCard: React.FC<TorrentCardProps> = ({
                 <button
                   onClick={handleMonitorSeries}
                   disabled={isMonitoring}
-                  className={`btn flex-1 min-h-[36px] text-xs ${
-                    sonarrAvailable ? 'btn-outline' : 'btn-outline border-orange-300 text-orange-600'
-                  }`}
+                  className={`btn flex-1 min-h-[36px] text-xs ${sonarrAvailable ? 'btn-outline' : 'btn-outline border-orange-300 text-orange-600'
+                    }`}
                   title={sonarrAvailable ? "Monitor series with Sonarr" : "Monitor series with Sonarr (service unavailable)"}
                 >
                   {isMonitoring ? (

@@ -47,15 +47,12 @@ export function useMonitoring() {
         fetch('/api/monitor/series').catch(() => ({ ok: false }))
       ])
 
-      const radarrData = radarrResponse.ok ? await radarrResponse.json() : { configured: false, available: false }
-      const sonarrData = sonarrResponse.ok ? await sonarrResponse.json() : { configured: false, available: false }
+      const radarrJson = radarrResponse.ok ? await radarrResponse.json() : { success: false, data: { configured: false, available: false } }
+      const sonarrJson = sonarrResponse.ok ? await sonarrResponse.json() : { success: false, data: { configured: false, available: false } }
 
-      console.log('🔍 Monitoring service check:', {
-        radarr: radarrData,
-        sonarr: sonarrData,
-        canMonitorMovies: radarrData.configured,
-        canMonitorSeries: sonarrData.configured
-      })
+      // Extract data from the API response format
+      const radarrData = radarrJson.success ? radarrJson.data : { configured: false, available: false }
+      const sonarrData = sonarrJson.success ? sonarrJson.data : { configured: false, available: false }
 
       setState(prev => ({
         ...prev,
