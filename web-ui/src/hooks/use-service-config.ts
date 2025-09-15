@@ -14,10 +14,13 @@ interface EnvConfig {
   SONARR_URL?: string
   RADARR_URL?: string
   API_BASE_URL?: string
+  WEB_UI_PORT?: string
 }
 
 const mapEnvToServices = (envConfig: EnvConfig): ServiceConfig[] => {
   const services: ServiceConfig[] = []
+  const webUiPort = envConfig.WEB_UI_PORT
+  const healthBaseUrl = `http://localhost:${webUiPort}/api/health`
 
   // qBittorrent - CRITICAL: Uses VPN-isolated network via nginx proxy
   if (envConfig.QBITTORRENT_URL) {
@@ -27,7 +30,7 @@ const mapEnvToServices = (envConfig: EnvConfig): ServiceConfig[] => {
       description: 'BitTorrent client for downloading torrents',
       icon: 'Download',
       url: envConfig.QBITTORRENT_URL,
-      healthEndpoint: 'http://localhost:15011/api/health/qbittorrent',
+      healthEndpoint: `${healthBaseUrl}/qbittorrent`,
       requiresAuth: false,
       category: 'download'
     })
@@ -41,7 +44,7 @@ const mapEnvToServices = (envConfig: EnvConfig): ServiceConfig[] => {
       description: 'Indexer manager for Sonarr and Radarr',
       icon: 'Search',
       url: envConfig.PROWLARR_URL,
-      healthEndpoint: 'http://localhost:15011/api/health/prowlarr',
+      healthEndpoint: `${healthBaseUrl}/prowlarr`,
       requiresAuth: false,
       category: 'indexer'
     })
@@ -55,7 +58,7 @@ const mapEnvToServices = (envConfig: EnvConfig): ServiceConfig[] => {
       description: 'Media server for streaming content',
       icon: 'Play',
       url: envConfig.PLEX_URL,
-      healthEndpoint: 'http://localhost:15011/api/health/plex',
+      healthEndpoint: `${healthBaseUrl}/plex`,
       requiresAuth: false,
       category: 'media'
     })
@@ -69,7 +72,7 @@ const mapEnvToServices = (envConfig: EnvConfig): ServiceConfig[] => {
       description: 'PVR for TV Shows management',
       icon: 'Tv',
       url: envConfig.SONARR_URL,
-      healthEndpoint: 'http://localhost:15011/api/health/sonarr',
+      healthEndpoint: `${healthBaseUrl}/sonarr`,
       requiresAuth: false,
       category: 'management'
     })
@@ -83,7 +86,7 @@ const mapEnvToServices = (envConfig: EnvConfig): ServiceConfig[] => {
       description: 'PVR for Movies management',
       icon: 'Film',
       url: envConfig.RADARR_URL,
-      healthEndpoint: 'http://localhost:15011/api/health/radarr',
+      healthEndpoint: `${healthBaseUrl}/radarr`,
       requiresAuth: false,
       category: 'management'
     })

@@ -12,6 +12,7 @@ export async function GET() {
     SONARR_URL: 'http://localhost:26013',
     RADARR_URL: 'http://localhost:38822',
     API_BASE_URL: 'http://localhost',
+    WEB_UI_PORT: process.env.WEB_UI_PORT,
   };
 
   console.log('Returning hardcoded config:', config)
