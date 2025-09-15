@@ -23,6 +23,10 @@ if [ ! -f "$CONFIG_DIR/prowlarr.db" ] && [ -f "$TEMPLATE_DIR/prowlarr.db.templat
     fi
     
     echo "[INIT] Configuration restored successfully!"
+    echo "[INIT] Prowlarr configuration includes:"
+    echo "[INIT] - Download client: qBittorrent via nginx-proxy:8080"
+    echo "[INIT] - Indexer proxies: FlareSolverr for Cloudflare protection"
+    echo "[INIT] - Applications can sync indexers and download clients"
 fi
 
 echo "[INIT] Starting Prowlarr with original entrypoint..."
