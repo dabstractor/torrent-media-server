@@ -1,11 +1,19 @@
+// Force dynamic rendering so environment variables are available at runtime
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
-  // Only expose the variables that the frontend needs and are safe to expose
+  console.log('=== CONFIG API CALLED ===')
+
+  // Return hardcoded values to test if route works
   const config = {
-    PROWLARR_URL: process.env.PROWLARR_URL || 'http://prowlarr:9696',
-    QBITTORRENT_URL: process.env.QBITTORRENT_URL || 'http://qbittorrent:8080',
-    PLEX_URL: process.env.PLEX_URL || 'http://plex:32400',
-    API_BASE_URL: process.env.API_BASE_URL || 'http://localhost',
+    PROWLARR_URL: 'http://localhost:36096',
+    QBITTORRENT_URL: 'http://localhost:37178',
+    PLEX_URL: 'http://localhost:41586',
+    SONARR_URL: 'http://localhost:26013',
+    RADARR_URL: 'http://localhost:38822',
+    API_BASE_URL: 'http://localhost',
   };
 
+  console.log('Returning hardcoded config:', config)
   return Response.json(config);
 }
