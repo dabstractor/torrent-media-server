@@ -210,6 +210,7 @@ services:
       - "${NGINX_PROWLARR_PORT:-19696}:9696"   # Prowlarr proxy
       - "${NGINX_SONARR_PORT:-18989}:8989"   # Sonarr proxy
       - "${NGINX_RADARR_PORT:-17878}:7878"   # Radarr proxy
+      - "${PLEX_PORT:-42400}:32400"           # Plex proxy
     volumes:
       - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
@@ -220,6 +221,8 @@ services:
       sonarr:
         condition: service_healthy
       radarr:
+        condition: service_healthy
+      plex:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080"]
@@ -239,8 +242,6 @@ services:
     ports:
       - "${WEB_UI_PORT:-18787}:3000"
     user: "1000:1000"  # Run as current user to match file ownership
-    env_file:
-      - .env
     depends_on:
       vpn:
         condition: service_healthy
@@ -253,13 +254,27 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - PROWLARR_URL=http://prowlarr:9696
-      - QBITTORRENT_URL=http://vpn:${QBITTORRENT_INTERNAL_PORT:-8081}
       - NEXT_TELEMETRY_DISABLED=1
+      # Frontend URLs for the Services page (user browser access)
+      - PROWLARR_URL=http://localhost:36096
+      - QBITTORRENT_URL=http://localhost:37178
+      - PLEX_URL=http://localhost:41586
+      - SONARR_URL=http://localhost:26013
+      - RADARR_URL=http://localhost:38822
+      # Backend URLs for internal Docker communication
+      - PROWLARR_BACKEND_URL=http://prowlarr:9696
+      - QBITTORRENT_BACKEND_URL=http://vpn:8081
+      - PLEX_BACKEND_URL=http://plex:32400
+      - SONARR_BACKEND_URL=http://sonarr:8989
+      - RADARR_BACKEND_URL=http://radarr:7878
       # Reverse proxy configuration for secure access
       - ENABLE_REVERSE_PROXY=true
       - QBITTORRENT_PROXY_PATH=/qbittorrent
       - PROWLARR_PROXY_PATH=/prowlarr
+      # API Keys for health checks
+      - PROWLARR_API_KEY=${PROWLARR_API_KEY}
+      - SONARR_API_KEY=${SONARR_API_KEY}
+      - RADARR_API_KEY=${RADARR_API_KEY}
     volumes:
       - ${DOWNLOADS_ROOT:-./data/downloads}:/downloads
       - ${MEDIA_ROOT:-./data/media}:/media

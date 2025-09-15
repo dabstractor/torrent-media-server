@@ -14,8 +14,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { href: '/', label: 'Search' }, // Search is now the home page
     { href: '/downloads', label: 'Downloads' },
     { href: '/completed', label: 'Completed' },
+    { href: '/services', label: 'Services' },
     { href: '/settings', label: 'Settings' },
-    { href: '/status', label: 'Status' },
   ];
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {

@@ -14,7 +14,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isSidebarOpen }) => {
     { href: '/', label: 'Search' }, // Search is now the home page
     { href: '/downloads', label: 'Downloads' },
     { href: '/completed', label: 'Completed' },
-    { href: '/status', label: 'Status' },
+    { href: '/services', label: 'Services' },
     { href: '/settings', label: 'Settings' },
   ];
   return (
