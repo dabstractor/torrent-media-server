@@ -1,4 +1,3 @@
-
 # Custom networks for service isolation
 networks:
   media_network:
@@ -11,16 +10,13 @@ networks:
     ipam:
       config:
         - subnet: ${VPN_NETWORK_SUBNET}
-
 # Logging configuration
 x-logging: &default-logging
   driver: json-file
   options:
     max-size: ${LOG_MAX_SIZE:-10m}
     max-file: ${LOG_MAX_FILE:-3}
-
 # Using local directories instead of Docker volumes for easier management
-
 services:
   # VPN Service - Default: Cloudflare WARP (no credentials needed)
   # To use PIA instead: docker-compose -f docker-compose.yml -f docker-compose.pia.yml up -d
@@ -32,9 +28,9 @@ services:
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
-    privileged: true  # Required for iptables and routing setup
+    privileged: true # Required for iptables and routing setup
     ports:
-      - "${VPN_BITTORRENT_PORT:-16881}:6881"     # qBittorrent BitTorrent port
+      - "${VPN_BITTORRENT_PORT:-16881}:6881" # qBittorrent BitTorrent port
       - "${VPN_BITTORRENT_PORT:-16881}:6881/udp" # qBittorrent BitTorrent port UDP
     environment:
       - WARP_SLEEP=2
@@ -56,7 +52,6 @@ services:
       retries: 5
       start_period: 90s
     restart: unless-stopped
-
   # FlareSolverr - CloudFlare bypass proxy for Prowlarr indexers
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
@@ -79,12 +74,11 @@ services:
       start_period: 30s
     restart: unless-stopped
     stop_grace_period: 30s
-
   # qBittorrent - Torrent download client running through VPN
   qbittorrent:
     image: qbittorrentofficial/qbittorrent-nox:latest
     container_name: ${CONTAINER_PREFIX}qbittorrent
-    network_mode: "container:${CONTAINER_PREFIX}vpn"  # Share VPN container's network stack (most secure isolation)
+    network_mode: "container:${CONTAINER_PREFIX}vpn" # Share VPN container's network stack (most secure isolation)
     # Port removed - access through Web-UI proxy only
     depends_on:
       vpn:
@@ -110,12 +104,11 @@ services:
       start_period: 40s
     restart: unless-stopped
     stop_grace_period: 60s
-
   # Plex Media Server
   plex:
     image: ghcr.io/linuxserver/plex
     container_name: ${CONTAINER_PREFIX}plex
-    network_mode: host  # Required for discovery and direct play
+    network_mode: host # Required for discovery and direct play
     environment:
       - PUID=1000
       - PGID=1000
@@ -133,7 +126,6 @@ services:
       retries: 3
       start_period: 60s
     restart: unless-stopped
-
   # Sonarr - TV Series Management
   sonarr:
     image: ghcr.io/linuxserver/sonarr
@@ -141,6 +133,7 @@ services:
     entrypoint: ["/scripts/sonarr-entrypoint.sh"]
     networks:
       - media_network
+      - vpn_network
     depends_on:
       prowlarr:
         condition: service_healthy
@@ -164,7 +157,6 @@ services:
       start_period: 60s
     restart: unless-stopped
     stop_grace_period: 60s
-
   # Radarr - Movie Management
   radarr:
     image: ghcr.io/linuxserver/radarr
@@ -172,6 +164,7 @@ services:
     entrypoint: ["/scripts/radarr-entrypoint.sh"]
     networks:
       - media_network
+      - vpn_network
     depends_on:
       prowlarr:
         condition: service_healthy
@@ -195,7 +188,6 @@ services:
       start_period: 60s
     restart: unless-stopped
     stop_grace_period: 60s
-
   # Nginx Reverse Proxy - Secure bridge for accessing isolated services
   nginx-proxy:
     image: nginx:alpine
@@ -226,7 +218,6 @@ services:
       retries: 3
       start_period: 10s
     restart: unless-stopped
-
   # Web UI - React frontend for managing the entire stack
   web-ui:
     build: ./web-ui
@@ -282,8 +273,7 @@ services:
       start_period: 30s
     restart: unless-stopped
     stop_grace_period: 30s
-    logging: *default-logging
-
+    logging: *default-logging 
   # Prowlarr - Torrent Indexer
   prowlarr:
     image: ghcr.io/linuxserver/prowlarr
@@ -291,6 +281,7 @@ services:
     entrypoint: ["/scripts/prowlarr-entrypoint.sh"]
     networks:
       - media_network
+      - vpn_network
     ports:
       - "${PROWLARR_PORT:-9696}:9696"
     depends_on:

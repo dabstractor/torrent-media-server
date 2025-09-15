@@ -174,10 +174,10 @@ export class FileMonitor {
 
       this.db.addCompletedFile(fileInfo)
 
-      // TRIGGER: Auto-organize new files in downloads directory for Plex
+      // FILE MONITORING: Track new files for UI display only
+      // Note: File organization is handled by Radarr/Sonarr automatically
       if (event === 'add' && filePath.includes('/downloads')) {
-        console.log(`🎬 New download detected: ${fileName}`);
-        await this.handleNewDownloadFile(filePath, fileInfo);
+        console.log(`📁 New download file detected (monitoring only): ${fileName}`);
       }
 
     } catch (error) {
@@ -298,92 +298,19 @@ export class FileMonitor {
       
       console.log(`Created history entry for: ${name} (${files.length} files)`)
       
-      // TRIGGER: Plex media organization for completed download
-      await this.triggerPlexOrganization(historyEntry, files)
+      // MONITOR: Track completed download for UI display only
+      // Note: Media organization handled by Radarr/Sonarr
       
     } catch (error) {
       console.error(`Error creating history entry for ${name}:`, error)
     }
   }
 
-  private async handleNewDownloadFile(filePath: string, fileInfo: CompletedFile): Promise<void> {
-    try {
-      // Only process media files for Plex
-      if (!fileInfo.mediaType || fileInfo.mediaType === 'document') {
-        console.log(`Skipping non-media file: ${fileInfo.name}`);
-        return;
-      }
+  // REMOVED: handleNewDownloadFile() - file organization now handled by Radarr/Sonarr
+  // This method was part of the DIY organization system that conflicted with proper *arr automation
 
-      console.log(`🔍 TRACE: Processing new media file for Plex: ${fileInfo.name}`);
-      console.log(`🔍 TRACE: File info:`, JSON.stringify(fileInfo, null, 2));
-
-      // Create a synthetic download entry for this individual file
-      const now = new Date();
-      const download: Download = {
-        hash: `file-${Date.now()}`,
-        name: path.basename(fileInfo.name, path.extname(fileInfo.name)),
-        state: 'completed',
-        progress: 1.0,
-        size: fileInfo.size,
-        downloadSpeed: 0,
-        uploadSpeed: 0,
-        eta: 0,
-        priority: 1,
-        category: 'auto-detected',
-        addedTime: now.getTime() - 60000, // 1 minute ago
-        completedTime: now.getTime(),
-      };
-
-      console.log(`🔍 TRACE: Created download object:`, JSON.stringify(download, null, 2));
-      console.log(`🔍 TRACE: Calling plexIntegrationManager.onDownloadComplete...`);
-      
-      // Trigger Plex organization process for this single file
-      const success = await plexIntegrationManager.onDownloadComplete(download, [fileInfo]);
-      
-      console.log(`🔍 TRACE: onDownloadComplete returned:`, success);
-      
-      if (success) {
-        console.log(`✅ TRACE: Plex organization completed for: ${fileInfo.name}`);
-      } else {
-        console.error(`❌ TRACE: Plex organization failed for: ${fileInfo.name}`);
-      }
-      
-    } catch (error) {
-      console.error(`❌ Error processing new download file ${fileInfo.name}:`, error);
-    }
-  }
-
-  private async triggerPlexOrganization(historyEntry: DownloadHistoryEntry, files: CompletedFile[]): Promise<void> {
-    try {
-      // Convert DownloadHistoryEntry to Download type for PlexIntegrationManager
-      const download: Download = {
-        hash: historyEntry.torrentHash,
-        name: historyEntry.name,
-        state: 'completed',
-        progress: 1.0,
-        size: historyEntry.originalSize,
-        downloadSpeed: 0,
-        uploadSpeed: 0,
-        eta: 0,
-        priority: 1,
-        category: historyEntry.category,
-        addedTime: historyEntry.startedAt.getTime(),
-        completedTime: historyEntry.completedAt?.getTime(),
-      }
-      
-      // Trigger Plex organization process
-      const success = await plexIntegrationManager.onDownloadComplete(download, files)
-      
-      if (success) {
-        console.log(`✓ Plex organization completed for: ${historyEntry.name}`)
-      } else {
-        console.warn(`⚠️ Plex organization failed for: ${historyEntry.name}`)
-      }
-      
-    } catch (error) {
-      console.error(`❌ Error triggering Plex organization for ${historyEntry.name}:`, error)
-    }
-  }
+  // REMOVED: triggerPlexOrganization() - file organization now handled by Radarr/Sonarr
+  // This method was part of the DIY organization system that conflicted with proper *arr automation
 
   private checkForTorrentCompletion(filePath: string, fileInfo: CompletedFile): void {
     // This would integrate with torrent client APIs to determine if this file

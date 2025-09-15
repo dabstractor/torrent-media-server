@@ -48,14 +48,6 @@ const PlexSection: React.FC<PlexSectionProps> = ({
     });
   };
 
-  const handleMediaPathChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onSettingsChange({
-      plex: {
-        ...settings.plex,
-        mediaPath: e.target.value,
-      },
-    });
-  };
 
   return (
     <div className="space-y-6">
@@ -64,7 +56,9 @@ const PlexSection: React.FC<PlexSectionProps> = ({
           Plex Integration
         </h3>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-          Configure connection to your Plex Media Server for automatic media library updates.
+          Configure connection to your Plex Media Server for automatic library refreshes.
+          <br />
+          <strong>Note:</strong> Media organization is automatically handled by Radarr (movies) and Sonarr (TV shows).
         </p>
       </div>
 
@@ -339,64 +333,34 @@ const PlexSection: React.FC<PlexSectionProps> = ({
         </div>
       </div>
 
-      {/* Media Organization Settings */}
+      {/* Automation Information */}
       <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
         <h4 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-4">
-          Media Organization
+          Automated Media Organization
         </h4>
-        
-        <div className="space-y-4">
-          <ToggleSwitch
-            id="plex-organization-enabled"
-            label="Enable Media Organization"
-            checked={settings.plex.organizationEnabled}
-            onChange={(checked) => onSettingsChange({ 
-              plex: { ...settings.plex, organizationEnabled: checked } 
-            })}
-            disabled={isLoading || !settings.plex.enabled}
-            description="Automatically organize downloaded media for Plex using symlinks and conversion"
-            error={errors['plex.organizationEnabled']}
-            className={settings.plex.enabled ? '' : 'opacity-50'}
-          />
 
-          <div className="space-y-1">
-            <label 
-              htmlFor="plex-media-path" 
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Media Organization Path
-            </label>
-            <input
-              id="plex-media-path"
-              type="text"
-              value={settings.plex.mediaPath}
-              onChange={handleMediaPathChange}
-              placeholder="/media"
-              disabled={isLoading || !settings.plex.enabled || !settings.plex.organizationEnabled}
-              className={`
-                input w-full
-                ${errors['plex.mediaPath'] 
-                  ? 'border-red-500 focus:border-red-500 focus:ring-red-200 dark:border-red-400' 
-                  : 'border-gray-300 focus:border-blue-500 focus:ring-blue-200 dark:border-gray-600 dark:focus:border-blue-400'
-                }
-                ${isLoading || !settings.plex.enabled || !settings.plex.organizationEnabled
-                  ? 'bg-gray-100 text-gray-500 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500' 
-                  : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'
-                }
-                block border rounded-md px-3 py-2 text-sm
-                focus:outline-none focus:ring-2 focus:ring-opacity-50
-                transition-colors duration-200
-              `}
-            />
-            {errors['plex.mediaPath'] ? (
-              <p className="text-xs text-red-600 dark:text-red-400">
-                {errors['plex.mediaPath']}
-              </p>
-            ) : (
-              <p className="text-xs text-gray-600 dark:text-gray-400">
-                Base directory where organized media will be stored (movies/, tv/ subdirectories will be created)
-              </p>
-            )}
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h5 className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                Automated Organization Active
+              </h5>
+              <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
+                <ul className="space-y-1">
+                  <li>• <strong>Movies:</strong> Automatically organized by Radarr to <code>/data/media/movies</code></li>
+                  <li>• <strong>TV Shows:</strong> Automatically organized by Sonarr to <code>/data/media/tv</code></li>
+                  <li>• <strong>Plex:</strong> Libraries automatically refreshed after organization completes</li>
+                </ul>
+                <p className="mt-2 text-xs">
+                  No manual file organization needed - the system handles everything automatically with proper naming and folder structure.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

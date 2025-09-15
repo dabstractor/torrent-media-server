@@ -45,10 +45,28 @@ if [ "$RESTORE_NEEDED" = true ] && [ -f "$TEMPLATE_DIR/sonarr.db.template" ]; th
     echo "[INIT] Sonarr configuration restored successfully!"
     echo "[INIT] - Root folder: /tv"
     echo "[INIT] - Download client: qBittorrent via nginx-proxy:8080"
-    echo "[INIT] - Category: sonarr-tv"
+    echo "[INIT] - Category: sonarr"
     echo "[INIT] - Indexers synced from Prowlarr"
 else
     echo "[INIT] Complete configuration found, no restoration needed"
+fi
+
+# Configure media organization (qBittorrent categories) if configuration script exists
+if [ -f "/scripts/configure-media-organization.sh" ]; then
+    echo "[INIT] Configuring media organization integration..."
+
+    # Wait a moment for Sonarr to be ready
+    sleep 5
+
+    # Run the media organization configuration in the background
+    # This will set up qBittorrent categories for proper automation
+    (/scripts/configure-media-organization.sh nginx-proxy 8080 60 &) || {
+        echo "[INIT] Warning: Media organization configuration failed - continuing anyway"
+    }
+
+    echo "[INIT] Media organization configuration initiated"
+else
+    echo "[INIT] Media organization script not found - skipping configuration"
 fi
 
 echo "[INIT] Starting Sonarr with original entrypoint..."

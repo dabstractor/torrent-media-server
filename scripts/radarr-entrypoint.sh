@@ -45,10 +45,28 @@ if [ "$RESTORE_NEEDED" = true ] && [ -f "$TEMPLATE_DIR/radarr.db.template" ]; th
     echo "[INIT] Radarr configuration restored successfully!"
     echo "[INIT] - Root folder: /movies"
     echo "[INIT] - Download client: qBittorrent via nginx-proxy:8080"
-    echo "[INIT] - Category: radarr-movies"
+    echo "[INIT] - Category: radarr"
     echo "[INIT] - Indexers synced from Prowlarr"
 else
     echo "[INIT] Complete configuration found, no restoration needed"
+fi
+
+# Configure media organization (qBittorrent categories) if configuration script exists
+if [ -f "/scripts/configure-media-organization.sh" ]; then
+    echo "[INIT] Configuring media organization integration..."
+
+    # Wait a moment for Radarr to be ready
+    sleep 5
+
+    # Run the media organization configuration in the background
+    # This will set up qBittorrent categories for proper automation
+    (/scripts/configure-media-organization.sh nginx-proxy 8080 60 &) || {
+        echo "[INIT] Warning: Media organization configuration failed - continuing anyway"
+    }
+
+    echo "[INIT] Media organization configuration initiated"
+else
+    echo "[INIT] Media organization script not found - skipping configuration"
 fi
 
 echo "[INIT] Starting Radarr with original entrypoint..."
