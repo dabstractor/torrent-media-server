@@ -126,8 +126,6 @@ services:
       - ./config/templates/plex:/templates:ro
       - ${MEDIA_ROOT:-./data/media}:/media
       - ${DOWNLOADS_ROOT:-./data/downloads}:/downloads
-    ports:
-      - ${PLEX_PORT:-42400}:32400
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:32400/identity"]
       interval: 60s
@@ -210,7 +208,6 @@ services:
       - "${NGINX_PROWLARR_PORT:-19696}:9696"   # Prowlarr proxy
       - "${NGINX_SONARR_PORT:-18989}:8989"   # Sonarr proxy
       - "${NGINX_RADARR_PORT:-17878}:7878"   # Radarr proxy
-      - "${PLEX_PORT:-42400}:32400"           # Plex proxy
     volumes:
       - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
@@ -221,8 +218,6 @@ services:
       sonarr:
         condition: service_healthy
       radarr:
-        condition: service_healthy
-      plex:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080"]
