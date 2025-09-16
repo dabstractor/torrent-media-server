@@ -3,11 +3,11 @@ import { createErrorResponse, createSuccessResponse, HTTP_STATUS } from '@/lib/a
 export async function GET() {
   try {
     const services = {
-      prowlarr: await checkServiceHealth('http://prowlarr:9696/api/v1/system/status'),
+      prowlarr: await checkServiceHealth(`${process.env.PROWLARR_BACKEND_URL}/api/v1/system/status`),
       qbittorrent: await checkQBittorrentHealth(),
-      plex: await checkServiceHealth('http://plex:32400/web/index.html'),
-      sonarr: await checkServiceHealth('http://sonarr:8989/api/v3/system/status'),
-      radarr: await checkServiceHealth('http://radarr:7878/api/v3/system/status'),
+      plex: await checkServiceHealth(`${process.env.PLEX_BACKEND_URL}/identity`),
+      sonarr: await checkServiceHealth(`${process.env.SONARR_BACKEND_URL}/api/v3/system/status`),
+      radarr: await checkServiceHealth(`${process.env.RADARR_BACKEND_URL}/api/v3/system/status`),
     };
 
     return createSuccessResponse({ 
@@ -42,7 +42,7 @@ async function checkServiceHealth(url: string) {
 }
 
 async function checkQBittorrentHealth() {
-  const url = 'http://qbittorrent:8080/api/v2/app/version';
+  const url = `${process.env.QBITTORRENT_BACKEND_URL}/api/v2/app/version`;
   
   try {
     const response = await fetch(url, {

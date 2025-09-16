@@ -51,12 +51,8 @@ const useMultiServiceHealth = (services: any[]) => {
       const checks = services.map(async (service) => {
         try {
           const startTime = Date.now()
-          // If healthEndpoint starts with http, use it as-is, otherwise combine with service.url
-          const healthUrl = service.healthEndpoint.startsWith('http')
-            ? service.healthEndpoint
-            : `${service.url}${service.healthEndpoint}`
-
-          const response = await fetch(healthUrl, {
+          // Always use healthEndpoint as-is (should be relative path like /api/health/servicename)
+          const response = await fetch(service.healthEndpoint, {
             method: 'GET',
             signal: AbortSignal.timeout(5000)
           })

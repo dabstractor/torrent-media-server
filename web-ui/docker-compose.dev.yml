@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     ports:
-      - "${PORT:-3000}:${PORT:-3000}"
+      - "${WEB_UI_PORT}:${WEB_UI_PORT}"
     volumes:
       - ./src:/app/src
       - ./public:/app/public

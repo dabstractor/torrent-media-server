@@ -93,7 +93,7 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=${TZ:-America/New_York}
-      - QBT_WEBUI_PORT=${QBITTORRENT_INTERNAL_PORT:-8081}
+      - QBT_WEBUI_PORT=${QBITTORRENT_INTERNAL_PORT:-8080}
       - QBT_LEGAL_NOTICE=confirm
     volumes:
       - ./config/qbittorrent:/config
@@ -103,7 +103,7 @@ services:
       - ./scripts:/scripts:ro
     entrypoint: ["/scripts/qbittorrent-wrapper.sh"]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${QBITTORRENT_INTERNAL_PORT:-8081}"]
+      test: ["CMD", "curl", "-f", "http://localhost:${QBITTORRENT_INTERNAL_PORT:-8080}"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -129,7 +129,7 @@ services:
     ports:
       - ${PLEX_PORT:-42400}:32400
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:32400/web/index.html"]
+      test: ["CMD", "curl", "-f", "http://localhost:32400/identity"]
       interval: 60s
       timeout: 10s
       retries: 3
@@ -254,6 +254,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - WEB_UI_PORT=${WEB_UI_PORT:-18787}
       - NEXT_TELEMETRY_DISABLED=1
       # Frontend URLs for the Services page (user browser access)
       - PROWLARR_URL=http://localhost:36096
@@ -263,8 +264,8 @@ services:
       - RADARR_URL=http://localhost:38822
       # Backend URLs for internal Docker communication
       - PROWLARR_BACKEND_URL=http://prowlarr:9696
-      - QBITTORRENT_BACKEND_URL=http://vpn:8081
-      - PLEX_BACKEND_URL=http://plex:32400
+      - QBITTORRENT_BACKEND_URL=http://vpn:8080
+      - PLEX_BACKEND_URL=http://nginx-proxy:32400
       - SONARR_BACKEND_URL=http://sonarr:8989
       - RADARR_BACKEND_URL=http://radarr:7878
       # Reverse proxy configuration for secure access

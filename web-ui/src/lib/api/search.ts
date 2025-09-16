@@ -87,7 +87,7 @@ export async function searchTorrents(params: SearchRequest): Promise<ApiResponse
 
     // Determine base URL for server-side calls
     const baseUrl = typeof window === 'undefined'
-      ? process.env.NEXTAUTH_URL || 'http://localhost:3000'
+      ? process.env.NEXTAUTH_URL || `http://localhost:${process.env.WEB_UI_PORT}`
       : ''
 
     // Call Prowlarr directly via proxy route for authentication and proper headers

@@ -29,12 +29,8 @@ export const useHealthCheck = (service: ServiceConfig, interval = 30000): Servic
         }
       }, 5000)
 
-      // If healthEndpoint starts with http, use it as-is, otherwise combine with service.url
-      const healthUrl = service.healthEndpoint.startsWith('http')
-        ? service.healthEndpoint
-        : `${service.url}${service.healthEndpoint}`
-
-      const response = await fetch(healthUrl, {
+      // Always use healthEndpoint as-is (should be relative path like /api/health/servicename)
+      const response = await fetch(service.healthEndpoint, {
         method: 'GET',
         signal: abortControllerRef.current.signal
       })
@@ -67,7 +63,7 @@ export const useHealthCheck = (service: ServiceConfig, interval = 30000): Servic
     } finally {
       abortControllerRef.current = null
     }
-  }, [service.url, service.healthEndpoint])
+  }, [service.healthEndpoint])
 
   useEffect(() => {
     // Initial health check

@@ -19,8 +19,7 @@ interface EnvConfig {
 
 const mapEnvToServices = (envConfig: EnvConfig): ServiceConfig[] => {
   const services: ServiceConfig[] = []
-  const webUiPort = envConfig.WEB_UI_PORT
-  const healthBaseUrl = `http://localhost:${webUiPort}/api/health`
+  const healthBaseUrl = `/api/health`
 
   // qBittorrent - CRITICAL: Uses VPN-isolated network via nginx proxy
   if (envConfig.QBITTORRENT_URL) {

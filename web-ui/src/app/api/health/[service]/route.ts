@@ -8,50 +8,34 @@ interface ServiceConfig {
   timeout: number
 }
 
-// Helper to get Docker gateway IP dynamically
-async function getDockerGatewayUrl(port: number): Promise<string> {
-  // Try different approaches to reach the host from container
-  const options = [
-    `http://host.docker.internal:${port}`, // Docker Desktop
-    `http://gateway.docker.internal:${port}`, // Alternative
-    `http://172.17.0.1:${port}`, // Default Docker bridge
-    `http://172.18.0.1:${port}`, // Custom network gateway
-    `http://10.187.0.1:${port}`, // Media network gateway from env
-  ]
-
-  // Return the first option for now - this could be enhanced to test connectivity
-  // or read from environment variables
-  return options[2] // Use 172.17.0.1 as most reliable for custom networks
-}
-
 async function getServiceConfigs(): Promise<Record<string, ServiceConfig>> {
   return {
     prowlarr: {
-      url: 'http://prowlarr:9696',
+      url: process.env.PROWLARR_BACKEND_URL || 'http://prowlarr:9696',
       healthEndpoint: '/api/v1/system/status',
       authType: 'apikey',
       timeout: 10000
     },
     qbittorrent: {
-      url: 'http://vpn:8081',
+      url: process.env.QBITTORRENT_BACKEND_URL || 'http://vpn:8081',
       healthEndpoint: '/api/v2/app/version',
       authType: 'none', // Use unauthenticated endpoint for basic connectivity
       timeout: 15000 // Longer timeout for VPN routing
     },
     plex: {
-      url: await getDockerGatewayUrl(41586),
+      url: process.env.PLEX_BACKEND_URL || 'http://plex:32400',
       healthEndpoint: '/identity',
       authType: 'none', // Identity endpoint doesn't require auth and provides version info
       timeout: 8000
     },
     sonarr: {
-      url: 'http://sonarr:8989',
+      url: process.env.SONARR_BACKEND_URL || 'http://sonarr:8989',
       healthEndpoint: '/ping', // Use unauthenticated ping endpoint
       authType: 'none',
       timeout: 10000
     },
     radarr: {
-      url: 'http://radarr:7878',
+      url: process.env.RADARR_BACKEND_URL || 'http://radarr:7878',
       healthEndpoint: '/ping', // Use unauthenticated ping endpoint
       authType: 'none',
       timeout: 10000

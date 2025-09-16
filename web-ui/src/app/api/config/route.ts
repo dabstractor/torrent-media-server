@@ -2,19 +2,16 @@
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  console.log('=== CONFIG API CALLED ===')
-
-  // Return hardcoded values to test if route works
+  // Return environment-based configuration
   const config = {
-    PROWLARR_URL: 'http://localhost:36096',
-    QBITTORRENT_URL: 'http://localhost:37178',
-    PLEX_URL: 'http://localhost:41586',
-    SONARR_URL: 'http://localhost:26013',
-    RADARR_URL: 'http://localhost:38822',
-    API_BASE_URL: 'http://localhost',
+    PROWLARR_URL: process.env.PROWLARR_URL,
+    QBITTORRENT_URL: process.env.QBITTORRENT_URL,
+    PLEX_URL: process.env.PLEX_URL,
+    SONARR_URL: process.env.SONARR_URL,
+    RADARR_URL: process.env.RADARR_URL,
+    API_BASE_URL: process.env.API_BASE_URL,
     WEB_UI_PORT: process.env.WEB_UI_PORT,
   };
 
-  console.log('Returning hardcoded config:', config)
   return Response.json(config);
 }

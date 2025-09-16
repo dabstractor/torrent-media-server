@@ -10,7 +10,7 @@ RUN npm install
 COPY . .
 
 # Expose port
-EXPOSE ${PORT:-3000}
+EXPOSE ${WEB_UI_PORT}
 
 # Start development server
 CMD ["npm", "run", "dev"]
