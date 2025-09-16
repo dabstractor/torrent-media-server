@@ -254,7 +254,7 @@ services:
       # Frontend URLs for the Services page (user browser access)
       - PROWLARR_URL=http://localhost:${NGINX_PROWLARR_PORT}
       - QBITTORRENT_URL=http://localhost:${NGINX_QBITTORRENT_PORT}
-      - PLEX_URL=http://localhost:${PLEX_PORT}
+      - PLEX_URL=http://localhost:32400
       - SONARR_URL=http://localhost:${NGINX_SONARR_PORT}
       - RADARR_URL=http://localhost:${NGINX_RADARR_PORT}
       # Backend URLs for internal Docker communication
