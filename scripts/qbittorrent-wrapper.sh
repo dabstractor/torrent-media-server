@@ -9,20 +9,59 @@ WEBUI_PORT="${QBT_WEBUI_PORT:-8081}"
 PROFILE_PATH="/config"
 LOG_FILE="/tmp/qbt_startup.log"
 
-# Process configuration template if it exists and config doesn't exist
-if [ -f "/templates/qBittorrent.conf.template" ] && [ ! -f "$PROFILE_PATH/qBittorrent/qBittorrent.conf" ]; then
+# Ensure download directories exist with correct permissions
+echo "Ensuring download directories exist..."
+mkdir -p /downloads/complete /downloads/incomplete /downloads/watch
+chown -R 1000:1000 /downloads 2>/dev/null || true
+
+# Always process configuration template to ensure correct paths are used
+if [ -f "/templates/qBittorrent.conf.template" ]; then
     echo "Processing qBittorrent configuration template..."
     mkdir -p "$PROFILE_PATH/qBittorrent"
-    
+
+    # Backup existing config if it exists
+    if [ -f "$PROFILE_PATH/qBittorrent/qBittorrent.conf" ]; then
+        cp "$PROFILE_PATH/qBittorrent/qBittorrent.conf" "$PROFILE_PATH/qBittorrent/qBittorrent.conf.backup"
+        echo "✓ Backed up existing configuration"
+    fi
+
     # Use envsubst to process template with environment variables
     if command -v envsubst >/dev/null 2>&1; then
         envsubst < "/templates/qBittorrent.conf.template" > "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
-        echo "✓ Configuration generated from template"
+        # Also copy to the config subdirectory location where qBittorrent might look
+        mkdir -p "$PROFILE_PATH/qBittorrent/config"
+        envsubst < "/templates/qBittorrent.conf.template" > "$PROFILE_PATH/qBittorrent/config/qBittorrent.conf"
+        echo "✓ Configuration generated from template (both locations)"
     else
         # Fallback: simple copy if envsubst not available
         cp "/templates/qBittorrent.conf.template" "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
-        echo "✓ Configuration copied from template (envsubst not available)"
+        mkdir -p "$PROFILE_PATH/qBittorrent/config"
+        cp "/templates/qBittorrent.conf.template" "$PROFILE_PATH/qBittorrent/config/qBittorrent.conf"
+        echo "✓ Configuration copied from template (both locations, envsubst not available)"
     fi
+
+    # Force correct download paths immediately after generation
+    echo "Forcing correct download paths in generated configuration..."
+    # Fix main config file
+    sed -i 's|Session\\DefaultSavePath=/data/downloads/complete|Session\\DefaultSavePath=/downloads/complete|g' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+    sed -i 's|Session\\SavePath=/data/downloads/complete|Session\\SavePath=/downloads/complete|g' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+    sed -i 's|Session\\TempPath=/data/downloads/incomplete|Session\\TempPath=/downloads/incomplete|g' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+    sed -i 's|Downloads\\SavePath=/data/downloads/complete|Downloads\\SavePath=/downloads/complete|g' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+    sed -i 's|Downloads\\DefaultSavePath=/data/downloads/complete|Downloads\\DefaultSavePath=/downloads/complete|g' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+    sed -i 's|Downloads\\TempPath=/data/downloads/incomplete|Downloads\\TempPath=/downloads/incomplete|g' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+
+    # Fix config subdirectory file too
+    sed -i 's|Session\\DefaultSavePath=/data/downloads/complete|Session\\DefaultSavePath=/downloads/complete|g' "$PROFILE_PATH/qBittorrent/config/qBittorrent.conf"
+    sed -i 's|Session\\SavePath=/data/downloads/complete|Session\\SavePath=/downloads/complete|g' "$PROFILE_PATH/qBittorrent/config/qBittorrent.conf"
+    sed -i 's|Session\\TempPath=/data/downloads/incomplete|Session\\TempPath=/downloads/incomplete|g' "$PROFILE_PATH/qBittorrent/config/qBittorrent.conf"
+    sed -i 's|Downloads\\SavePath=/data/downloads/complete|Downloads\\SavePath=/downloads/complete|g' "$PROFILE_PATH/qBittorrent/config/qBittorrent.conf"
+    sed -i 's|Downloads\\DefaultSavePath=/data/downloads/complete|Downloads\\DefaultSavePath=/downloads/complete|g' "$PROFILE_PATH/qBittorrent/config/qBittorrent.conf"
+    sed -i 's|Downloads\\TempPath=/data/downloads/incomplete|Downloads\\TempPath=/downloads/incomplete|g' "$PROFILE_PATH/qBittorrent/config/qBittorrent.conf"
+
+    # Ensure configuration is writable for qBittorrent
+    echo "Ensuring configuration is writable..."
+    chmod 644 "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+    chmod 644 "$PROFILE_PATH/qBittorrent/config/qBittorrent.conf"
 fi
 
 # Start qBittorrent and capture output
@@ -58,6 +97,71 @@ if [ -f "/scripts/qbittorrent-auth-bypass.sh" ]; then
     echo "Bypass configuration running in background (PID: $BYPASS_PID)"
 else
     echo "⚠ Authentication bypass script not found"
+fi
+
+# Force correct download paths in both config files after qBittorrent starts
+echo "Waiting briefly for qBittorrent to initialize..."
+sleep 5
+
+echo "Fixing download paths in all config files..."
+
+# Fix main config file
+if [ -f "$PROFILE_PATH/qBittorrent/qBittorrent.conf" ]; then
+    echo "Updating main config file..."
+    # Remove any existing download path settings
+    sed -i '/^Session\\DefaultSavePath=/d' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+    sed -i '/^Session\\SavePath=/d' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+    sed -i '/^Session\\TempPath=/d' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+    sed -i '/^Downloads\\SavePath=/d' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+    sed -i '/^Downloads\\DefaultSavePath=/d' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+    sed -i '/^Downloads\\TempPath=/d' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+
+    # Add correct download paths to BitTorrent section
+    sed -i '/^\[BitTorrent\]/a Session\\DefaultSavePath=/downloads/complete\nSession\\SavePath=/downloads/complete\nSession\\TempPath=/downloads/incomplete' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+
+    # Add correct download paths to Preferences section
+    sed -i '/^\[Preferences\]/a Downloads\\SavePath=/downloads/complete\nDownloads\\DefaultSavePath=/downloads/complete\nDownloads\\TempPath=/downloads/incomplete\nDownloads\\TempPathEnabled=true' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+fi
+
+# Fix runtime config file (this is the key one that was being ignored)
+if [ -f "$PROFILE_PATH/qBittorrent/config/qBittorrent.conf" ]; then
+    echo "Updating runtime config file..."
+    # Create a new runtime config with correct paths
+    cat > "$PROFILE_PATH/qBittorrent/config/qBittorrent.conf" << 'EOF'
+[BitTorrent]
+Session\Port=43117
+Session\QueueingSystemEnabled=false
+Session\SSL\Port=21077
+Session\DefaultSavePath=/downloads/complete
+Session\SavePath=/downloads/complete
+Session\TempPath=/downloads/incomplete
+
+[Meta]
+MigrationVersion=8
+
+[Preferences]
+WebUI\AuthSubnetWhitelist=0.0.0.0/0, ::/0
+WebUI\AuthSubnetWhitelistEnabled=true
+WebUI\LocalHostAuth=false
+WebUI\Port=8081
+Downloads\SavePath=/downloads/complete
+Downloads\DefaultSavePath=/downloads/complete
+Downloads\TempPath=/downloads/incomplete
+Downloads\TempPathEnabled=true
+EOF
+    echo "✓ Runtime config updated with correct download paths"
+fi
+
+echo "✓ Download paths fixed in all config files"
+
+# Fix category paths for proper media organization
+if [ -f "/scripts/fix-qbittorrent-category-paths.sh" ]; then
+    echo "Fixing qBittorrent category paths for media organization..."
+    /scripts/fix-qbittorrent-category-paths.sh "localhost" "$WEBUI_PORT" 30 >> "$LOG_FILE" 2>&1 &
+    FIX_PID=$!
+    echo "Category path fix running in background (PID: $FIX_PID)"
+else
+    echo "⚠ Category path fix script not found"
 fi
 
 # Clean up log file after script has access to it

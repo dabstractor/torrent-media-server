@@ -1,4 +1,4 @@
-const QBITTORRENT_URL = process.env.QBITTORRENT_URL || 'http://qbittorrent:8080';
+const QBITTORRENT_URL = process.env.QBITTORRENT_BACKEND_URL || 'http://vpn:8081';
 
 // In-memory session store for qBittorrent session cookies
 const sessionStore = new Map<string, { cookie: string; timestamp: number }>();

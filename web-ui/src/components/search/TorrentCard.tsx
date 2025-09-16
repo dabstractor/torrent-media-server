@@ -1,5 +1,6 @@
 import React from 'react'
 import type { TorrentResult } from '@/lib/types'
+import { isMovie, isSeries } from '@/lib/utils/content-detection'
 
 interface TorrentCardProps {
   torrent: TorrentResult
@@ -40,9 +41,9 @@ const TorrentCard: React.FC<TorrentCardProps> = ({
     }
   }
 
-  // Determine if this appears to be a movie or TV series based on title
-  const isMovie = !torrent.title.match(/S\d{2}E\d{2}|Season|Episode|\b\d{1,2}x\d{1,2}\b/i)
-  const isSeries = !isMovie
+  // Determine if this appears to be a movie or TV series based on title and category
+  const isMovieContent = isMovie(torrent.title, torrent.category)
+  const isSeriesContent = isSeries(torrent.title, torrent.category)
 
   const formatDate = (dateString: string) => {
     try {
@@ -183,7 +184,7 @@ const TorrentCard: React.FC<TorrentCardProps> = ({
           {/* Monitoring buttons */}
           {showMonitorOptions && (
             <div className="flex gap-2">
-              {isMovie && onMonitorMovie && (
+              {isMovieContent && onMonitorMovie && (
                 <button
                   onClick={handleMonitorMovie}
                   disabled={isMonitoring}
@@ -205,7 +206,7 @@ const TorrentCard: React.FC<TorrentCardProps> = ({
                 </button>
               )}
 
-              {isSeries && onMonitorSeries && (
+              {isSeriesContent && onMonitorSeries && (
                 <button
                   onClick={handleMonitorSeries}
                   disabled={isMonitoring}

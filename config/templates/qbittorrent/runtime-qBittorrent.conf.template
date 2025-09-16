@@ -1,0 +1,20 @@
+[BitTorrent]
+Session\Port=43117
+Session\QueueingSystemEnabled=false
+Session\SSL\Port=21077
+Session\DefaultSavePath=/data/downloads/complete
+Session\SavePath=/data/downloads/complete
+Session\TempPath=/data/downloads/incomplete
+
+[Meta]
+MigrationVersion=8
+
+[Preferences]
+WebUI\AuthSubnetWhitelist=0.0.0.0/0, ::/0
+WebUI\AuthSubnetWhitelistEnabled=true
+WebUI\LocalHostAuth=false
+WebUI\Port=8081
+Downloads\SavePath=/data/downloads/complete
+Downloads\DefaultSavePath=/data/downloads/complete
+Downloads\TempPath=/data/downloads/incomplete
+Downloads\TempPathEnabled=true

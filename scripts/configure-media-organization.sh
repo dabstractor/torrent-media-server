@@ -124,8 +124,9 @@ configure_categories() {
     local success=true
 
     # Define categories with their save paths
-    # Using download subdirectories for proper organization
-    local categories="radarr:/downloads/movies sonarr:/downloads/tv"
+    # Point to the shared downloads directory that all containers can access
+    # Radarr/Sonarr will process and move files from here to final media directories
+    local categories="radarr:/downloads/complete sonarr:/downloads/complete"
 
     for category_config in $categories; do
         local category=$(echo "$category_config" | cut -d':' -f1)
@@ -261,8 +262,9 @@ echo ""
 if [ $exit_code -eq 0 ]; then
     echo "=== Media organization configuration complete ==="
     echo "✓ Categories 'radarr' and 'sonarr' are ready for automated downloads"
-    echo "✓ Radarr will organize movies to /downloads/movies"
-    echo "✓ Sonarr will organize TV shows to /downloads/tv"
+    echo "✓ Both services will download to /downloads/complete"
+    echo "✓ Radarr will process and move movies to /movies"
+    echo "✓ Sonarr will process and move TV shows to /tv"
 else
     echo "=== Media organization configuration failed ==="
     echo "Check $LOG_FILE for details"

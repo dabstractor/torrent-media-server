@@ -3,6 +3,12 @@ import '@testing-library/jest-dom'
 import TorrentCard from '@/components/search/TorrentCard'
 import type { TorrentResult } from '@/lib/types'
 
+// Mock the content detection module
+jest.mock('@/lib/utils/content-detection', () => ({
+  isMovie: jest.fn((title: string) => !title.includes('S01E01')),
+  isSeries: jest.fn((title: string) => title.includes('S01E01'))
+}))
+
 const mockTorrent: TorrentResult = {
   id: 'test-torrent-123',
   title: 'Ubuntu 22.04.3 Desktop amd64.iso',

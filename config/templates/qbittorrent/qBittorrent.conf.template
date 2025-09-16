@@ -8,6 +8,9 @@ FileLogger\MaxSizeBytes=66560
 FileLogger\Path=/config/qBittorrent.log
 
 [BitTorrent]
+Session\DefaultSavePath=/downloads/complete
+Session\SavePath=/downloads/complete
+Session\TempPath=/downloads/incomplete
 Session\AnnounceToAllTrackers=true
 Session\AsyncIOThreadsCount=10
 Session\CheckingMemUsageSize=32
@@ -24,8 +27,6 @@ Session\MaxUploads=-1
 Session\MaxUploadsPerTorrent=-1
 Session\Port=${QBITTORRENT_PORT:-6881}
 Session\QueueingSystemEnabled=true
-Session\SavePath=/data/downloads/complete
-Session\TempPath=/data/downloads/incomplete
 Session\TempPathEnabled=true
 
 [Core]
@@ -47,12 +48,14 @@ Proxy\Type=None
 Proxy\Username=
 
 [Preferences]
+Downloads\SavePath=/downloads/complete
+Downloads\DefaultSavePath=/downloads/complete
+Downloads\TempPath=/downloads/incomplete
+Downloads\TempPathEnabled=true
 Advanced\RecheckOnCompletion=false
 Advanced\TrayIconStyle=MonoDark
 Connection\GlobalDLLimitAlt=10
 Connection\GlobalUPLimitAlt=10
-Downloads\DefaultSavePath=/data/downloads/complete
-Downloads\TempPath=/data/downloads/incomplete
 Downloads\TempPathEnabled=true
 Downloads\ExternalProgram=/scripts/test-completion-hook.sh "%N" "%F" "%D"
 Downloads\ExternalProgramEnabled=true

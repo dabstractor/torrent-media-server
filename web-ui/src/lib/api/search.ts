@@ -1,5 +1,6 @@
 import type { ApiResponse, SearchResponse, TorrentResult } from '@/lib/types'
 import { transformDownloadUrls } from '@/lib/utils/download-url-utils'
+import { getQBittorrentCategory } from '@/lib/utils/content-detection'
 
 export interface SearchRequest {
   query: string
@@ -175,6 +176,19 @@ export async function searchTorrents(params: SearchRequest): Promise<ApiResponse
 
 export async function addTorrentToDownloads(torrent: TorrentResult): Promise<ApiResponse<{ success: boolean }>> {
   try {
+    // Determine the appropriate qBittorrent category for automatic organization
+    const autoCategory = getQBittorrentCategory(torrent.title, torrent.category)
+
+    // Use auto-detected category if available, otherwise keep original
+    const categoryToUse = autoCategory || torrent.category
+
+    // Log category assignment for debugging
+    if (autoCategory) {
+      console.log(`Smart category assignment: "${torrent.title}" → ${autoCategory}`)
+    } else {
+      console.log(`No auto-category detected for: "${torrent.title}" (keeping original: ${torrent.category})`)
+    }
+
     // Use qBittorrent API via proxy to add torrent
     const response = await fetch('/api/qbittorrent/torrents/add', {
       method: 'POST',
@@ -183,7 +197,7 @@ export async function addTorrentToDownloads(torrent: TorrentResult): Promise<Api
       },
       body: JSON.stringify({
         urls: torrent.magnetUrl || torrent.downloadUrl,
-        category: torrent.category
+        category: categoryToUse
       })
     })
 
