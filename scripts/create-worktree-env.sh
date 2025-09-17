@@ -285,20 +285,19 @@ subnets_overlap() {
 generate_unique_subnets() {
     local used_subnets="$1"
     local attempts=0
-    local base_ip="10"
     local subnets=()
     local generated_subnets=""
 
     # Generate media network subnet (10.X.0.0/16)
     while [[ $attempts -lt $MAX_RETRIES ]]; do
         local second_octet=$((RANDOM % 200 + 50))  # Range 50-249 to avoid common conflicts
-        local new_subnet="${base_ip}.${second_octet}.0.0/16"
+        local candidate_subnet="10.${second_octet}.0.0/16"
 
         # Check if this subnet overlaps with any used subnet
         local overlap_found=false
         if [[ -n "$used_subnets" ]]; then
             while IFS= read -r used_subnet; do
-                if [[ -n "$used_subnet" ]] && subnets_overlap "$new_subnet" "$used_subnet"; then
+                if [[ -n "$used_subnet" ]] && subnets_overlap "$candidate_subnet" "$used_subnet"; then
                     overlap_found=true
                     break
                 fi
@@ -306,8 +305,9 @@ generate_unique_subnets() {
         fi
 
         if [[ "$overlap_found" == false ]]; then
-            subnets+=("MEDIA_NETWORK_SUBNET=$new_subnet")
-            generated_subnets="$generated_subnets"$'\n'"$new_subnet"
+            subnets+=("MEDIA_NETWORK_SUBNET=$candidate_subnet")
+            generated_subnets="$generated_subnets"$'\n'"$candidate_subnet"
+            used_subnets="$used_subnets"$'\n'"$candidate_subnet"
             break
         fi
 
@@ -323,8 +323,8 @@ generate_unique_subnets() {
     attempts=0
     while [[ $attempts -lt $MAX_RETRIES ]]; do
         local second_octet=$((RANDOM % 200 + 50))
-        local new_subnet="${base_ip}.${second_octet}.0.0/16"
-        local vpn_ip="${base_ip}.${second_octet}.0.2"
+        local candidate_subnet="10.${second_octet}.0.0/16"
+        local vpn_ip="10.${second_octet}.0.2"
 
         # Check if this subnet overlaps with any used subnet or the media subnet we just generated
         local overlap_found=false
@@ -332,7 +332,7 @@ generate_unique_subnets() {
 
         if [[ -n "$all_used_subnets" ]]; then
             while IFS= read -r used_subnet; do
-                if [[ -n "$used_subnet" ]] && subnets_overlap "$new_subnet" "$used_subnet"; then
+                if [[ -n "$used_subnet" ]] && subnets_overlap "$candidate_subnet" "$used_subnet"; then
                     overlap_found=true
                     break
                 fi
@@ -340,7 +340,7 @@ generate_unique_subnets() {
         fi
 
         if [[ "$overlap_found" == false ]]; then
-            subnets+=("VPN_NETWORK_SUBNET=$new_subnet")
+            subnets+=("VPN_NETWORK_SUBNET=$candidate_subnet")
             subnets+=("VPN_IP_ADDRESS=$vpn_ip")
             break
         fi

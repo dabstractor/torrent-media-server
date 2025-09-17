@@ -10,3 +10,4 @@
 
 Ensure `proxyenabled=False` in Prowlarr database to prevent timeouts.
 Ensure `proxyenabled=False` in Prowlarr database to prevent timeouts.
+- Keep feature-specific documentation out of the main codebase directory

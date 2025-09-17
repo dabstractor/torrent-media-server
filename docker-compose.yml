@@ -235,12 +235,54 @@ services:
       radarr:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      test: ["CMD", "nginx", "-t"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
     restart: unless-stopped
+  # Watchlistarr - Plex Watchlist Sync Service
+  watchlistarr:
+    image: ghcr.io/dabstractor/watchlistarr:latest
+    container_name: ${CONTAINER_PREFIX}watchlistarr
+    restart: unless-stopped
+    networks:
+      - media_network
+    extra_hosts:
+      - "docker-host:host-gateway"
+    depends_on:
+      sonarr:
+        condition: service_healthy
+      radarr:
+        condition: service_healthy
+      plex:
+        condition: service_healthy
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/New_York}
+      - PLEX_HOST=${PLEX_HOST:-docker-host}
+      - PLEX_PORT=${PLEX_PORT:-32400}
+      - PLEX_TOKEN=${PLEX_TOKEN}
+      - PLEX_USERNAME=${PLEX_USERNAME}
+      - PLEX_PASSWORD=${PLEX_PASSWORD}
+      - SONARR_API_KEY=${SONARR_API_KEY}
+      - SONARR_BASE_URL=http://sonarr:8989
+      - RADARR_API_KEY=${RADARR_API_KEY}
+      - RADARR_BASE_URL=http://radarr:7878
+    volumes:
+      - ./config/watchlistarr:/app/config
+      - ./config/templates/watchlistarr:/templates:ro
+      - ./scripts:/scripts:ro
+      - ./config/plex:/plex-config:ro
+    entrypoint: ["/scripts/watchlistarr-entrypoint.sh"]
+    healthcheck:
+      test: ["CMD", "test", "-f", "/app/config/config.yaml"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    stop_grace_period: 30s
   # Web UI - React frontend for managing the entire stack
   web-ui:
     build: ./web-ui

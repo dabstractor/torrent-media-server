@@ -1,6 +1,6 @@
 # Torrent Media Hub - Local Infrastructure Setup
 
-A complete self-hosted torrent management and media streaming solution with VPN-protected downloads, torrent indexing, and Plex media server integration.
+A complete self-hosted torrent management and media streaming solution with VPN-protected downloads, torrent indexing, Plex media server integration, and automated watchlist synchronization.
 
 ## 🚀 Quick Start
 
@@ -21,16 +21,18 @@ A complete self-hosted torrent management and media streaming solution with VPN-
    - **Plex**: http://localhost:32400 (Media streaming)
    - **Prowlarr**: http://localhost:9696 (Torrent indexer aggregation)
    - **qBittorrent**: http://localhost:8080 (Torrent client)
-   - **Sonarr**: http://localhost:8989 (TV series management)  
+   - **Sonarr**: http://localhost:8989 (TV series management)
    - **Radarr**: http://localhost:7878 (Movie management)
+   - **Watchlistarr**: Automatic Plex watchlist sync (background service)
    - **Web UI**: http://localhost:3000 (Dashboard - configurable port via WEB_UI_PORT)
 
 ## 🏗️ Architecture
 
 This setup provides:
-- **VPN-Protected Downloads**: All torrent traffic routed through Wireguard VPN
+- **VPN-Protected Downloads**: All torrent traffic routed through Cloudflare WARP VPN
 - **Automated Media Management**: Sonarr/Radarr handle TV shows and movies
 - **Centralized Search**: Prowlarr aggregates multiple torrent indexers
+- **Watchlist Automation**: Watchlistarr syncs Plex watchlists with Sonarr/Radarr
 - **Media Streaming**: Plex serves your downloaded content
 - **Web Dashboard**: React-based mobile-friendly interface
 
@@ -38,7 +40,7 @@ This setup provides:
 
 - Docker and Docker Compose
 - 20GB+ free disk space
-- VPN provider supporting Wireguard (for protected downloads)
+- Plex account (for watchlist synchronization)
 
 ## ⚙️ Configuration
 
@@ -47,15 +49,14 @@ This setup provides:
 Edit `.env` file with your settings:
 
 ```bash
-# VPN Configuration (Required for secure torrenting)
-VPN_CONFIG_PATH=./config/vpn
-VPN_PORT=51820
+# Plex Configuration (Required for watchlist sync)
+PLEX_TOKEN=your_plex_token_here
 
 # Torrent Client
 QBITTORRENT_USERNAME=admin
 QBITTORRENT_PASSWORD=your_secure_password
 
-# Media Directories  
+# Media Directories
 MEDIA_ROOT=./data/media
 DOWNLOADS_ROOT=./data/downloads
 CONFIG_ROOT=./config
@@ -64,11 +65,17 @@ CONFIG_ROOT=./config
 TZ=America/New_York
 ```
 
-### VPN Setup
+### Plex Token Setup
 
-1. Create VPN configuration in `config/vpn/` directory
-2. Place your Wireguard `.conf` file in that directory
-3. Ensure VPN credentials are configured in `.env`
+To get your Plex token for watchlist synchronization:
+
+1. Open Plex Web (localhost:32400) in your browser
+2. Navigate to any library item (movie or show)
+3. Click "Get Info" → "View XML"
+4. Copy the `X-Plex-Token` parameter from the URL
+5. Add it to your `.env` file as `PLEX_TOKEN=your_token_here`
+
+**Note**: Uses Cloudflare WARP VPN by default (no configuration needed)
 
 ## 🗂️ Directory Structure
 
@@ -82,7 +89,7 @@ torrents/
 │   ├── qbittorrent/     # Torrent client settings
 │   ├── sonarr/           # TV series automation
 │   ├── radarr/           # Movie automation
-│   └── vpn/              # VPN configuration files
+│   └── watchlistarr/     # Watchlist sync configuration
 ├── data/                 # Media and download storage
 │   ├── downloads/        # Active and completed downloads
 │   │   ├── incomplete/   # Downloads in progress

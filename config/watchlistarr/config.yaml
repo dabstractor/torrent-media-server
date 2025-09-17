@@ -1,0 +1,48 @@
+# Watchlistarr Configuration Template
+# Automatically syncs Plex watchlists with Sonarr (TV) and Radarr (movies)
+# Environment variables will be substituted at container startup
+
+# Sync interval configuration
+interval:
+  seconds: 60
+
+# Sonarr configuration for TV shows
+sonarr:
+  baseUrl: "http://sonarr:8989"
+  apikey: "afde353290c6439497772562330d4eb0"
+  qualityProfile: "Any"
+  rootFolder: "/tv"
+  bypassIgnored: false
+  seasonMonitoring: "all"
+  tags:
+    - watchlistarr
+
+# Radarr configuration for movies
+radarr:
+  baseUrl: "http://radarr:7878"
+  apikey: "1896856646174be29ab7cca907e77458"
+  qualityProfile: "Any"
+  rootFolder: "/movies"
+  bypassIgnored: false
+  tags:
+    - watchlistarr
+
+# Plex configuration
+plex:
+  token: "gjyy4Fx3Qv_Msy9hWChe"
+  skipfriendsync: false
+
+# Delete sync configuration - ENABLED BY DEFAULT
+# Removes content from Sonarr/Radarr when removed from Plex watchlist
+delete:
+  movie: true
+  endedShow: true
+  continuingShow: true
+  interval:
+    days: 7
+  deleteFiles: true
+
+# Logging configuration
+logging:
+  level: "INFO"
+  file: "/app/logs/watchlistarr.log"
