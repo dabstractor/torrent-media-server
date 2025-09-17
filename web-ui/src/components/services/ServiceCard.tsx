@@ -18,6 +18,22 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, health, loading }) =
     )
   }
 
+  // Generate dynamic URL using the browser's current hostname
+  const generateDynamicUrl = (originalUrl: string): string => {
+    try {
+      const serviceUrl = new URL(originalUrl);
+      // Use window.location.protocol for the protocol, window.location.hostname for the hostname,
+      // and keep the original port and pathname
+      return `${window.location.protocol}//${window.location.hostname}:${serviceUrl.port}${serviceUrl.pathname}`;
+    } catch (error) {
+      // If URL parsing fails, fall back to the original URL
+      console.warn('Failed to parse service URL, falling back to original:', originalUrl);
+      return originalUrl;
+    }
+  };
+
+  const dynamicUrl = generateDynamicUrl(service.url);
+
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'media':
@@ -79,8 +95,8 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, health, loading }) =
         <div className="grid grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-400">
           <div className="flex items-center space-x-2">
             <span className="text-gray-400">🔗</span>
-            <span className="truncate" title={service.url}>
-              {new URL(service.url).hostname}
+            <span className="truncate" title={dynamicUrl}>
+              {window.location.hostname}
             </span>
           </div>
           <div className="flex items-center space-x-2">
@@ -92,7 +108,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, health, loading }) =
         {/* Action button */}
         <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
           <a
-            href={service.url}
+            href={dynamicUrl}
             target="_blank"
             rel="noopener noreferrer"
             className={`inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium rounded-md min-h-[44px] transition-colors ${

@@ -2,6 +2,19 @@ import { render, screen } from '@testing-library/react'
 import ServiceCard from '@/components/services/ServiceCard'
 import { ServiceConfig, ServiceHealth } from '@/lib/types/services'
 
+// Mock window.location for testing dynamic URLs
+const mockWindowLocation = {
+  protocol: 'http:',
+  hostname: '192.168.1.100',
+  port: '',
+  pathname: '/'
+};
+
+// @ts-ignore
+delete window.location;
+// @ts-ignore
+window.location = mockWindowLocation;
+
 // Mock Next.js Link component
 jest.mock('next/link', () => {
   const MockLink = ({ children, href }: { children: React.ReactNode; href: string }) => {
@@ -103,7 +116,7 @@ describe('ServiceCard', () => {
       />
     )
 
-    expect(screen.getByText('localhost')).toBeInTheDocument()
+    expect(screen.getByText('192.168.1.100')).toBeInTheDocument()
     expect(screen.getByText('No Auth')).toBeInTheDocument()
   })
 
@@ -134,7 +147,7 @@ describe('ServiceCard', () => {
     )
 
     const link = screen.getByRole('link', { name: /open qbittorrent/i })
-    expect(link).toHaveAttribute('href', 'http://localhost:8080')
+    expect(link).toHaveAttribute('href', 'http://192.168.1.100:8080/')
     expect(link).toHaveAttribute('target', '_blank')
     expect(link).toHaveAttribute('rel', 'noopener noreferrer')
   })
@@ -149,7 +162,7 @@ describe('ServiceCard', () => {
     )
 
     const link = screen.getByRole('link', { name: /open qbittorrent/i })
-    expect(link).toHaveClass('opacity-50', 'cursor-not-allowed')
+    expect(link).toHaveClass('cursor-not-allowed')
     expect(link).toHaveAttribute('aria-disabled', 'true')
   })
 
@@ -202,4 +215,68 @@ describe('ServiceCard', () => {
     expect(screen.getByText('Offline')).toBeInTheDocument()
     expect(screen.getByText('Never')).toBeInTheDocument()
   })
-})
+
+  it('generates correct dynamic URL for different hostnames', () => {
+    // @ts-ignore
+    window.location.hostname = '10.0.0.5';
+
+    render(
+      <ServiceCard
+        service={mockService}
+        health={mockHealthOnline}
+        loading={false}
+      />
+    )
+
+    const link = screen.getByRole('link', { name: /open qbittorrent/i });
+    expect(link).toHaveAttribute('href', 'http://10.0.0.5:8080/');
+
+    // Reset to original value
+    // @ts-ignore
+    window.location.hostname = '192.168.1.100';
+  });
+
+  it('falls back to original URL when URL parsing fails', () => {
+    const serviceWithInvalidUrl = {
+      ...mockService,
+      url: 'invalid-url'
+    };
+
+    // Mock console.warn to avoid test output pollution
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+    render(
+      <ServiceCard
+        service={serviceWithInvalidUrl}
+        health={mockHealthOnline}
+        loading={false}
+      />
+    );
+
+    const link = screen.getByRole('link', { name: /open qbittorrent/i });
+    expect(link).toHaveAttribute('href', 'invalid-url');
+
+    // Restore console.warn
+    consoleWarnSpy.mockRestore();
+  });
+
+  it('generates correct dynamic URL with HTTPS protocol', () => {
+    // @ts-ignore
+    window.location.protocol = 'https:';
+
+    render(
+      <ServiceCard
+        service={mockService}
+        health={mockHealthOnline}
+        loading={false}
+      />
+    );
+
+    const link = screen.getByRole('link', { name: /open qbittorrent/i });
+    expect(link).toHaveAttribute('href', 'https://192.168.1.100:8080/');
+
+    // Reset to original value
+    // @ts-ignore
+    window.location.protocol = 'http:';
+  });
+});
