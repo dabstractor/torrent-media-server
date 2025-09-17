@@ -91,7 +91,7 @@ validate_worktree_name() {
 
 # Get all ports currently in use by docker containers
 get_used_ports() {
-    docker ps --format "{{.Ports}}" 2>/dev/null | \
+    docker ps -a --format "{{.Ports}}" 2>/dev/null | \
     grep -oE ':[0-9]+->|:[0-9]+/' | \
     grep -oE '[0-9]+' | \
     sort -n | \
