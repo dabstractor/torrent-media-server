@@ -99,22 +99,104 @@ get_used_ports() {
 }
 
 # Get ports from existing .env files in sibling directories
+# Enhanced to specifically target known port variables and validate port ranges
 get_env_ports() {
-    find "$PARENT_DIR" -maxdepth 2 -name ".env" -type f 2>/dev/null | \
-    xargs grep -h "PORT=" 2>/dev/null | \
-    grep -oE '[0-9]+' | \
-    sort -n | \
-    uniq || true
+    local port_vars=(
+        "VPN_BITTORRENT_PORT"
+        "FLARESOLVERR_PORT"
+        "PLEX_PORT"
+        "NGINX_QBITTORRENT_PORT"
+        "NGINX_PROWLARR_PORT"
+        "NGINX_SONARR_PORT"
+        "NGINX_RADARR_PORT"
+        "PROWLARR_PORT"
+        "WEB_UI_PORT"
+        "PIA_WIREGUARD_PORT"
+        "PIA_FLARESOLVERR_PORT"
+        "PIA_PROWLARR_PORT"
+        "PLEX_EXTERNAL_PORT"
+        "QBITTORRENT_PORT"
+        "VPN_PORT"
+    )
+
+    local all_ports=""
+
+    # Find all .env files in sibling directories
+    local env_files
+    env_files=$(find "$PARENT_DIR" -maxdepth 2 -name ".env" -type f 2>/dev/null || true)
+
+    # Extract ports from each .env file
+    while IFS= read -r env_file; do
+        if [[ -f "$env_file" ]]; then
+            # For each port variable, extract its value
+            for port_var in "${port_vars[@]}"; do
+                local port_value
+                port_value=$(grep "^${port_var}=" "$env_file" 2>/dev/null | cut -d'=' -f2 | tr -d ' ')
+                if [[ -n "$port_value" ]] && [[ "$port_value" =~ ^[0-9]+$ ]] && [[ "$port_value" -ge 1 ]] && [[ "$port_value" -le 65535 ]]; then
+                    all_ports="$all_ports"$'\n'"$port_value"
+                fi
+            done
+        fi
+    done <<< "$env_files"
+
+    # Also check for any other PORT variables that might be valid
+    while IFS= read -r env_file; do
+        if [[ -f "$env_file" ]]; then
+            local other_ports
+            other_ports=$(grep -E "^[A-Z_]+PORT=" "$env_file" 2>/dev/null | grep -v "^MEDIA_NETWORK_SUBNET\|^VPN_NETWORK_SUBNET\|^NETWORK_SUBNET" | cut -d'=' -f2 | tr -d ' ' | grep -E "^[0-9]+$" || true)
+            while IFS= read -r port; do
+                if [[ -n "$port" ]] && [[ "$port" -ge 1 ]] && [[ "$port" -le 65535 ]]; then
+                    all_ports="$all_ports"$'\n'"$port"
+                fi
+            done <<< "$other_ports"
+        fi
+    done <<< "$env_files"
+
+    # Return sorted unique ports
+    if [[ -n "$all_ports" ]]; then
+        echo "$all_ports" | grep -E "^[0-9]+$" | sort -n | uniq
+    fi
 }
 
 # Get network subnets from existing .env files in sibling directories
+# Enhanced to extract full subnet information and handle both legacy and new formats
 get_env_subnets() {
-    find "$PARENT_DIR" -maxdepth 2 -name ".env" -type f 2>/dev/null | \
-    xargs grep -h "NETWORK_SUBNET=" 2>/dev/null | \
-    grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+' | \
-    cut -d'.' -f3 | \
-    sort -n | \
-    uniq || true
+    local all_subnets=""
+
+    # Find all .env files in sibling directories
+    local env_files
+    env_files=$(find "$PARENT_DIR" -maxdepth 2 -name ".env" -type f 2>/dev/null || true)
+
+    # Extract subnets from each .env file
+    while IFS= read -r env_file; do
+        if [[ -f "$env_file" ]]; then
+            # Check for MEDIA_NETWORK_SUBNET (new format)
+            local media_subnet
+            media_subnet=$(grep "^MEDIA_NETWORK_SUBNET=" "$env_file" 2>/dev/null | cut -d'=' -f2 | tr -d ' ')
+            if [[ -n "$media_subnet" ]] && [[ "$media_subnet" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$ ]]; then
+                all_subnets="$all_subnets"$'\n'"$media_subnet"
+            fi
+
+            # Check for VPN_NETWORK_SUBNET (new format)
+            local vpn_subnet
+            vpn_subnet=$(grep "^VPN_NETWORK_SUBNET=" "$env_file" 2>/dev/null | cut -d'=' -f2 | tr -d ' ')
+            if [[ -n "$vpn_subnet" ]] && [[ "$vpn_subnet" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$ ]]; then
+                all_subnets="$all_subnets"$'\n'"$vpn_subnet"
+            fi
+
+            # Check for legacy NETWORK_SUBNET (old format)
+            local legacy_subnet
+            legacy_subnet=$(grep "^NETWORK_SUBNET=" "$env_file" 2>/dev/null | cut -d'=' -f2 | tr -d ' ')
+            if [[ -n "$legacy_subnet" ]] && [[ "$legacy_subnet" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$ ]]; then
+                all_subnets="$all_subnets"$'\n'"$legacy_subnet"
+            fi
+        fi
+    done <<< "$env_files"
+
+    # Return sorted unique subnets
+    if [[ -n "$all_subnets" ]]; then
+        echo "$all_subnets" | grep -E "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$" | sort | uniq
+    fi
 }
 
 # Generate a random port that's not in use
@@ -138,60 +220,139 @@ generate_random_port() {
     return 1
 }
 
-# Get all network subnets currently in use
+# Get all network subnets currently in use by Docker networks
+# Enhanced to extract full subnet information for better conflict detection
 get_used_subnets() {
-    docker network ls --format "{{.Name}}" 2>/dev/null | \
-    xargs -I {} docker network inspect {} --format "{{range .IPAM.Config}}{{.Subnet}}{{end}}" 2>/dev/null | \
-    grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$' | \
-    cut -d'.' -f3 | \
-    sort -n | \
-    uniq || true
+    # Get all Docker networks and their subnets
+    local docker_subnets=""
+    local network_names
+    network_names=$(docker network ls --format "{{.Name}}" 2>/dev/null || true)
+
+    if [[ -n "$network_names" ]]; then
+        while IFS= read -r network_name; do
+            if [[ -n "$network_name" ]]; then
+                local subnet_info
+                subnet_info=$(docker network inspect "$network_name" --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}' 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$' || true)
+                if [[ -n "$subnet_info" ]]; then
+                    docker_subnets="$docker_subnets"$'\n'"$subnet_info"
+                fi
+            fi
+        done <<< "$network_names"
+    fi
+
+    # Return sorted unique subnets
+    if [[ -n "$docker_subnets" ]]; then
+        echo "$docker_subnets" | grep -E "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$" | sort | uniq
+    fi
 }
 
-# Generate unique network subnets
+# Check if two subnets overlap
+# Takes two subnet strings in format X.X.X.X/Y
+subnets_overlap() {
+    local subnet1="$1"
+    local subnet2="$2"
+
+    # Extract IP and CIDR for both subnets
+    local ip1=$(echo "$subnet1" | cut -d'/' -f1)
+    local cidr1=$(echo "$subnet1" | cut -d'/' -f2)
+    local ip2=$(echo "$subnet2" | cut -d'/' -f1)
+    local cidr2=$(echo "$subnet2" | cut -d'/' -f2)
+
+    # Convert IPs to integers
+    local ip1_int=0
+    local ip2_int=0
+
+    # Convert dotted decimal to integer
+    IFS='.' read -ra IP1_PARTS <<< "$ip1"
+    IFS='.' read -ra IP2_PARTS <<< "$ip2"
+
+    ip1_int=$(( (${IP1_PARTS[0]} << 24) + (${IP1_PARTS[1]} << 16) + (${IP1_PARTS[2]} << 8) + ${IP1_PARTS[3]} ))
+    ip2_int=$(( (${IP2_PARTS[0]} << 24) + (${IP2_PARTS[1]} << 16) + (${IP2_PARTS[2]} << 8) + ${IP2_PARTS[3]} ))
+
+    # Calculate subnet masks
+    local mask1=$(( 0xFFFFFFFF << (32 - cidr1) ))
+    local mask2=$(( 0xFFFFFFFF << (32 - cidr2) ))
+
+    # Check if networks overlap
+    if (( (ip1_int & mask1) == (ip2_int & mask1) )) || (( (ip1_int & mask2) == (ip2_int & mask2) )); then
+        return 0  # Overlap
+    else
+        return 1  # No overlap
+    fi
+}
+
+# Generate unique network subnets with improved conflict detection
 generate_unique_subnets() {
     local used_subnets="$1"
     local attempts=0
     local base_ip="10"
     local subnets=()
-    
+    local generated_subnets=""
+
     # Generate media network subnet (10.X.0.0/16)
     while [[ $attempts -lt $MAX_RETRIES ]]; do
         local second_octet=$((RANDOM % 200 + 50))  # Range 50-249 to avoid common conflicts
-        
-        if ! echo "$used_subnets" | grep -q "^${second_octet}$"; then
-            subnets+=("MEDIA_NETWORK_SUBNET=${base_ip}.${second_octet}.0.0/16")
-            used_subnets="$used_subnets"$'\n'"$second_octet"
+        local new_subnet="${base_ip}.${second_octet}.0.0/16"
+
+        # Check if this subnet overlaps with any used subnet
+        local overlap_found=false
+        if [[ -n "$used_subnets" ]]; then
+            while IFS= read -r used_subnet; do
+                if [[ -n "$used_subnet" ]] && subnets_overlap "$new_subnet" "$used_subnet"; then
+                    overlap_found=true
+                    break
+                fi
+            done <<< "$used_subnets"
+        fi
+
+        if [[ "$overlap_found" == false ]]; then
+            subnets+=("MEDIA_NETWORK_SUBNET=$new_subnet")
+            generated_subnets="$generated_subnets"$'\n'"$new_subnet"
             break
         fi
-        
+
         attempts=$((attempts + 1))
     done
-    
+
     if [[ $attempts -eq $MAX_RETRIES ]]; then
-        log_error "Could not find available media network subnet"
+        log_error "Could not find available media network subnet after $MAX_RETRIES attempts"
         return 1
     fi
-    
+
     # Generate VPN network subnet (10.Y.0.0/16) - different from media network
     attempts=0
     while [[ $attempts -lt $MAX_RETRIES ]]; do
         local second_octet=$((RANDOM % 200 + 50))
-        
-        if ! echo "$used_subnets" | grep -q "^${second_octet}$"; then
-            subnets+=("VPN_NETWORK_SUBNET=${base_ip}.${second_octet}.0.0/16")
-            subnets+=("VPN_IP_ADDRESS=${base_ip}.${second_octet}.0.2")
+        local new_subnet="${base_ip}.${second_octet}.0.0/16"
+        local vpn_ip="${base_ip}.${second_octet}.0.2"
+
+        # Check if this subnet overlaps with any used subnet or the media subnet we just generated
+        local overlap_found=false
+        local all_used_subnets="$used_subnets"$'\n'"$generated_subnets"
+
+        if [[ -n "$all_used_subnets" ]]; then
+            while IFS= read -r used_subnet; do
+                if [[ -n "$used_subnet" ]] && subnets_overlap "$new_subnet" "$used_subnet"; then
+                    overlap_found=true
+                    break
+                fi
+            done <<< "$all_used_subnets"
+        fi
+
+        if [[ "$overlap_found" == false ]]; then
+            subnets+=("VPN_NETWORK_SUBNET=$new_subnet")
+            subnets+=("VPN_IP_ADDRESS=$vpn_ip")
             break
         fi
-        
+
         attempts=$((attempts + 1))
     done
-    
+
     if [[ $attempts -eq $MAX_RETRIES ]]; then
-        log_error "Could not find available VPN network subnet"
+        log_error "Could not find available VPN network subnet after $MAX_RETRIES attempts"
         return 1
     fi
-    
+
     printf '%s\n' "${subnets[@]}"
 }
 
@@ -441,31 +602,55 @@ main() {
     
     # Gather all used ports
     log_info "Checking for port conflicts..."
+    local docker_ports
+    local env_ports
+    docker_ports=$(get_used_ports)
+    env_ports=$(get_env_ports)
+
     local used_ports
     used_ports=$(
         {
-            get_used_ports
-            get_env_ports
-        } | sort -n | uniq
+            echo "$docker_ports"
+            echo "$env_ports"
+        } | grep -E "^[0-9]+$" | sort -n | uniq
     )
-    
-    local used_count
-    used_count=$(echo "$used_ports" | wc -l)
-    log_info "Found $used_count ports already in use"
-    
+
+    local docker_port_count
+    local env_port_count
+    local total_port_count
+    docker_port_count=$(echo "$docker_ports" | grep -E "^[0-9]+$" | wc -l)
+    env_port_count=$(echo "$env_ports" | grep -E "^[0-9]+$" | wc -l)
+    total_port_count=$(echo "$used_ports" | grep -E "^[0-9]+$" | wc -l)
+
+    log_info "Found $docker_port_count ports in use by Docker containers"
+    log_info "Found $env_port_count ports in .env files"
+    log_info "Total unique ports to avoid: $total_port_count"
+
     # Gather all used network subnets
     log_info "Checking for network subnet conflicts..."
+    local docker_subnets
+    local env_subnets
+    docker_subnets=$(get_used_subnets)
+    env_subnets=$(get_env_subnets)
+
     local used_subnets
     used_subnets=$(
         {
-            get_used_subnets
-            get_env_subnets
-        } | sort -n | uniq
+            echo "$docker_subnets"
+            echo "$env_subnets"
+        } | grep -E "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$" | sort | uniq
     )
-    
-    local subnet_count
-    subnet_count=$(echo "$used_subnets" | wc -l)
-    log_info "Found $subnet_count network subnets already in use"
+
+    local docker_subnet_count
+    local env_subnet_count
+    local total_subnet_count
+    docker_subnet_count=$(echo "$docker_subnets" | grep -E "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$" | wc -l)
+    env_subnet_count=$(echo "$env_subnets" | grep -E "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$" | wc -l)
+    total_subnet_count=$(echo "$used_subnets" | grep -E "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$" | wc -l)
+
+    log_info "Found $docker_subnet_count subnets in use by Docker networks"
+    log_info "Found $env_subnet_count subnets in .env files"
+    log_info "Total unique subnets to avoid: $total_subnet_count"
     
     # Generate port configuration
     local port_config
