@@ -13,6 +13,7 @@ interface EnvConfig {
   PLEX_URL?: string
   SONARR_URL?: string
   RADARR_URL?: string
+  OVERSEERR_URL?: string
   API_BASE_URL?: string
   WEB_UI_PORT?: string
 }
@@ -86,6 +87,20 @@ const mapEnvToServices = (envConfig: EnvConfig): ServiceConfig[] => {
       icon: 'Film',
       url: envConfig.RADARR_URL,
       healthEndpoint: `${healthBaseUrl}/radarr`,
+      requiresAuth: false,
+      category: 'management'
+    })
+  }
+
+  // Overseerr - Media request management
+  if (envConfig.OVERSEERR_URL) {
+    services.push({
+      id: 'overseerr',
+      name: 'Overseerr',
+      description: 'Media request management',
+      icon: 'Request',
+      url: envConfig.OVERSEERR_URL,
+      healthEndpoint: `${healthBaseUrl}/overseerr`,
       requiresAuth: false,
       category: 'management'
     })

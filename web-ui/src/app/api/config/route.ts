@@ -9,6 +9,7 @@ export async function GET() {
     PLEX_URL: process.env.PLEX_URL,
     SONARR_URL: process.env.SONARR_URL,
     RADARR_URL: process.env.RADARR_URL,
+    OVERSEERR_URL: process.env.OVERSEERR_URL,
     API_BASE_URL: process.env.API_BASE_URL,
     WEB_UI_PORT: process.env.WEB_UI_PORT,
   };

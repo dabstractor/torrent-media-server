@@ -22,13 +22,16 @@ services:
   init-directories:
     image: alpine:latest
     container_name: ${CONTAINER_PREFIX}init-directories
-    user: "0:0"  # Run as root to fix ownership
+    user: "0:0" # Run as root to fix ownership
     command: >
       sh -c "
+
+
         mkdir -p /data/media/tv /data/media/movies /data/downloads/complete /data/downloads/incomplete /data/downloads/watch &&
         chown -R 1000:1000 /data/ &&
         echo 'Directory ownership initialized: dustin:dustin (1000:1000)'
       "
+
     volumes:
       - ./data:/data
     restart: "no"
@@ -219,10 +222,10 @@ services:
       - media_network
       - vpn_network
     ports:
-      - "${NGINX_QBITTORRENT_PORT:-18080}:8080"   # qBittorrent proxy
-      - "${NGINX_PROWLARR_PORT:-19696}:9696"   # Prowlarr proxy
-      - "${NGINX_SONARR_PORT:-18989}:8989"   # Sonarr proxy
-      - "${NGINX_RADARR_PORT:-17878}:7878"   # Radarr proxy
+      - "${NGINX_QBITTORRENT_PORT:-18080}:8080" # qBittorrent proxy
+      - "${NGINX_PROWLARR_PORT:-19696}:9696" # Prowlarr proxy
+      - "${NGINX_SONARR_PORT:-18989}:8989" # Sonarr proxy
+      - "${NGINX_RADARR_PORT:-17878}:7878" # Radarr proxy
     volumes:
       - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
@@ -292,7 +295,7 @@ services:
       - vpn_network
     ports:
       - "${WEB_UI_PORT:-18787}:3000"
-    user: "1000:1000"  # Run as current user to match file ownership
+    user: "1000:1000" # Run as current user to match file ownership
     depends_on:
       init-directories:
         condition: service_completed_successfully
@@ -315,12 +318,14 @@ services:
       - PLEX_URL=http://localhost:32400
       - SONARR_URL=http://localhost:${NGINX_SONARR_PORT}
       - RADARR_URL=http://localhost:${NGINX_RADARR_PORT}
+      - OVERSEERR_URL=http://localhost:${OVERSEERR_PORT:-5055}
       # Backend URLs for internal Docker communication
       - PROWLARR_BACKEND_URL=http://prowlarr:9696
       - QBITTORRENT_BACKEND_URL=http://vpn:8080
       - PLEX_BACKEND_URL=http://nginx-proxy:32400
       - SONARR_BACKEND_URL=http://sonarr:8989
       - RADARR_BACKEND_URL=http://radarr:7878
+      - OVERSEERR_BACKEND_URL=http://overseerr:5055
       # Reverse proxy configuration for secure access
       - ENABLE_REVERSE_PROXY=true
       - QBITTORRENT_PROXY_PATH=/qbittorrent
@@ -366,6 +371,45 @@ services:
       - ./scripts:/scripts:ro
     healthcheck:
       test: ["CMD-SHELL", "curl -f -H \"X-Api-Key: $$PROWLARR_API_KEY\" http://localhost:9696/api/v1/system/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    stop_grace_period: 60s
+  # Overseerr - Media Request Management
+  overseerr:
+    build:
+      context: .
+      dockerfile: overseerr.Dockerfile
+    container_name: ${CONTAINER_PREFIX}overseerr
+    networks:
+      - media_network
+      - vpn_network
+    ports:
+      - "${OVERSEERR_PORT:-5055}:5055"
+    depends_on:
+      init-directories:
+        condition: service_completed_successfully
+      plex:
+        condition: service_healthy
+      radarr:
+        condition: service_healthy
+      sonarr:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/New_York}
+      - PORT=${OVERSEERR_PORT:-5055}
+      - PLEX_TOKEN=${PLEX_CLAIM_TOKEN}
+    volumes:
+      - ./config/overseerr:/app/config
+      - ./config/templates/overseerr:/templates:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${OVERSEERR_PORT:-5055}/api/v1/status || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

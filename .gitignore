@@ -8,9 +8,10 @@
 # Exclude all runtime config data
 config/plex/
 config/prowlarr/
-config/qbittorrent/ 
+config/qbittorrent/
 config/radarr/
 config/sonarr/
+config/overseerr/
 config/vpn/
 # Only preserve templates for secure configuration generation
 !config/templates/
@@ -42,6 +43,11 @@ config/**/*.db-shm
 config/**/*.db-wal
 config/**/*.sqlite
 config/**/*.sqlite3
+
+# Overseerr-specific excludes
+config/overseerr/db/
+config/overseerr/logs/
+config/overseerr/settings.json
 
 # ASP.NET Core Data Protection Keys (cryptographic secrets)
 config/**/asp/

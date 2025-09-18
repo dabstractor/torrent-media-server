@@ -39,6 +39,12 @@ async function getServiceConfigs(): Promise<Record<string, ServiceConfig>> {
       healthEndpoint: '/ping', // Use unauthenticated ping endpoint
       authType: 'none',
       timeout: 10000
+    },
+    overseerr: {
+      url: process.env.OVERSEERR_BACKEND_URL || 'http://overseerr:5055',
+      healthEndpoint: '/api/v1/status',
+      authType: 'none',
+      timeout: 10000
     }
   }
 }

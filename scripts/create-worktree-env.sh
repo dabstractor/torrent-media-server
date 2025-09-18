@@ -375,6 +375,7 @@ generate_port_configuration() {
         "PIA_WIREGUARD_PORT"
         "PIA_FLARESOLVERR_PORT"
         "PIA_PROWLARR_PORT"
+        "OVERSEERR_PORT"
     )
     
     # Generate ports without logging to avoid output pollution
