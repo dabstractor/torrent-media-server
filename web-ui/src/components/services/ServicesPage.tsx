@@ -119,6 +119,11 @@ const ServicesPage: React.FC = () => {
   const { config: services, loading: configLoading, error: configError } = useServiceConfig()
   const healthData = useMultiServiceHealth(services)
 
+  // Simple test to see if Jellyfin is in the services list
+  const hasJellyfin = services.some(service => service.id === 'jellyfin')
+  console.log('[TEST] Services list:', services)
+  console.log('[TEST] Has Jellyfin:', hasJellyfin)
+
   // Refresh function for manual refresh
   const handleRefresh = () => {
     // Force a re-render which will trigger health checks
@@ -174,6 +179,15 @@ const ServicesPage: React.FC = () => {
             🔄 Refresh
           </button>
         </div>
+      </div>
+
+      {/* Test message to see if Jellyfin is detected */}
+      <div className="bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 dark:border-yellow-700 text-yellow-700 dark:text-yellow-200 px-4 py-3 rounded">
+        <p className="font-bold">Debug Info:</p>
+        <p>Total services: {totalServices}</p>
+        <p>Has Jellyfin: {hasJellyfin ? 'Yes' : 'No'}</p>
+        <p>Services loading: {configLoading ? 'Yes' : 'No'}</p>
+        {configError && <p>Error: {configError}</p>}
       </div>
 
       {/* Services grid */}

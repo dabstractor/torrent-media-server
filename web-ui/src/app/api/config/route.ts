@@ -15,5 +15,7 @@ export async function GET() {
     WEB_UI_PORT: process.env.WEB_UI_PORT,
   };
 
+  console.log('[DEBUG] Config API returning:', config);
+
   return Response.json(config);
 }

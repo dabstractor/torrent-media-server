@@ -131,16 +131,20 @@ export const useServiceConfig = (): UseServiceConfigReturn => {
 
   const fetchConfig = useCallback(async () => {
     try {
+      console.log('[TEST] fetchConfig called')
       setLoading(true)
       setError(null)
 
       const response = await fetch('/api/config')
+      console.log('[TEST] Config API response status:', response.status)
       if (!response.ok) {
         throw new Error(`Failed to fetch configuration: ${response.statusText}`)
       }
 
       const envConfig = await response.json()
+      console.log('[TEST] Config API response data:', envConfig)
       const services = mapEnvToServices(envConfig)
+      console.log('[TEST] Services after mapEnvToServices:', services)
       setConfig(services)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load configuration'
@@ -148,10 +152,12 @@ export const useServiceConfig = (): UseServiceConfigReturn => {
       console.error('Error fetching service configuration:', err)
     } finally {
       setLoading(false)
+      console.log('[TEST] fetchConfig completed')
     }
   }, [])
 
   useEffect(() => {
+    console.log('[TEST] useEffect called')
     fetchConfig()
   }, [fetchConfig])
 

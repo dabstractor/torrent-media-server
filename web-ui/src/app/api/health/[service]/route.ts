@@ -45,6 +45,12 @@ async function getServiceConfigs(): Promise<Record<string, ServiceConfig>> {
       healthEndpoint: '/api/v1/status',
       authType: 'none',
       timeout: 10000
+    },
+    jellyfin: {
+      url: process.env.JELLYFIN_BACKEND_URL || 'http://jellyfin:8096',
+      healthEndpoint: '/health',
+      authType: 'none',
+      timeout: 10000
     }
   }
 }

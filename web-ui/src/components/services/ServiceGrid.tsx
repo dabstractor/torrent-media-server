@@ -18,13 +18,18 @@ const ServiceGrid: React.FC<ServiceGridProps> = ({
   error
 }) => {
   // Show loading state
-  if (isLoading && services.length === 0) {
+  if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <LoadingSpinner />
         <p className="mt-4 text-gray-600 dark:text-gray-400">
           Loading service configurations...
         </p>
+        {/* Debug info */}
+        <div className="mt-4 p-2 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded">
+          <p>Debug: Loading state is true</p>
+          <p>Services length: {services.length}</p>
+        </div>
       </div>
     )
   }
