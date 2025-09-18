@@ -6,7 +6,7 @@ export interface ServiceConfig {
   url: string
   healthEndpoint: string
   requiresAuth: boolean
-  category: 'media' | 'download' | 'indexer' | 'proxy'
+  category: 'media' | 'download' | 'indexer' | 'proxy' | 'management'
 }
 
 export interface ServiceHealth {

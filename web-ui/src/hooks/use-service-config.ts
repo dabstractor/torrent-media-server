@@ -13,6 +13,7 @@ interface EnvConfig {
   PLEX_URL?: string
   SONARR_URL?: string
   RADARR_URL?: string
+  JELLYFIN_URL?: string
   OVERSEERR_URL?: string
   API_BASE_URL?: string
   WEB_UI_PORT?: string
@@ -59,6 +60,20 @@ const mapEnvToServices = (envConfig: EnvConfig): ServiceConfig[] => {
       icon: 'Play',
       url: envConfig.PLEX_URL,
       healthEndpoint: `${healthBaseUrl}/plex`,
+      requiresAuth: false,
+      category: 'media'
+    })
+  }
+
+  // Jellyfin - Open source media server
+  if (envConfig.JELLYFIN_URL) {
+    services.push({
+      id: 'jellyfin',
+      name: 'Jellyfin',
+      description: 'Open source media server alternative to Plex',
+      icon: 'Play',
+      url: envConfig.JELLYFIN_URL,
+      healthEndpoint: `${healthBaseUrl}/jellyfin`,
       requiresAuth: false,
       category: 'media'
     })

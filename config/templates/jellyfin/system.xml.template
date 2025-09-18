@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ServerConfiguration>
+  <!-- Skip setup wizard on first run -->
+  <IsStartupWizardCompleted>true</IsStartupWizardCompleted>
+  <MetadataPath>/config/metadata</MetadataPath>
+  <MetadataNetworkPath></MetadataNetworkPath>
+  <EnableCaseSensitiveItemIds>false</EnableCaseSensitiveItemIds>
+  <DisableLiveTvChannelUserDataName>false</DisableLiveTvChannelUserDataName>
+  <EnableNewOmdbSupport>false</EnableNewOmdbSupport>
+  <EnableExternalContentInSuggestions>true</EnableExternalContentInSuggestions>
+  <RequireHttps>false</RequireHttps>
+  <EnableLocalizedGuids>false</EnableLocalizedGuids>
+  <EnableNormalizedItemByNameIds>true</EnableNormalizedItemByNameIds>
+  <IsPortAuthorized>true</IsPortAuthorized>
+  <QuickConnectAvailable>false</QuickConnectAvailable>
+  <EnableCase>false</EnableCase>
+  <EnableMetrics>false</EnableMetrics>
+  <ServerName>${CONTAINER_PREFIX}Jellyfin</ServerName>
+  <BaseUrl></BaseUrl>
+  <CertificatePath></CertificatePath>
+  <CertificatePassword></CertificatePassword>
+  <LocalNetworkSubnets>
+    <string>172.16.0.0/12</string>
+    <string>10.0.0.0/8</string>
+    <string>192.168.0.0/16</string>
+  </LocalNetworkSubnets>
+  <LocalNetworkAddresses/>
+  <RemoteIPFilter/>
+  <IsRemoteIPFilterBlacklist>false</IsRemoteIPFilterBlacklist>
+  <PublicPort>8096</PublicPort>
+  <PublicHttpsPort>8920</PublicHttpsPort>
+  <HttpServerPortNumber>8096</HttpServerPortNumber>
+  <HttpsPortNumber>8920</HttpsPortNumber>
+  <EnableHttps>false</EnableHttps>
+  <AllowRemoteAccess>true</AllowRemoteAccess>
+  <LogFileRetentionDays>3</LogFileRetentionDays>
+  <EnableUPnP>false</EnableUPnP>
+</ServerConfiguration>
