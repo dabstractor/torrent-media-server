@@ -193,40 +193,6 @@ services:
       start_period: 300s
     restart: unless-stopped
     stop_grace_period: 60s
-  # Cloudflare Tunnel - Jellyfin Remote Access (zero-config for new users)
-  cloudflared:
-    image: alpine:latest
-    container_name: ${CONTAINER_PREFIX}cloudflared
-    networks:
-      - media_network
-    volumes:
-      - ./data/shared:/shared-data
-      - ./config/jellyfin/tunnel-setup:/tunnel-setup:ro
-    environment:
-      - TUNNEL_TOKEN=${TUNNEL_TOKEN:-}
-    entrypoint: ["/tunnel-setup/smart-tunnel.sh"]
-    depends_on:
-      jellyfin:
-        condition: service_healthy
-    restart: unless-stopped
-
-  # Ngrok Tunnel - Alternative Jellyfin Remote Access (zero-config for new users)
-  ngrok:
-    image: ngrok/ngrok:latest
-    container_name: ${CONTAINER_PREFIX}ngrok
-    networks:
-      - media_network
-    environment:
-      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN:-}
-      - NGROK_DOMAIN=${NGROK_DOMAIN:-}
-    entrypoint: ["/ngrok-setup/smart-ngrok.sh"]
-    volumes:
-      - ./config/jellyfin/ngrok/smart-ngrok.sh:/ngrok-setup/smart-ngrok.sh:ro
-      - ./data/shared:/shared-data
-    depends_on:
-      jellyfin:
-        condition: service_healthy
-    restart: unless-stopped
   # Sonarr - TV Series Management
   sonarr:
     image: ghcr.io/linuxserver/sonarr
