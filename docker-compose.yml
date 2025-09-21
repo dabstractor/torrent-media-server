@@ -50,6 +50,7 @@ services:
       - NET_ADMIN
       - SYS_MODULE
       - NET_RAW
+      - SYS_ADMIN  # Required for network buffer sysctl modifications
     privileged: true # Required for iptables and routing setup
     user: "root"
     ports:
@@ -66,10 +67,17 @@ services:
       - ./setup-vpn-routing.sh:/usr/local/bin/setup-vpn-routing.sh:ro
       - ./scripts/vpn/enhanced-vpn-kill-switch.sh:/scripts/vpn/enhanced-vpn-kill-switch.sh:ro
       - ./scripts/qbittorrent-internal-monitor.sh:/scripts/qbittorrent-internal-monitor.sh:ro
+    ulimits:
+      nofile: ${VPN_MAX_FILE_DESCRIPTORS:-32768}
+      memlock: -1
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=0
       - net.ipv4.conf.all.src_valid_mark=1
       - net.ipv4.ip_forward=1
+    deploy:
+      resources:
+        limits:
+          memory: ${VPN_MEMORY_LIMIT:-1g}
     entrypoint: ["/scripts/vpn/enhanced-vpn-kill-switch.sh"]
     healthcheck:
       test: ["CMD", "sh", "-c", "warp-cli --accept-tos status | grep -q 'Connected' && ip link show CloudflareWARP >/dev/null 2>&1"]
