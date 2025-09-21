@@ -117,6 +117,8 @@ services:
       - TZ=${TZ:-America/New_York}
       - QBT_WEBUI_PORT=${QBITTORRENT_INTERNAL_PORT:-8080}
       - QBT_LEGAL_NOTICE=confirm
+      - QBITTORRENT_USERNAME=${QBITTORRENT_USERNAME:-admin}
+      - QBITTORRENT_PORT=${QBITTORRENT_PORT:-6881}
     volumes:
       - ./config/qbittorrent:/config
       - ./config/templates/qbittorrent:/templates:ro
@@ -125,7 +127,7 @@ services:
       - ./scripts:/scripts:ro
       - ./scripts/qbittorrent-internal-monitor.sh:/scripts/qbittorrent-internal-monitor.sh:ro
       - ./scripts/qbittorrent-wrapper-with-monitor.sh:/scripts/qbittorrent-wrapper-with-monitor.sh:ro
-    entrypoint: ["/scripts/qbittorrent-wrapper-with-monitor.sh"]
+    entrypoint: ["/scripts/qbittorrent-entrypoint.sh"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${QBITTORRENT_INTERNAL_PORT:-8080}"]
       interval: 30s
