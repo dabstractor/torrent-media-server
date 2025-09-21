@@ -13,7 +13,8 @@ config/radarr/
 config/sonarr/
 config/overseerr/
 config/vpn/
-config/jellyfin/
+config/jellyfin/*
+!config/jellyfin/.gitkeep
 config/cloudflared/
 # Only preserve templates for secure configuration generation
 !config/templates/

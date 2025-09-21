@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # External VPN Watchdog
 # Monitors VPN from outside network namespace and implements emergency controls
 
@@ -7,7 +7,7 @@ set -euo pipefail
 echo "=== External VPN Watchdog ==="
 
 # Configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 LOG_DIR="/logs"
 LOG_FILE="${LOG_DIR}/vpn-watchdog.log"
 ALERT_LOG="${LOG_DIR}/vpn-alerts.log"
@@ -23,6 +23,10 @@ log_info() {
 
 log_warn() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') [WARN] $1" | tee -a "$LOG_FILE"
+}
+
+log_debug() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [DEBUG] $1" | tee -a "$LOG_FILE"
 }
 
 log_error() {
@@ -121,12 +125,22 @@ check_ip_leaks() {
         return 1
     fi
 
-    # Test if traffic is properly blocked when VPN is down
+    # Skip IP leak check when VPN is connected and healthy
+    # IP leak check is only relevant when VPN connection fails but container is still running
+    # When VPN is properly connected, traffic will go through VPN (expected behavior)
+    local vpn_status
+    vpn_status=$(docker exec "$VPN_CONTAINER" warp-cli --accept-tos status 2>/dev/null | grep -o "Connected" || echo "NotConnected")
+    if [ "$vpn_status" = "Connected" ]; then
+        log_debug "VPN is connected - skipping IP leak test"
+        return 0
+    fi
+
+    # Only test for leaks when VPN is not connected
     local test_result
     test_result=$(docker exec "$VPN_CONTAINER" timeout 5 curl -s ifconfig.me 2>/dev/null || echo "BLOCKED")
 
     if [ "$test_result" != "BLOCKED" ]; then
-        log_critical "IP LEAK DETECTED: Traffic not blocked when VPN down. Detected IP: $test_result"
+        log_critical "IP LEAK DETECTED: Traffic not blocked when VPN disconnected. Detected IP: $test_result"
         return 1
     fi
 

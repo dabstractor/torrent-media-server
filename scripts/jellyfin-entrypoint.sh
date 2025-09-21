@@ -22,12 +22,22 @@ if [ ! -f "$CONFIG_DIR/system.xml" ]; then
     # Copy template to bypass setup wizard
     if [ -f "$TEMPLATE_DIR/system.xml.template" ]; then
         echo "[INIT] Applying system configuration template"
-        envsubst < "$TEMPLATE_DIR/system.xml.template" > "$CONFIG_DIR/system.xml"
 
-        # Verify the XML was generated correctly
-        if [ ! -s "$CONFIG_DIR/system.xml" ]; then
-            echo "[INIT] WARNING: Generated system.xml is empty, using template directly"
+        # Try envsubst first, fallback to direct copy if it fails
+        if envsubst < "$TEMPLATE_DIR/system.xml.template" > "$CONFIG_DIR/system.xml.tmp" 2>/dev/null; then
+            # Verify the XML was generated correctly and is valid
+            if [ -s "$CONFIG_DIR/system.xml.tmp" ] && grep -q "<?xml" "$CONFIG_DIR/system.xml.tmp"; then
+                mv "$CONFIG_DIR/system.xml.tmp" "$CONFIG_DIR/system.xml"
+                echo "[INIT] Successfully applied template with variable substitution"
+            else
+                echo "[INIT] WARNING: Generated system.xml is empty or invalid, using template directly"
+                cp "$TEMPLATE_DIR/system.xml.template" "$CONFIG_DIR/system.xml"
+                rm -f "$CONFIG_DIR/system.xml.tmp"
+            fi
+        else
+            echo "[INIT] WARNING: envsubst failed, using template directly"
             cp "$TEMPLATE_DIR/system.xml.template" "$CONFIG_DIR/system.xml"
+            rm -f "$CONFIG_DIR/system.xml.tmp"
         fi
 
         chown 1000:1000 "$CONFIG_DIR/system.xml"
