@@ -50,45 +50,52 @@ CLOUDFLARE_WARP_IPS="
 apply_kill_switch() {
     echo "Applying enhanced kill switch..."
 
+    # Use iptables-legacy consistently for compatibility
+    IPTABLES="iptables-legacy"
+
     # Allow loopback traffic
-    iptables -A INPUT -i lo -j ACCEPT
-    iptables -A OUTPUT -o lo -j ACCEPT
+    $IPTABLES -A INPUT -i lo -j ACCEPT
+    $IPTABLES -A OUTPUT -o lo -j ACCEPT
 
     # Allow established connections
-    iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-    iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    $IPTABLES -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    $IPTABLES -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+    # PRIORITY: Allow traffic within VPN network for nginx-proxy access (inserted first)
+    $IPTABLES -I INPUT 1 -s 10.233.0.0/16 -j ACCEPT
+    $IPTABLES -I OUTPUT 1 -d 10.233.0.0/16 -j ACCEPT
 
     # Allow traffic through VPN tunnel interface (priority rule)
-    iptables -A OUTPUT -o CloudflareWARP -j ACCEPT 2>/dev/null || true
-    iptables -A INPUT -i CloudflareWARP -j ACCEPT 2>/dev/null || true
+    $IPTABLES -A OUTPUT -o CloudflareWARP -j ACCEPT 2>/dev/null || true
+    $IPTABLES -A INPUT -i CloudflareWARP -j ACCEPT 2>/dev/null || true
 
     # Create Cloudflare whitelist chain for WARP infrastructure
-    iptables -N CLOUDFLARE-ALLOW 2>/dev/null || iptables -F CLOUDFLARE-ALLOW
+    $IPTABLES -N CLOUDFLARE-ALLOW 2>/dev/null || $IPTABLES -F CLOUDFLARE-ALLOW
 
     # Allow ONLY Cloudflare WARP infrastructure for initial connection
     for ip in $CLOUDFLARE_WARP_IPS; do
         [ -z "$ip" ] && continue
-        iptables -A CLOUDFLARE-ALLOW -d "$ip" -j ACCEPT
+        $IPTABLES -A CLOUDFLARE-ALLOW -d "$ip" -j ACCEPT
     done
 
     # Jump to Cloudflare whitelist for new outbound connections
-    iptables -A OUTPUT -m conntrack --ctstate NEW -j CLOUDFLARE-ALLOW
+    $IPTABLES -A OUTPUT -m conntrack --ctstate NEW -j CLOUDFLARE-ALLOW
 
     # CRITICAL: Block all other traffic (Docker bridge, etc.)
-    iptables -A OUTPUT -o eth0 -d 0.0.0.0/0 -j DROP 2>/dev/null || true
-    iptables -A OUTPUT -d 172.16.0.0/12 -j DROP 2>/dev/null || true
-    iptables -A OUTPUT -d 192.168.0.0/16 -j DROP 2>/dev/null || true
+    $IPTABLES -A OUTPUT -o eth0 -d 0.0.0.0/0 -j DROP 2>/dev/null || true
+    $IPTABLES -A OUTPUT -d 172.16.0.0/12 -j DROP 2>/dev/null || true
+    $IPTABLES -A OUTPUT -d 192.168.0.0/16 -j DROP 2>/dev/null || true
 
     # Log blocked traffic for debugging
-    iptables -A OUTPUT -m limit --limit 1/sec -j LOG --log-prefix "ENHANCED-KILLSWITCH: "
+    $IPTABLES -A OUTPUT -m limit --limit 1/sec -j LOG --log-prefix "ENHANCED-KILLSWITCH: "
 
     # Final DROP for anything not explicitly allowed
-    iptables -A OUTPUT -j DROP
+    $IPTABLES -A OUTPUT -j DROP
 
     # Set default policies AFTER rules are in place
-    iptables -P INPUT DROP
-    iptables -P OUTPUT DROP
-    iptables -P FORWARD DROP
+    $IPTABLES -P INPUT DROP
+    $IPTABLES -P OUTPUT DROP
+    $IPTABLES -P FORWARD DROP
 
     echo "✅ Enhanced kill switch activated - VPN tunnel traffic allowed, all else blocked"
 }
