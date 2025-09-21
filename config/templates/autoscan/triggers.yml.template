@@ -1,0 +1,41 @@
+# Autoscan Webhook Triggers Configuration Template
+# Defines webhook endpoints and path mappings for Radarr/Sonarr integration
+# Environment variables will be substituted at container startup
+
+# Webhook trigger definitions
+triggers:
+  # Radarr movie import webhook
+  radarr:
+    priority: 5
+    include:
+      - "^/media/movies/"
+    exclude:
+      - "\\.(nfo|jpg|jpeg|png|gif|srt|sub|idx|ass|ssa|sup)$"
+    rewrite:
+      - from: "^/downloads/complete/movies/"
+        to: "/media/movies/"
+
+  # Sonarr TV show import webhook
+  sonarr:
+    priority: 5
+    include:
+      - "^/media/tv/"
+    exclude:
+      - "\\.(nfo|jpg|jpeg|png|gif|srt|sub|idx|ass|ssa|sup)$"
+    rewrite:
+      - from: "^/downloads/complete/tv/"
+        to: "/media/tv/"
+
+  # Manual trigger for testing
+  manual:
+    priority: 1
+
+# Webhook authentication
+authentication:
+  token: ${AUTOSCAN_WEBHOOK_TOKEN}
+
+# Scan timing configuration
+timing:
+  minimum_age: 10  # Seconds to wait before scanning new files
+  scan_delay: 5    # Delay between scan requests
+  timeout: 60      # Timeout for scan operations

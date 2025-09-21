@@ -1,0 +1,91 @@
+{
+  "CHECK_FILESYSTEM": true,
+  "DOCKER_NAME": "",
+  "ENABLE_JOE": false,
+  "ENABLE_PLEX": true,
+  "FILESYSTEM_PATHS": ["/media"],
+  "GOOGLE": {
+    "ALLOWED": {
+      "FILE_EXTENSIONS": true,
+      "FILE_EXTENSIONS_LIST": [
+        "webm", "mkv", "flv", "vob", "ogv", "ogg", "drc", "gif", "gifv", "mng",
+        "avi", "mov", "qt", "wmv", "yuv", "rm", "rmvb", "asf", "amv", "mp4",
+        "m4p", "m4v", "mpg", "mp2", "mpeg", "mpe", "mpv", "m2v", "svi", "3gp",
+        "3g2", "mxf", "roq", "nsv", "f4v", "f4p", "f4a", "f4b", "mp3", "flac", "ts"
+      ],
+      "FILE_PATHS": [],
+      "MIME_TYPES": true,
+      "MIME_TYPES_LIST": ["video"]
+    },
+    "CLIENT_ID": "",
+    "CLIENT_SECRET": "",
+    "DISABLE_DISK_FILE_SIZE_CHECK": false,
+    "ENABLED": false,
+    "POLL_INTERVAL": 120,
+    "REDIRECT_URI": "",
+    "SHOW_CACHE_LOGS": false,
+    "TEAMDRIVE": false,
+    "TEAMDRIVES": []
+  },
+  "JELLYFIN_EMBY": "jellyfin",
+  "JELLYFIN_SCHEDULED_TASK_IDS": [],
+  "JELLYFIN_TRIGGER_SCHEDULED_TASKS": false,
+  "JOE_API_KEY": "",
+  "JOE_ENTIRE_REFRESH": false,
+  "JOE_HOST": "http://jellyfin:8096",
+  "PLEX_ANALYZE_DIRECTORY": true,
+  "PLEX_ANALYZE_TYPE": "basic",
+  "PLEX_CHECK_BEFORE_SCAN": true,
+  "PLEX_DATABASE_PATH": "/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Plug-in Support/Databases/com.plexapp.plugins.library.db",
+  "PLEX_EMPTY_TRASH": false,
+  "PLEX_EMPTY_TRASH_CONTROL_FILES": ["/media/.anchor"],
+  "PLEX_EMPTY_TRASH_MAX_FILES": 100,
+  "PLEX_EMPTY_TRASH_ZERO_DELETED": false,
+  "PLEX_FIX_MISMATCHED": false,
+  "PLEX_FIX_MISMATCHED_LANG": "en",
+  "PLEX_LD_LIBRARY_PATH": "/usr/lib/plexmediaserver/lib",
+  "PLEX_LOCAL_URL": "http://172.17.0.1:32400",
+  "PLEX_SCANNER": "/usr/lib/plexmediaserver/Plex\\ Media\\ Scanner",
+  "PLEX_SUPPORT_DIR": "/var/lib/plexmediaserver/Library/Application\\ Support",
+  "PLEX_TOKEN": "gjyy4Fx3Qv_Msy9hWChe",
+  "PLEX_USER": "plex",
+  "PLEX_WAIT_FOR_EXTERNAL_SCANNERS": true,
+  "RCLONE": {
+    "BINARY": "/usr/bin/rclone",
+    "CONFIG": "",
+    "CRYPT_MAPPINGS": {},
+    "RC_CACHE_REFRESH": {
+      "ENABLED": false,
+      "FILE_EXISTS_TO_REMOTE_MAPPINGS": {},
+      "RC_URL": "http://localhost:5572"
+    }
+  },
+  "RUN_COMMAND_AFTER_SCAN": "",
+  "RUN_COMMAND_BEFORE_SCAN": "",
+  "SERVER_ALLOW_MANUAL_SCAN": true,
+  "SERVER_FILE_CHECK_DELAY": 10,
+  "SERVER_FILE_EXIST_PATH_MAPPINGS": {
+    "/downloads/complete/": ["/media/"]
+  },
+  "SERVER_IGNORE_LIST": [
+    "/.grab/", ".DS_Store", "Thumbs.db", ".nfo", ".jpg", ".jpeg", ".png", ".gif",
+    ".srt", ".sub", ".idx", ".ass", ".ssa", ".sup"
+  ],
+  "SERVER_IP": "0.0.0.0",
+  "SERVER_MAX_FILE_CHECKS": 10,
+  "SERVER_PASS": "autoscan",
+  "SERVER_PATH_MAPPINGS": {
+    "/downloads/complete/movies/": ["/media/movies/"],
+    "/downloads/complete/tv/": ["/media/tv/"]
+  },
+  "SERVER_PORT": 3030,
+  "SERVER_SCAN_DELAY": 5,
+  "SERVER_SCAN_FOLDER_ON_FILE_EXISTS_EXHAUSTION": false,
+  "SERVER_SCAN_PRIORITIES": {
+    "0": ["/movies/"],
+    "1": ["/tv/"]
+  },
+  "SERVER_USE_SQLITE": true,
+  "USE_DOCKER": false,
+  "USE_SUDO": false
+}

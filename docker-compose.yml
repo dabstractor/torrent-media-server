@@ -509,7 +509,6 @@ services:
     networks:
       - default
       - vpn_network
-
   autoheal:
     image: willfarrell/autoheal:latest
     container_name: ${CONTAINER_PREFIX}autoheal
@@ -525,3 +524,33 @@ services:
       - vpn
     networks:
       - default
+  # Autoscan - Automated library scanning for Plex and Jellyfin
+  autoscan:
+    image: ghcr.io/niniyas/autoscan:latest
+    container_name: ${CONTAINER_PREFIX}autoscan
+    networks:
+      - media_network  # NOT vpn - needs communication with Jellyfin/Plex
+    ports:
+      - "${AUTOSCAN_PORT:-3030}:3030"
+    depends_on:
+      init-directories:
+        condition: service_completed_successfully
+      plex:
+        condition: service_healthy
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/New_York}
+    volumes:
+      - ./config/autoscan:/config
+      - ./config/templates/autoscan:/templates:ro
+      - ./scripts:/scripts:ro
+      - ${MEDIA_ROOT:-./data/media}:/media
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3030/autoscan')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    stop_grace_period: 30s

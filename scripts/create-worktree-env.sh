@@ -118,6 +118,7 @@ get_env_ports() {
         "PLEX_EXTERNAL_PORT"
         "QBITTORRENT_PORT"
         "VPN_PORT"
+        "AUTOSCAN_PORT"
     )
 
     local all_ports=""
@@ -378,6 +379,7 @@ generate_port_configuration() {
         "PIA_FLARESOLVERR_PORT"
         "PIA_PROWLARR_PORT"
         "OVERSEERR_PORT"
+        "AUTOSCAN_PORT"
     )
     
     # Generate ports without logging to avoid output pollution

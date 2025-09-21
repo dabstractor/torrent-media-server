@@ -1,0 +1,59 @@
+# Autoscan Configuration Template
+# Automatically triggers targeted library scans in Plex and Jellyfin
+# Environment variables will be substituted at container startup
+
+# Port configuration
+port: 3030
+verbosity: 1
+
+# Path configuration for media directories
+paths:
+  - /media
+
+# Server definitions
+servers:
+  # Plex Media Server configuration
+  plex:
+    - url: http://172.17.0.1:32400  # Host network access for Plex
+      token: "${PLEX_TOKEN}"
+      timeout: 60
+      libraries:
+        Movies: /media/movies
+        TV Shows: /media/tv
+
+  # Jellyfin Media Server configuration
+  jellyfin:
+    - url: http://jellyfin:8096  # Docker internal networking
+      api_key: "${JELLYFIN_API_KEY}"
+      timeout: 60
+      libraries:
+        Movies: /media/movies
+        TV Shows: /media/tv
+
+# Webhook configuration
+webhooks:
+  - name: radarr
+    token: ${AUTOSCAN_WEBHOOK_TOKEN}
+  - name: sonarr
+    token: ${AUTOSCAN_WEBHOOK_TOKEN}
+
+# Rewrite rules for path translation
+rewrites:
+  - from: "^/downloads/complete/movies/"
+    to: "/media/movies/"
+  - from: "^/downloads/complete/tv/"
+    to: "/media/tv/"
+
+# Anchor files for mount verification (optional)
+anchors:
+  - /media/.anchor
+
+# Scan settings
+scan:
+  # Minimum age of files before scanning (prevents partial uploads)
+  minimum_age: 10s
+  # Delay between scans to prevent flooding
+  delay: 5s
+  # Exclude certain file types from triggering scans
+  excludes:
+    - "^.*\\.(nfo|jpg|jpeg|png|gif|srt|sub|idx|ass|ssa|sup)$"
