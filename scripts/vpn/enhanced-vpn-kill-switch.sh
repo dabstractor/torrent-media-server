@@ -11,7 +11,7 @@ if command -v apk >/dev/null 2>&1; then
     apk add --no-cache iptables
 elif command -v apt-get >/dev/null 2>&1; then
     export DEBIAN_FRONTEND=noninteractive
-    apt-get update && apt-get install -y iptables
+    apt-get update && apt-get install -y iptables iputils-ping
 elif command -v yum >/dev/null 2>&1; then
     yum install -y iptables
 elif command -v iptables >/dev/null 2>&1; then

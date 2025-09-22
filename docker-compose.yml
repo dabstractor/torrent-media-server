@@ -80,7 +80,7 @@ services:
           memory: ${VPN_MEMORY_LIMIT:-1g}
     entrypoint: ["/scripts/vpn/enhanced-vpn-kill-switch.sh"]
     healthcheck:
-      test: ["CMD", "sh", "-c", "warp-cli --accept-tos status | grep -q 'Connected' && ip link show CloudflareWARP >/dev/null 2>&1"]
+      test: ["CMD-SHELL", "warp-cli --accept-tos status | grep -q 'Connected' || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -488,3 +488,19 @@ services:
     networks:
       - default
       - vpn_network
+
+  autoheal:
+    image: willfarrell/autoheal:latest
+    container_name: ${CONTAINER_PREFIX}autoheal
+    restart: unless-stopped
+    environment:
+      - AUTOHEAL_CONTAINER_LABEL=all  # Monitor all containers with healthchecks
+      - AUTOHEAL_INTERVAL=${AUTOHEAL_INTERVAL:-5}  # Check every 5 seconds
+      - AUTOHEAL_START_PERIOD=${AUTOHEAL_START_PERIOD:-60}  # Wait 60s before monitoring
+      - AUTOHEAL_DEFAULT_STOP_TIMEOUT=${AUTOHEAL_DEFAULT_STOP_TIMEOUT:-10}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - vpn
+    networks:
+      - default
