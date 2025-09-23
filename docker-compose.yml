@@ -294,10 +294,6 @@ services:
       - vpn_network
     ports:
       - "${NGINX_QBITTORRENT_PORT:-18080}:8080" # qBittorrent proxy
-      - "${NGINX_PROWLARR_PORT:-19696}:9696" # Prowlarr proxy
-      - "${NGINX_SONARR_PORT:-18989}:8989" # Sonarr proxy
-      - "${NGINX_RADARR_PORT:-17878}:7878" # Radarr proxy
-      - "${NGINX_JELLYFIN_PORT:-18096}:8096" # Jellyfin proxy
     volumes:
       - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
