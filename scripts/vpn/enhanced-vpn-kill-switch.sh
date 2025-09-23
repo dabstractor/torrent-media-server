@@ -53,21 +53,26 @@ apply_kill_switch() {
     # Use iptables-legacy consistently for compatibility
     IPTABLES="iptables-legacy"
 
-    # Allow loopback traffic
-    $IPTABLES -A INPUT -i lo -j ACCEPT
-    $IPTABLES -A OUTPUT -o lo -j ACCEPT
+    # CRITICAL: Set default DROP policies FIRST to prevent any leakage
+    $IPTABLES -P INPUT DROP
+    $IPTABLES -P OUTPUT DROP
+    $IPTABLES -P FORWARD DROP
 
-    # Allow established connections
-    $IPTABLES -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-    $IPTABLES -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    # Allow loopback traffic only
+    $IPTABLES -I INPUT 1 -i lo -j ACCEPT
+    $IPTABLES -I OUTPUT 1 -o lo -j ACCEPT
 
-    # PRIORITY: Allow traffic within VPN network for nginx-proxy access (inserted first)
+    # Allow traffic within VPN network for nginx-proxy access
     $IPTABLES -I INPUT 1 -s 10.233.0.0/16 -j ACCEPT
     $IPTABLES -I OUTPUT 1 -d 10.233.0.0/16 -j ACCEPT
 
-    # Allow traffic through VPN tunnel interface (priority rule)
-    $IPTABLES -A OUTPUT -o CloudflareWARP -j ACCEPT 2>/dev/null || true
-    $IPTABLES -A INPUT -i CloudflareWARP -j ACCEPT 2>/dev/null || true
+    # Allow established connections ONLY after policies are set
+    $IPTABLES -I INPUT 1 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    $IPTABLES -I OUTPUT 1 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+    # Allow traffic through VPN tunnel interface (priority rule - insert at top)
+    $IPTABLES -I OUTPUT 1 -o CloudflareWARP -j ACCEPT 2>/dev/null || true
+    $IPTABLES -I INPUT 1 -i CloudflareWARP -j ACCEPT 2>/dev/null || true
 
     # Create Cloudflare whitelist chain for WARP infrastructure
     $IPTABLES -N CLOUDFLARE-ALLOW 2>/dev/null || $IPTABLES -F CLOUDFLARE-ALLOW
@@ -92,10 +97,7 @@ apply_kill_switch() {
     # Final DROP for anything not explicitly allowed
     $IPTABLES -A OUTPUT -j DROP
 
-    # Set default policies AFTER rules are in place
-    $IPTABLES -P INPUT DROP
-    $IPTABLES -P OUTPUT DROP
-    $IPTABLES -P FORWARD DROP
+    # Policies already set at the beginning for maximum security
 
     echo "✅ Enhanced kill switch activated - VPN tunnel traffic allowed, all else blocked"
 }
