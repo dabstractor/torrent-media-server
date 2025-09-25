@@ -32,6 +32,8 @@ services:
 
 
 
+
+
         mkdir -p /data/media/tv /data/media/movies /data/downloads/complete /data/downloads/incomplete /data/downloads/watch &&
         chown -R 1000:1000 /data/ &&
         echo 'Directory ownership initialized: dustin:dustin (1000:1000)'
@@ -170,7 +172,7 @@ services:
     restart: unless-stopped
   # Jellyfin Media Server - Open source alternative to Plex
   jellyfin:
-    image: ghcr.io/linuxserver/jellyfin:10.9.11
+    image: ghcr.io/linuxserver/jellyfin:latest
     container_name: ${CONTAINER_PREFIX}jellyfin
     entrypoint: ["/scripts/jellyfin-entrypoint.sh"]
     networks:

@@ -9,17 +9,11 @@ echo "[INIT] Jellyfin custom entrypoint starting..."
 # Ensure config directory exists
 mkdir -p "$CONFIG_DIR"
 
-# Check if first run (no existing configuration)
-if [ ! -f "$CONFIG_DIR/system.xml" ]; then
-    echo "[INIT] First run detected - setting up initial configuration"
+# Set proper permissions
+chown -R 1000:1000 "$CONFIG_DIR"
 
-    # Create required directories
-    mkdir -p "$CONFIG_DIR/data"
-    mkdir -p "$CONFIG_DIR/log"
-    mkdir -p "$CONFIG_DIR/cache"
-    mkdir -p "$CONFIG_DIR/metadata"
-
-    # Copy template to bypass setup wizard
+# Function to apply template configuration
+apply_template() {
     if [ -f "$TEMPLATE_DIR/system.xml.template" ]; then
         echo "[INIT] Applying system configuration template"
 
@@ -44,15 +38,55 @@ if [ ! -f "$CONFIG_DIR/system.xml" ]; then
     else
         echo "[INIT] WARNING: Template not found at $TEMPLATE_DIR/system.xml.template"
     fi
+}
 
-    echo "[INIT] Initial configuration complete"
+# Check if this is first run (no existing configuration)
+if [ ! -f "$CONFIG_DIR/system.xml" ]; then
+    echo "[INIT] First run detected - allowing Jellyfin to initialize naturally"
+
+    # Create a background script to apply configuration after startup
+    cat > /tmp/jellyfin-config.sh << 'EOF'
+#!/bin/bash
+sleep 60  # Wait for Jellyfin to fully initialize
+
+# Check if Jellyfin is responding and system.xml still doesn't exist
+if [ ! -f /config/system.xml ]; then
+    if curl -s http://localhost:8096/health > /dev/null 2>&1; then
+        echo "[CONFIG] Jellyfin is ready, applying configuration..."
+
+        # Apply the template configuration
+        if [ -f /templates/system.xml.template ]; then
+            if envsubst < /templates/system.xml.template > /config/system.xml.tmp 2>/dev/null; then
+                if [ -s /config/system.xml.tmp ] && grep -q "<?xml" /config/system.xml.tmp; then
+                    mv /config/system.xml.tmp /config/system.xml
+                    echo "[CONFIG] Template applied successfully"
+                else
+                    cp /templates/system.xml.template /config/system.xml
+                    rm -f /config/system.xml.tmp
+                fi
+            else
+                cp /templates/system.xml.template /config/system.xml
+            fi
+            chown 1000:1000 /config/system.xml
+
+            # Restart Jellyfin to apply the configuration
+            echo "[CONFIG] Restarting Jellyfin to apply configuration..."
+            pkill -f jellyfin || true
+        fi
+    fi
+fi
+EOF
+
+    chmod +x /tmp/jellyfin-config.sh
+
+    # Start the configuration script in background
+    /tmp/jellyfin-config.sh &
+
+    echo "[INIT] Starting Jellyfin with natural initialization..."
 else
-    echo "[INIT] Existing configuration found - skipping setup"
+    echo "[INIT] Existing configuration found - starting normally"
 fi
 
-# Set proper permissions
-chown -R 1000:1000 "$CONFIG_DIR"
-
+# Start Jellyfin normally
 echo "[INIT] Starting Jellyfin..."
-# Execute original LinuxServer.io entrypoint
 exec /init
