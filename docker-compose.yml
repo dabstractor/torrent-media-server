@@ -25,6 +25,13 @@ services:
     user: "0:0" # Run as root to fix ownership
     command: >
       sh -c "
+
+
+
+
+
+
+
         mkdir -p /data/media/tv /data/media/movies /data/downloads/complete /data/downloads/incomplete /data/downloads/watch &&
         chown -R 1000:1000 /data/ &&
         echo 'Directory ownership initialized: dustin:dustin (1000:1000)'
@@ -44,7 +51,7 @@ services:
       - NET_ADMIN
       - SYS_MODULE
       - NET_RAW
-      - SYS_ADMIN  # Required for network buffer sysctl modifications
+      - SYS_ADMIN # Required for network buffer sysctl modifications
     privileged: true # Required for iptables and routing setup
     user: "root"
     ports:
@@ -114,8 +121,6 @@ services:
       vpn:
         condition: service_healthy
     environment:
-      - PUID=1000
-      - PGID=1000
       - TZ=${TZ:-America/New_York}
       - QBT_WEBUI_PORT=${QBITTORRENT_INTERNAL_PORT:-8080}
       - QBT_LEGAL_NOTICE=confirm
@@ -363,7 +368,8 @@ services:
       - vpn_network
     ports:
       - "${WEB_UI_PORT:-18787}:3000"
-    user: "1000:1000" # Run as current user to match file ownership
+    # Run as current user to match file ownership
+    user: "1000:1000"
     depends_on:
       init-directories:
         condition: service_completed_successfully
@@ -384,9 +390,9 @@ services:
       - PROWLARR_URL=http://localhost:${PROWLARR_PORT}
       - QBITTORRENT_URL=http://localhost:${NGINX_QBITTORRENT_PORT}
       - PLEX_URL=http://localhost:32400
-      - SONARR_URL=http://localhost:${NGINX_SONARR_PORT}
-      - RADARR_URL=http://localhost:${NGINX_RADARR_PORT}
-      - JELLYFIN_URL=http://localhost:${NGINX_JELLYFIN_PORT}
+      - SONARR_URL=http://localhost:${SONARR_PORT}
+      - RADARR_URL=http://localhost:${RADARR_PORT}
+      - JELLYFIN_URL=http://localhost:${JELLYFIN_PORT}
       - OVERSEERR_URL=http://localhost:${OVERSEERR_PORT:-5055}
       # Backend URLs for internal Docker communication
       - PROWLARR_BACKEND_URL=http://prowlarr:9696
@@ -508,9 +514,9 @@ services:
     container_name: ${CONTAINER_PREFIX}autoheal
     restart: unless-stopped
     environment:
-      - AUTOHEAL_CONTAINER_LABEL=all  # Monitor all containers with healthchecks
-      - AUTOHEAL_INTERVAL=${AUTOHEAL_INTERVAL:-5}  # Check every 5 seconds
-      - AUTOHEAL_START_PERIOD=${AUTOHEAL_START_PERIOD:-60}  # Wait 60s before monitoring
+      - AUTOHEAL_CONTAINER_LABEL=all # Monitor all containers with healthchecks
+      - AUTOHEAL_INTERVAL=${AUTOHEAL_INTERVAL:-5} # Check every 5 seconds
+      - AUTOHEAL_START_PERIOD=${AUTOHEAL_START_PERIOD:-60} # Wait 60s before monitoring
       - AUTOHEAL_DEFAULT_STOP_TIMEOUT=${AUTOHEAL_DEFAULT_STOP_TIMEOUT:-10}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -523,7 +529,7 @@ services:
     image: ghcr.io/niniyas/autoscan:latest
     container_name: ${CONTAINER_PREFIX}autoscan
     networks:
-      - media_network  # NOT vpn - needs communication with Jellyfin/Plex
+      - media_network # NOT vpn - needs communication with Jellyfin/Plex
     ports:
       - "${AUTOSCAN_PORT:-3030}:3030"
     depends_on:
