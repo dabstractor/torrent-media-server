@@ -542,6 +542,7 @@ services:
       - ./config/templates/autoscan:/templates:ro
       - ./scripts:/scripts:ro
       - ${MEDIA_ROOT:-./data/media}:/media
+      - ./config/plex:/plex-config:ro
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3030/autoscan')"]
       interval: 30s
