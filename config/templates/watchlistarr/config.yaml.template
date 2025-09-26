@@ -8,7 +8,7 @@ interval:
 
 # Sonarr configuration for TV shows
 sonarr:
-  baseUrl: "http://sonarr:8989"
+  baseUrl: "http://localhost:${SONARR_PORT}"
   apikey: "${SONARR_API_KEY}"
   qualityProfile: "Any"
   rootFolder: "/tv"
@@ -19,7 +19,7 @@ sonarr:
 
 # Radarr configuration for movies
 radarr:
-  baseUrl: "http://radarr:7878"
+  baseUrl: "http://localhost:${RADARR_PORT}"
   apikey: "${RADARR_API_KEY}"
   qualityProfile: "Any"
   rootFolder: "/movies"
@@ -35,12 +35,12 @@ plex:
 # Delete sync configuration - ENABLED BY DEFAULT
 # Removes content from Sonarr/Radarr when removed from Plex watchlist
 delete:
-  movie: true
-  endedShow: true
-  continuingShow: true
+  movie: false
+  endedShow: false
+  continuingShow: false
   interval:
     days: 7
-  deleteFiles: true
+  deleteFiles: false
 
 # Logging configuration
 logging:

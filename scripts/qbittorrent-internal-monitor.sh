@@ -76,10 +76,10 @@ emergency_shutdown() {
 
 # Main monitoring loop
 main() {
-    log_info "Starting qBittorrent internal monitor"
-
-    # Create log directory if it doesn't exist
+    # Create log directory if it doesn't exist (BEFORE any logging calls)
     mkdir -p "$(dirname "$LOG_FILE")"
+
+    log_info "Starting qBittorrent internal monitor"
 
     while true; do
         log_info "Running VPN connectivity checks..."
