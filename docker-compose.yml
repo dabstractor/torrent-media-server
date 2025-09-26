@@ -339,7 +339,7 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=${TZ:-America/New_York}
-      - PLEX_HOST=${PLEX_HOST:-docker-host}
+      - PLEX_HOST=${PLEX_HOST}
       - PLEX_PORT=${PLEX_PORT:-32400}
       - PLEX_TOKEN=${PLEX_TOKEN}
       - PLEX_USERNAME=${PLEX_USERNAME}
@@ -481,7 +481,7 @@ services:
       - PGID=1000
       - TZ=${TZ:-America/New_York}
       - PORT=${OVERSEERR_PORT:-5055}
-      - PLEX_TOKEN=${PLEX_CLAIM_TOKEN}
+      - PLEX_TOKEN=${PLEX_TOKEN}
     volumes:
       - ./config/overseerr:/app/config
       - ./config/templates/overseerr:/templates:ro
