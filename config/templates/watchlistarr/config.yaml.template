@@ -8,7 +8,7 @@ interval:
 
 # Sonarr configuration for TV shows
 sonarr:
-  baseUrl: "http://localhost:${SONARR_PORT}"
+  baseUrl: "http://sonarr:8989"
   apikey: "${SONARR_API_KEY}"
   qualityProfile: "Any"
   rootFolder: "/tv"
@@ -19,7 +19,7 @@ sonarr:
 
 # Radarr configuration for movies
 radarr:
-  baseUrl: "http://localhost:${RADARR_PORT}"
+  baseUrl: "http://radarr:7878"
   apikey: "${RADARR_API_KEY}"
   qualityProfile: "Any"
   rootFolder: "/movies"
