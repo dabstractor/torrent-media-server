@@ -8,14 +8,15 @@ echo "=== qBittorrent Authentication Bypass Wrapper ==="
 WEBUI_PORT="${QBT_WEBUI_PORT:-8081}"
 PROFILE_PATH="/config"
 LOG_FILE="/tmp/qbt_startup.log"
+FIRST_RUN_MARKER="$PROFILE_PATH/.qbt_config_initialized"
 
 # Ensure download directories exist with correct permissions
 echo "Ensuring download directories exist..."
 mkdir -p /downloads/complete /downloads/incomplete /downloads/watch
 chown -R 1000:1000 /downloads 2>/dev/null || true
 
-# Always process configuration template to ensure correct paths are used
-if [ -f "/templates/qBittorrent.conf.template" ]; then
+# Only process configuration template on first run to preserve user settings
+if [ -f "/templates/qBittorrent.conf.template" ] && [ ! -f "$FIRST_RUN_MARKER" ]; then
     echo "Processing qBittorrent configuration template..."
     mkdir -p "$PROFILE_PATH/qBittorrent"
 
@@ -62,6 +63,16 @@ if [ -f "/templates/qBittorrent.conf.template" ]; then
     echo "Ensuring configuration is writable..."
     chmod 644 "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
     chmod 644 "$PROFILE_PATH/qBittorrent/config/qBittorrent.conf"
+
+    # Create marker file to indicate configuration has been initialized
+    touch "$FIRST_RUN_MARKER"
+    echo "✓ First-run configuration complete - marker file created"
+else
+    if [ -f "$FIRST_RUN_MARKER" ]; then
+        echo "Configuration already initialized - preserving existing user settings"
+    else
+        echo "Template not found - skipping configuration initialization"
+    fi
 fi
 
 # Start qBittorrent and capture output
@@ -99,35 +110,36 @@ else
     echo "⚠ Authentication bypass script not found"
 fi
 
-# Force correct download paths in both config files after qBittorrent starts
-echo "Waiting briefly for qBittorrent to initialize..."
-sleep 5
+# Only fix download paths on first run to avoid overwriting user settings
+if [ ! -f "$FIRST_RUN_MARKER" ]; then
+    echo "First run - ensuring download paths are correct..."
+    sleep 5
 
-echo "Fixing download paths in all config files..."
+    echo "Fixing download paths in all config files..."
 
-# Fix main config file
-if [ -f "$PROFILE_PATH/qBittorrent/qBittorrent.conf" ]; then
-    echo "Updating main config file..."
-    # Remove any existing download path settings
-    sed -i '/^Session\\DefaultSavePath=/d' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
-    sed -i '/^Session\\SavePath=/d' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
-    sed -i '/^Session\\TempPath=/d' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
-    sed -i '/^Downloads\\SavePath=/d' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
-    sed -i '/^Downloads\\DefaultSavePath=/d' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
-    sed -i '/^Downloads\\TempPath=/d' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+    # Fix main config file
+    if [ -f "$PROFILE_PATH/qBittorrent/qBittorrent.conf" ]; then
+        echo "Updating main config file..."
+        # Remove any existing download path settings
+        sed -i '/^Session\\DefaultSavePath=/d' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+        sed -i '/^Session\\SavePath=/d' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+        sed -i '/^Session\\TempPath=/d' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+        sed -i '/^Downloads\\SavePath=/d' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+        sed -i '/^Downloads\\DefaultSavePath=/d' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+        sed -i '/^Downloads\\TempPath=/d' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
 
-    # Add correct download paths to BitTorrent section
-    sed -i '/^\[BitTorrent\]/a Session\\DefaultSavePath=/downloads/complete\nSession\\SavePath=/downloads/complete\nSession\\TempPath=/downloads/incomplete' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+        # Add correct download paths to BitTorrent section
+        sed -i '/^\[BitTorrent\]/a Session\\DefaultSavePath=/downloads/complete\nSession\\SavePath=/downloads/complete\nSession\\TempPath=/downloads/incomplete' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
 
-    # Add correct download paths to Preferences section
-    sed -i '/^\[Preferences\]/a Downloads\\SavePath=/downloads/complete\nDownloads\\DefaultSavePath=/downloads/complete\nDownloads\\TempPath=/downloads/incomplete\nDownloads\\TempPathEnabled=true' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
-fi
+        # Add correct download paths to Preferences section
+        sed -i '/^\[Preferences\]/a Downloads\\SavePath=/downloads/complete\nDownloads\\DefaultSavePath=/downloads/complete\nDownloads\\TempPath=/downloads/incomplete\nDownloads\\TempPathEnabled=true' "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+    fi
 
-# Fix runtime config file (this is the key one that was being ignored)
-if [ -f "$PROFILE_PATH/qBittorrent/config/qBittorrent.conf" ]; then
-    echo "Updating runtime config file..."
-    # Create a new runtime config with correct paths
-    cat > "$PROFILE_PATH/qBittorrent/config/qBittorrent.conf" << 'EOF'
+    # Fix runtime config file (this is the key one that was being ignored)
+    if [ -f "$PROFILE_PATH/qBittorrent/config/qBittorrent.conf" ]; then
+        echo "Updating runtime config file..."
+        # Create a new runtime config with correct paths
+        cat > "$PROFILE_PATH/qBittorrent/config/qBittorrent.conf" << 'EOF'
 [BitTorrent]
 Session\Port=43117
 Session\QueueingSystemEnabled=false
@@ -149,19 +161,26 @@ Downloads\DefaultSavePath=/downloads/complete
 Downloads\TempPath=/downloads/incomplete
 Downloads\TempPathEnabled=true
 EOF
-    echo "✓ Runtime config updated with correct download paths"
+        echo "✓ Runtime config updated with correct download paths"
+    fi
+
+    echo "✓ Download paths fixed in all config files"
+else
+    echo "Configuration already initialized - skipping download path fixes to preserve user settings"
 fi
 
-echo "✓ Download paths fixed in all config files"
-
-# Fix category paths for proper media organization
-if [ -f "/scripts/fix-qbittorrent-category-paths.sh" ]; then
-    echo "Fixing qBittorrent category paths for media organization..."
+# Fix category paths for proper media organization (only on first run)
+if [ ! -f "$FIRST_RUN_MARKER" ] && [ -f "/scripts/fix-qbittorrent-category-paths.sh" ]; then
+    echo "First run - fixing qBittorrent category paths for media organization..."
     /scripts/fix-qbittorrent-category-paths.sh "localhost" "$WEBUI_PORT" 30 >> "$LOG_FILE" 2>&1 &
     FIX_PID=$!
     echo "Category path fix running in background (PID: $FIX_PID)"
 else
-    echo "⚠ Category path fix script not found"
+    if [ -f "$FIRST_RUN_MARKER" ]; then
+        echo "Configuration already initialized - skipping category path fixes to preserve user settings"
+    else
+        echo "⚠ Category path fix script not found"
+    fi
 fi
 
 # Clean up log file after script has access to it
