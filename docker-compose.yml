@@ -27,13 +27,6 @@ services:
       sh -c "
 
 
-
-
-
-
-
-
-
         mkdir -p /data/media/tv /data/media/movies /data/downloads/complete /data/downloads/incomplete /data/downloads/watch &&
         chown -R 1000:1000 /data/ &&
         echo 'Directory ownership initialized: dustin:dustin (1000:1000)'
@@ -42,10 +35,13 @@ services:
     volumes:
       - ./data:/data
     restart: "no"
-  # VPN Service - Default: Cloudflare WARP (no credentials needed)
-  # To use PIA instead: docker-compose -f docker-compose.yml -f docker-compose.pia.yml up -d
+  # VPN Service - Modular provider system
+  # Default: Cloudflare WARP (no credentials needed)
+  # To use PIA: Set VPN_PROVIDER=pia in .env file and provide PIA credentials
   vpn:
-    image: caomingjun/warp:latest
+    build:
+      context: .
+      dockerfile: dockerfiles/vpn/Dockerfile.${VPN_PROVIDER:-warp}
     container_name: ${CONTAINER_PREFIX}vpn
     env_file:
       - .env
@@ -60,16 +56,27 @@ services:
       - "${VPN_BITTORRENT_PORT:-16881}:6881" # qBittorrent BitTorrent port
       - "${VPN_BITTORRENT_PORT:-16881}:6881/udp" # qBittorrent BitTorrent port UDP
     environment:
+      - VPN_PROVIDER=${VPN_PROVIDER:-warp}
       - WARP_SLEEP=2
       - TZ=${TZ:-America/New_York}
+      # PIA-specific environment variables (ignored if not using PIA)
+      - USER=${PIA_USER:-}
+      - PASS=${PIA_PASS:-}
+      - LOC=${PIA_REGION:-us_atlanta}
+      - PORTFORWARD=${PORT_FORWARDING:-1}
+      - LOCAL_NETWORK=${LOCAL_NETWORK:-192.168.1.0/24}
+      - KEEPALIVE=25
+      # WARP-specific environment variables (ignored if not using WARP)
+      - WARP_LICENSE_KEY=${WARP_LICENSE_KEY:-}
     networks:
       default:
       vpn_network:
         ipv4_address: ${VPN_IP_ADDRESS}
     volumes:
       - ./setup-vpn-routing.sh:/usr/local/bin/setup-vpn-routing.sh:ro
-      - ./scripts/vpn/enhanced-vpn-kill-switch.sh:/scripts/vpn/enhanced-vpn-kill-switch.sh:ro
       - ./scripts/qbittorrent-internal-monitor.sh:/scripts/qbittorrent-internal-monitor.sh:ro
+      # PIA-specific volume for config storage
+      - ./config/vpn:/config
     ulimits:
       nofile: ${VPN_MAX_FILE_DESCRIPTORS:-32768}
       memlock: -1
@@ -81,10 +88,9 @@ services:
       resources:
         limits:
           memory: ${VPN_MEMORY_LIMIT:-1g}
-    entrypoint: ["/scripts/vpn/enhanced-vpn-kill-switch.sh"]
     healthcheck:
-      test: ["CMD-SHELL", "warp-cli --accept-tos status | grep -q 'Connected' || exit 1"]
-      interval: 30s
+      test: ["CMD-SHELL", "/scripts/vpn/${VPN_PROVIDER:-warp}/healthcheck.sh"]
+      interval: ${VPN_HEALTH_CHECK_INTERVAL:-30s}
       timeout: 10s
       retries: 3
       start_period: 90s
@@ -121,6 +127,8 @@ services:
       init-directories:
         condition: service_completed_successfully
       vpn:
+        condition: service_healthy
+      nginx-proxy:
         condition: service_healthy
     environment:
       - TZ=${TZ:-America/New_York}
@@ -303,15 +311,6 @@ services:
       - "${NGINX_QBITTORRENT_PORT:-18080}:8080" # qBittorrent proxy
     volumes:
       - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      qbittorrent:
-        condition: service_healthy
-      prowlarr:
-        condition: service_healthy
-      sonarr:
-        condition: service_healthy
-      radarr:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "nginx", "-t"]
       interval: 30s
