@@ -246,8 +246,8 @@ services:
       test: ["CMD-SHELL", "curl -s http://localhost:8989 > /dev/null 2>&1 || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 5
+      start_period: 180s
     restart: unless-stopped
     stop_grace_period: 60s
   # Radarr - Movie Management
@@ -281,8 +281,8 @@ services:
       test: ["CMD-SHELL", "curl -s http://localhost:7878 > /dev/null 2>&1 || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 5
+      start_period: 180s
     restart: unless-stopped
     stop_grace_period: 60s
   # Nginx Reverse Proxy - Secure bridge for accessing isolated services
