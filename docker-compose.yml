@@ -529,6 +529,7 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=${TZ:-America/New_York}
+      - PLEX_TOKEN=${PLEX_TOKEN}
     volumes:
       - ./config/autoscan:/config
       - ./config/templates/autoscan:/templates:ro
