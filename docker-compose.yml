@@ -199,7 +199,7 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=${TZ:-America/New_York}
-      - JELLYFIN_PublishedServerUrl=${JELLYFIN_TUNNEL_URL:-http://localhost:8096}
+      - JELLYFIN_PublishedServerUrl=http://localhost:8096
     volumes:
       - ./config/jellyfin:/config
       - ./config/templates/jellyfin:/templates:ro
@@ -215,21 +215,6 @@ services:
       start_period: 300s
     restart: unless-stopped
     stop_grace_period: 60s
-  # Cloudflare Tunnel - Secure remote access for Jellyfin
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    container_name: ${CONTAINER_PREFIX}cloudflared
-    networks:
-      - media_network
-    volumes:
-      - ./config/cloudflared:/home/nonroot/.cloudflared
-      - ./data/shared:/shared-data
-      - ./scripts:/scripts:ro
-    entrypoint: ["/scripts/start-tunnel.sh"]
-    depends_on:
-      jellyfin:
-        condition: service_healthy
-    restart: unless-stopped
   # Sonarr - TV Series Management
   sonarr:
     image: ghcr.io/linuxserver/sonarr

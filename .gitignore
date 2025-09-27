@@ -15,7 +15,6 @@ config/overseerr/
 config/vpn/
 config/jellyfin/*
 !config/jellyfin/.gitkeep
-config/cloudflared/
 # Only preserve templates for secure configuration generation
 !config/templates/
 
