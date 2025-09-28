@@ -44,7 +44,7 @@
   "PLEX_FIX_MISMATCHED": false,
   "PLEX_FIX_MISMATCHED_LANG": "en",
   "PLEX_LD_LIBRARY_PATH": "/usr/lib/plexmediaserver/lib",
-  "PLEX_LOCAL_URL": "http://172.17.0.1:32400",
+  "PLEX_LOCAL_URL": "http://plex:32400",
   "PLEX_SCANNER": "/usr/lib/plexmediaserver/Plex\\\\ Media\\\\ Scanner",
   "PLEX_SUPPORT_DIR": "/var/lib/plexmediaserver/Library/Application\\\\ Support",
   "PLEX_TOKEN": "gjyy4Fx3Qv_Msy9hWChe",
@@ -65,25 +65,26 @@
   "SERVER_ALLOW_MANUAL_SCAN": true,
   "SERVER_FILE_CHECK_DELAY": 10,
   "SERVER_FILE_EXIST_PATH_MAPPINGS": {
-    "/downloads/complete/": ["/media/"]
+    "/media/movies": ["/movies"],
+    "/media/tv": ["/tv"]
   },
   "SERVER_IGNORE_LIST": [
     "/.grab/", ".DS_Store", "Thumbs.db", ".nfo", ".jpg", ".jpeg", ".png", ".gif",
-    ".srt", ".sub", ".idx", ".ass", ".ssa", ".sup"
+    ".srt", ".sub", ".idx", ".ass", ".ssa", ".sup", ".plexmatch"
   ],
   "SERVER_IP": "0.0.0.0",
   "SERVER_MAX_FILE_CHECKS": 10,
   "SERVER_PASS": "autoscan",
   "SERVER_PATH_MAPPINGS": {
-    "/downloads/complete/movies/": ["/media/movies/"],
-    "/downloads/complete/tv/": ["/media/tv/"]
+    "/media/movies": ["/movies"],
+    "/media/tv": ["/tv"]
   },
   "SERVER_PORT": 3030,
   "SERVER_SCAN_DELAY": 5,
   "SERVER_SCAN_FOLDER_ON_FILE_EXISTS_EXHAUSTION": false,
   "SERVER_SCAN_PRIORITIES": {
-    "0": ["/movies/"],
-    "1": ["/tv/"]
+    "0": ["/movies"],
+    "1": ["/tv"]
   },
   "SERVER_USE_SQLITE": true,
   "USE_DOCKER": false,
