@@ -1,5 +1,5 @@
 PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
 CREATE TABLE IF NOT EXISTS "AppSyncProfiles" ("Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "Name" TEXT NOT NULL, "EnableRss" INTEGER NOT NULL, "EnableInteractiveSearch" INTEGER NOT NULL, "EnableAutomaticSearch" INTEGER NOT NULL, "MinimumSeeders" INTEGER NOT NULL DEFAULT 1);
-INSERT INTO AppSyncProfiles VALUES(1,'Standard',1,1,1,1);
+INSERT INTO AppSyncProfiles VALUES(1,'Standard',1,1,1,2);
 COMMIT;

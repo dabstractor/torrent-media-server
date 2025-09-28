@@ -1,10 +1,19 @@
 #!/bin/bash
 
-# Custom entrypoint for Radarr with automatic configuration restoration
+# Custom entrypoint for Radarr with automatic configuration restoration and dynamic torrent client selection
 CONFIG_DIR="/config"
 TEMPLATE_DIR="/templates"
 
 echo "[INIT] Radarr custom entrypoint starting..."
+
+# Load torrent client selector for dynamic configuration
+if [ -f "/scripts/common/torrent-client-selector.sh" ]; then
+    source /scripts/common/torrent-client-selector.sh
+    torrent_client_selector
+else
+    echo "[INIT] Warning: torrent-client-selector.sh not found, using defaults"
+    export TORRENT_CLIENT_SQL_SUFFIX="qbittorrent"
+fi
 
 # Check if database OR config.xml needs restoration
 RESTORE_NEEDED=false
@@ -17,15 +26,37 @@ elif [ ! -f "$CONFIG_DIR/config.xml" ] || [ ! -s "$CONFIG_DIR/config.xml" ]; the
     RESTORE_NEEDED=true
 fi
 
-if [ "$RESTORE_NEEDED" = true ] && [ -f "$TEMPLATE_DIR/radarr.db.template" ]; then
+if [ "$RESTORE_NEEDED" = true ]; then
     echo "[INIT] Restoring Radarr configuration from templates..."
 
-    # Restore database if missing
+    # Restore database if missing - use client-specific SQL template
     if [ ! -f "$CONFIG_DIR/radarr.db" ]; then
-        cp "$TEMPLATE_DIR/radarr.db.template" "$CONFIG_DIR/radarr.db"
+        CLIENT_SQL_TEMPLATE="$TEMPLATE_DIR/radarr.db.${TORRENT_CLIENT_SQL_SUFFIX}.sql"
+        FALLBACK_TEMPLATE="$TEMPLATE_DIR/radarr.db.template"
+
+        if [ -f "$CLIENT_SQL_TEMPLATE" ]; then
+            echo "[INIT] Using client-specific database template: $CLIENT_SQL_TEMPLATE"
+            # Create base database first
+            if [ -f "$FALLBACK_TEMPLATE" ]; then
+                cp "$FALLBACK_TEMPLATE" "$CONFIG_DIR/radarr.db"
+            else
+                # Create minimal database if template doesn't exist
+                sqlite3 "$CONFIG_DIR/radarr.db" "CREATE TABLE IF NOT EXISTS Config (Id INTEGER PRIMARY KEY, Key TEXT, Value TEXT);"
+            fi
+
+            # Apply client-specific configuration
+            sqlite3 "$CONFIG_DIR/radarr.db" < "$CLIENT_SQL_TEMPLATE"
+            echo "[INIT] Applied $TORRENT_CLIENT_NAME configuration"
+        elif [ -f "$FALLBACK_TEMPLATE" ]; then
+            echo "[INIT] Using fallback template: $FALLBACK_TEMPLATE"
+            cp "$FALLBACK_TEMPLATE" "$CONFIG_DIR/radarr.db"
+        else
+            echo "[INIT] Error: No database template found"
+        fi
+
         chown 1000:1000 "$CONFIG_DIR/radarr.db"
         chmod 644 "$CONFIG_DIR/radarr.db"
-        echo "[INIT] Database restored from template"
+        echo "[INIT] Database restored with $TORRENT_CLIENT_NAME configuration"
     fi
 
     # Always restore config.xml when restoration is needed
@@ -50,8 +81,8 @@ if [ "$RESTORE_NEEDED" = true ] && [ -f "$TEMPLATE_DIR/radarr.db.template" ]; th
 
     echo "[INIT] Radarr configuration restored successfully!"
     echo "[INIT] - Root folder: /movies"
-    echo "[INIT] - Download client: qBittorrent via nginx-proxy:8080"
-    echo "[INIT] - Category: radarr"
+    echo "[INIT] - Download client: $TORRENT_CLIENT_NAME via nginx-proxy:$TORRENT_CLIENT_PORT"
+    echo "[INIT] - Category: radarr-movies"
     echo "[INIT] - Indexers synced from Prowlarr"
     echo "[INIT] - Plex metadata enabled"
 else
@@ -66,8 +97,8 @@ if [ -f "/scripts/configure-media-organization.sh" ]; then
     sleep 5
 
     # Run the media organization configuration in the background
-    # This will set up qBittorrent categories for proper automation
-    (/scripts/configure-media-organization.sh nginx-proxy 8080 60 &) || {
+    # This will set up torrent client categories for proper automation
+    (/scripts/configure-media-organization.sh nginx-proxy $TORRENT_CLIENT_PORT 60 &) || {
         echo "[INIT] Warning: Media organization configuration failed - continuing anyway"
     }
 
@@ -84,7 +115,7 @@ if [ -f "/scripts/configure-download-handling.sh" ]; then
     sleep 10
 
     # Configure download handling in the background
-    (/scripts/configure-download-handling.sh radarr nginx-proxy 8080 30 &) || {
+    (/scripts/configure-download-handling.sh radarr nginx-proxy $TORRENT_CLIENT_PORT 30 &) || {
         echo "[INIT] Warning: Download handling configuration failed - continuing anyway"
     }
 
@@ -106,20 +137,40 @@ if [ -f "/scripts/configure-plex-metadata.sh" ]; then
     echo "[INIT] Plex metadata configuration initiated"
 fi
 
-# Fix qBittorrent download client password (gets reset on restart)
+# Fix download client configuration (dynamic based on selected client)
 if [ -n "$RADARR_API_KEY" ]; then
-    echo "[INIT] Configuring qBittorrent download client..."
+    echo "[INIT] Configuring $TORRENT_CLIENT_NAME download client..."
 
     # Wait for Radarr to be fully ready
     sleep 20
 
-    # Update qBittorrent download client password in the background
+    # Update download client configuration in the background
     (
         sleep 5
-        curl -X PUT "http://localhost:7878/api/v3/downloadclient/1" \
-            -H "X-Api-Key: $RADARR_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{
+
+        # Build client-specific configuration
+        if [ "$TORRENT_CLIENT" = "transmission" ]; then
+            CLIENT_CONFIG='{
+                "enable": true,
+                "protocol": "torrent",
+                "priority": 1,
+                "removeCompletedDownloads": true,
+                "removeFailedDownloads": true,
+                "name": "Transmission",
+                "fields": [
+                    {"name": "host", "value": "nginx-proxy"},
+                    {"name": "port", "value": '${TORRENT_CLIENT_PORT}'},
+                    {"name": "username", "value": ""},
+                    {"name": "password", "value": ""},
+                    {"name": "movieCategory", "value": "radarr-movies"}
+                ],
+                "implementationName": "Transmission",
+                "implementation": "Transmission",
+                "configContract": "TransmissionSettings",
+                "id": 1
+            }'
+        else
+            CLIENT_CONFIG='{
                 "enable": true,
                 "protocol": "torrent",
                 "priority": 1,
@@ -128,20 +179,26 @@ if [ -n "$RADARR_API_KEY" ]; then
                 "name": "qBittorrent",
                 "fields": [
                     {"name": "host", "value": "nginx-proxy"},
-                    {"name": "port", "value": 8080},
+                    {"name": "port", "value": '${TORRENT_CLIENT_PORT}'},
                     {"name": "username", "value": "admin"},
                     {"name": "password", "value": "adminpass"},
-                    {"name": "tvCategory", "value": "radarr"}
+                    {"name": "movieCategory", "value": "radarr-movies"}
                 ],
                 "implementationName": "qBittorrent",
                 "implementation": "QBittorrent",
                 "configContract": "QBittorrentSettings",
                 "id": 1
-            }' > /dev/null 2>&1
-        echo "[INIT] qBittorrent download client password updated"
+            }'
+        fi
+
+        curl -X PUT "http://localhost:7878/api/v3/downloadclient/1" \
+            -H "X-Api-Key: $RADARR_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$CLIENT_CONFIG" > /dev/null 2>&1
+        echo "[INIT] $TORRENT_CLIENT_NAME download client configuration updated"
     ) &
 
-    echo "[INIT] qBittorrent configuration initiated"
+    echo "[INIT] $TORRENT_CLIENT_NAME configuration initiated"
 fi
 
 echo "[INIT] Starting Radarr with original entrypoint..."

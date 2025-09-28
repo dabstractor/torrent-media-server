@@ -151,6 +151,44 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    profiles:
+      - qbittorrent
+    restart: unless-stopped
+    stop_grace_period: 60s
+  # Transmission - Alternative torrent download client running through VPN
+  transmission:
+    image: lscr.io/linuxserver/transmission:latest
+    container_name: ${CONTAINER_PREFIX}transmission
+    network_mode: "container:${CONTAINER_PREFIX}vpn" # Share VPN container's network stack (most secure isolation)
+    depends_on:
+      init-directories:
+        condition: service_completed_successfully
+      vpn:
+        condition: service_healthy
+      nginx-proxy:
+        condition: service_healthy
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/New_York}
+      - USER=${TRANSMISSION_USERNAME}
+      - PASS=${TRANSMISSION_PASSWORD}
+      - PEERPORT=${TRANSMISSION_PORT:-51413}
+    volumes:
+      - ./config/transmission:/config
+      - ./config/templates/transmission:/templates:ro
+      - ./data/downloads:/downloads
+      - ./data/downloads/watch:/watch
+      - ./scripts:/scripts:ro
+    entrypoint: ["/scripts/transmission-entrypoint.sh"]
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -s http://localhost:9091/transmission/rpc | grep -q 'X-Transmission-Session-Id'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    profiles:
+      - transmission
     restart: unless-stopped
     stop_grace_period: 60s
   # Plex Media Server
@@ -294,6 +332,7 @@ services:
       - vpn_network
     ports:
       - "${NGINX_QBITTORRENT_PORT:-18080}:8080" # qBittorrent proxy
+      - "${NGINX_TRANSMISSION_PORT:-19091}:9091" # Transmission proxy
     volumes:
       - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     healthcheck:
@@ -362,8 +401,6 @@ services:
       vpn:
         condition: service_healthy
       plex:
-        condition: service_healthy
-      qbittorrent:
         condition: service_healthy
       prowlarr:
         condition: service_healthy
