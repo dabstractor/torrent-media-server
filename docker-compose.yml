@@ -128,8 +128,6 @@ services:
         condition: service_completed_successfully
       vpn:
         condition: service_healthy
-      nginx-proxy:
-        condition: service_healthy
     environment:
       - TZ=${TZ:-America/New_York}
       - QBT_WEBUI_PORT=${QBITTORRENT_INTERNAL_PORT:-8080}
@@ -164,8 +162,6 @@ services:
       init-directories:
         condition: service_completed_successfully
       vpn:
-        condition: service_healthy
-      nginx-proxy:
         condition: service_healthy
     environment:
       - PUID=1000
