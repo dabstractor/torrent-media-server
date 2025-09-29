@@ -65,7 +65,8 @@
   "SERVER_ALLOW_MANUAL_SCAN": true,
   "SERVER_FILE_CHECK_DELAY": 10,
   "SERVER_FILE_EXIST_PATH_MAPPINGS": {
-    "/downloads/complete/": ["/media/"]
+    "/media/movies": ["/movies"],
+    "/media/tv": ["/tv"]
   },
   "SERVER_IGNORE_LIST": [
     "/.grab/", ".DS_Store", "Thumbs.db", ".nfo", ".jpg", ".jpeg", ".png", ".gif",
@@ -75,8 +76,8 @@
   "SERVER_MAX_FILE_CHECKS": 10,
   "SERVER_PASS": "${AUTOSCAN_WEBHOOK_TOKEN}",
   "SERVER_PATH_MAPPINGS": {
-    "/downloads/complete/movies/": ["/media/movies/"],
-    "/downloads/complete/tv/": ["/media/tv/"]
+    "/media/movies": ["/movies"],
+    "/media/tv": ["/tv"]
   },
   "SERVER_PORT": 3030,
   "SERVER_SCAN_DELAY": 5,
