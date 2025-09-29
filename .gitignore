@@ -194,3 +194,7 @@ docker-compose.override.yml
 config/transmission/resume
 config/transmission/torrents
 config/transmission/stats.json
+config/transmission/transmission-daemon
+config/transmission/.transmission_config_initialized
+config/transmission/bandwidth-groups.json
+config/transmission/dht.dat
