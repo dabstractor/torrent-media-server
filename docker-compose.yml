@@ -168,8 +168,8 @@ services:
       vpn:
         condition: service_healthy
     environment:
-      - PUID=$(id -u)
-      - PGID=$(id -g)
+      - PUID=1000
+      - PGID=1000
       - TZ=${TZ:-America/New_York}
       - USER=${TRANSMISSION_USERNAME}
       - PASS=${TRANSMISSION_PASSWORD}
@@ -200,8 +200,8 @@ services:
       init-directories:
         condition: service_completed_successfully
     environment:
-      - PUID=$(id -u)
-      - PGID=$(id -g)
+      - PUID=1000
+      - PGID=1000
       - TZ=${TZ:-America/New_York}
       - PLEX_CLAIM=${PLEX_CLAIM_TOKEN}
     volumes:
@@ -234,8 +234,8 @@ services:
     env_file:
       - .env
     environment:
-      - PUID=$(id -u)
-      - PGID=$(id -g)
+      - PUID=1000
+      - PGID=1000
       - TZ=${TZ:-America/New_York}
       - JELLYFIN_PublishedServerUrl=http://localhost:8096
     volumes:
@@ -271,8 +271,8 @@ services:
     env_file:
       - .env
     environment:
-      - PUID=$(id -u)
-      - PGID=$(id -g)
+      - PUID=1000
+      - PGID=1000
       - TZ=${TZ:-America/New_York}
     volumes:
       - ./config/sonarr:/config
@@ -306,8 +306,8 @@ services:
     env_file:
       - .env
     environment:
-      - PUID=$(id -u)
-      - PGID=$(id -g)
+      - PUID=1000
+      - PGID=1000
       - TZ=${TZ:-America/New_York}
     volumes:
       - ./config/radarr:/config
@@ -359,8 +359,8 @@ services:
       plex:
         condition: service_healthy
     environment:
-      - PUID=$(id -u)
-      - PGID=$(id -g)
+      - PUID=1000
+      - PGID=1000
       - TZ=${TZ:-America/New_York}
       - PLEX_HOST=${PLEX_HOST}
       - PLEX_PORT=${PLEX_PORT:-32400}
@@ -394,7 +394,7 @@ services:
     ports:
       - "${WEB_UI_PORT:-18787}:3000"
     # Run as current user to match file ownership
-    user: "$(id -u):$(id -g)"
+    user: "1000:1000"
     depends_on:
       init-directories:
         condition: service_completed_successfully
@@ -460,8 +460,8 @@ services:
     env_file:
       - .env
     environment:
-      - PUID=$(id -u)
-      - PGID=$(id -g)
+      - PUID=1000
+      - PGID=1000
       - TZ=${TZ:-America/New_York}
     volumes:
       - ./config/prowlarr:/config
@@ -498,8 +498,8 @@ services:
     env_file:
       - .env
     environment:
-      - PUID=$(id -u)
-      - PGID=$(id -g)
+      - PUID=1000
+      - PGID=1000
       - TZ=${TZ:-America/New_York}
       - PORT=${OVERSEERR_PORT:-5055}
       - PLEX_TOKEN=${PLEX_TOKEN}
@@ -563,8 +563,8 @@ services:
       plex:
         condition: service_healthy
     environment:
-      - PUID=$(id -u)
-      - PGID=$(id -g)
+      - PUID=1000
+      - PGID=1000
       - TZ=${TZ:-America/New_York}
       - PLEX_TOKEN="${PLEX_TOKEN}"
     volumes:
