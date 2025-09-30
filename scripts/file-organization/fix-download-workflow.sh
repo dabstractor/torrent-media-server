@@ -17,17 +17,17 @@ echo "Step 1: Fixing qBittorrent categories..."
 
 # Fix qBittorrent categories using API
 docker exec plex-organization-qbittorrent curl -s -X POST \
-    -d "category=sonarr-tv&savePath=/downloads/complete" \
+    -d "category=sonarr&savePath=/downloads/complete" \
     "http://localhost:8081/api/v2/torrents/editCategory" || \
 docker exec plex-organization-qbittorrent curl -s -X POST \
-    -d "category=sonarr-tv&savePath=/downloads/complete" \
+    -d "category=sonarr&savePath=/downloads/complete" \
     "http://localhost:8081/api/v2/torrents/createCategory"
 
 docker exec plex-organization-qbittorrent curl -s -X POST \
-    -d "category=radarr-movies&savePath=/downloads/complete" \
+    -d "category=radarr&savePath=/downloads/complete" \
     "http://localhost:8081/api/v2/torrents/editCategory" || \
 docker exec plex-organization-qbittorrent curl -s -X POST \
-    -d "category=radarr-movies&savePath=/downloads/complete" \
+    -d "category=radarr&savePath=/downloads/complete" \
     "http://localhost:8081/api/v2/torrents/createCategory"
 
 echo "✓ qBittorrent categories updated"
@@ -46,7 +46,7 @@ if [ -n "$SONARR_DL_CLIENT_ID" ] && [ "$SONARR_DL_CLIENT_ID" != "null" ]; then
 
     # Update the tvCategory and removeCompletedDownloads fields
     UPDATED_CLIENT=$(echo "$SONARR_DL_CLIENT" | jq '
-        (.fields[] | select(.name == "tvCategory") | .value) = "sonarr-tv" |
+        (.fields[] | select(.name == "tvCategory") | .value) = "sonarr" |
         (.fields[] | select(.name == "removeCompletedDownloads") | .value) = true
     ')
 
@@ -75,7 +75,7 @@ if [ -n "$RADARR_DL_CLIENT_ID" ] && [ "$RADARR_DL_CLIENT_ID" != "null" ]; then
 
     # Update the movieCategory and removeCompletedDownloads fields
     UPDATED_CLIENT=$(echo "$RADARR_DL_CLIENT" | jq '
-        (.fields[] | select(.name == "movieCategory") | .value) = "radarr-movies" |
+        (.fields[] | select(.name == "movieCategory") | .value) = "radarr" |
         (.fields[] | select(.name == "removeCompletedDownloads") | .value) = true
     ')
 

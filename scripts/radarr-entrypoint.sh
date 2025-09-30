@@ -82,7 +82,7 @@ if [ "$RESTORE_NEEDED" = true ]; then
     echo "[INIT] Radarr configuration restored successfully!"
     echo "[INIT] - Root folder: /movies"
     echo "[INIT] - Download client: $TORRENT_CLIENT_NAME via nginx-proxy:$TORRENT_CLIENT_PORT"
-    echo "[INIT] - Category: radarr-movies"
+    echo "[INIT] - Category: radarr"
     echo "[INIT] - Indexers synced from Prowlarr"
     echo "[INIT] - Plex metadata enabled"
 else
@@ -162,7 +162,7 @@ if [ -n "$RADARR_API_KEY" ]; then
                     {"name": "port", "value": '${TORRENT_CLIENT_PORT}'},
                     {"name": "username", "value": ""},
                     {"name": "password", "value": ""},
-                    {"name": "movieCategory", "value": "radarr-movies"}
+                    {"name": "movieCategory", "value": "radarr"}
                 ],
                 "implementationName": "Transmission",
                 "implementation": "Transmission",
@@ -182,7 +182,7 @@ if [ -n "$RADARR_API_KEY" ]; then
                     {"name": "port", "value": '${TORRENT_CLIENT_PORT}'},
                     {"name": "username", "value": "admin"},
                     {"name": "password", "value": "adminpass"},
-                    {"name": "movieCategory", "value": "radarr-movies"}
+                    {"name": "movieCategory", "value": "radarr"}
                 ],
                 "implementationName": "qBittorrent",
                 "implementation": "QBittorrent",

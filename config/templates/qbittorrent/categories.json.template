@@ -1,8 +1,8 @@
 {
-    "radarr-movies": {
+    "radarr": {
         "save_path": "/downloads"
     },
-    "sonarr-tv": {
+    "sonarr": {
         "save_path": "/downloads"
     }
 }

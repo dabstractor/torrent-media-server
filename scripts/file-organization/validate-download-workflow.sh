@@ -15,9 +15,9 @@ echo -n "Testing qBittorrent categories configuration ... "
 ((TOTAL_TESTS++))
 
 CATEGORIES=$(docker exec plex-organization-qbittorrent curl -s "http://localhost:8081/api/v2/torrents/categories" 2>/dev/null)
-if echo "$CATEGORIES" | jq -e '.["sonarr-tv"] and .["radarr-movies"]' >/dev/null 2>&1; then
-    SONARR_PATH=$(echo "$CATEGORIES" | jq -r '.["sonarr-tv"].savePath')
-    RADARR_PATH=$(echo "$CATEGORIES" | jq -r '.["radarr-movies"].savePath')
+if echo "$CATEGORIES" | jq -e '.["sonarr"] and .["radarr"]' >/dev/null 2>&1; then
+    SONARR_PATH=$(echo "$CATEGORIES" | jq -r '.["sonarr"].savePath')
+    RADARR_PATH=$(echo "$CATEGORIES" | jq -r '.["radarr"].savePath')
 
     if [ "$SONARR_PATH" = "/downloads/complete" ] && [ "$RADARR_PATH" = "/downloads/complete" ]; then
         echo "✓ PASS"
@@ -39,7 +39,7 @@ if echo "$SONARR_DL_CLIENTS" | jq -e '.[0]' >/dev/null 2>&1; then
     QBT_CLIENT=$(echo "$SONARR_DL_CLIENTS" | jq -r '.[] | select(.implementation == "QBittorrent")')
     if [ -n "$QBT_CLIENT" ]; then
         CATEGORY=$(echo "$QBT_CLIENT" | jq -r '.fields[] | select(.name == "tvCategory") | .value')
-        if [ "$CATEGORY" = "sonarr-tv" ]; then
+        if [ "$CATEGORY" = "sonarr" ]; then
             echo "✓ PASS"
             ((SUCCESS_COUNT++))
         else
@@ -62,7 +62,7 @@ if echo "$RADARR_DL_CLIENTS" | jq -e '.[0]' >/dev/null 2>&1; then
     QBT_CLIENT=$(echo "$RADARR_DL_CLIENTS" | jq -r '.[] | select(.implementation == "QBittorrent")')
     if [ -n "$QBT_CLIENT" ]; then
         CATEGORY=$(echo "$QBT_CLIENT" | jq -r '.fields[] | select(.name == "movieCategory") | .value')
-        if [ "$CATEGORY" = "radarr-movies" ]; then
+        if [ "$CATEGORY" = "radarr" ]; then
             echo "✓ PASS"
             ((SUCCESS_COUNT++))
         else
