@@ -82,7 +82,7 @@ if [ "$RESTORE_NEEDED" = true ]; then
     echo "[INIT] Sonarr configuration restored successfully!"
     echo "[INIT] - Root folder: /tv"
     echo "[INIT] - Download client: $TORRENT_CLIENT_NAME via nginx-proxy:$TORRENT_CLIENT_PORT"
-    echo "[INIT] - Category: sonarr-tv"
+    echo "[INIT] - Category: sonarr"
     echo "[INIT] - Indexers synced from Prowlarr"
     echo "[INIT] - Plex metadata enabled"
 else
@@ -97,8 +97,8 @@ if [ -f "/scripts/configure-media-organization.sh" ]; then
     sleep 5
 
     # Run the media organization configuration in the background
-    # This will set up qBittorrent categories for proper automation
-    (/scripts/configure-media-organization.sh nginx-proxy 8080 60 &) || {
+    # This will set up torrent client categories for proper automation
+    (/scripts/configure-media-organization.sh nginx-proxy $TORRENT_CLIENT_PORT 60 &) || {
         echo "[INIT] Warning: Media organization configuration failed - continuing anyway"
     }
 
@@ -115,7 +115,7 @@ if [ -f "/scripts/configure-download-handling.sh" ]; then
     sleep 10
 
     # Configure download handling in the background
-    (/scripts/configure-download-handling.sh sonarr nginx-proxy 8080 30 &) || {
+    (/scripts/configure-download-handling.sh sonarr nginx-proxy $TORRENT_CLIENT_PORT 30 &) || {
         echo "[INIT] Warning: Download handling configuration failed - continuing anyway"
     }
 
@@ -162,7 +162,7 @@ if [ -n "$SONARR_API_KEY" ]; then
                     {"name": "port", "value": '${TORRENT_CLIENT_PORT}'},
                     {"name": "username", "value": ""},
                     {"name": "password", "value": ""},
-                    {"name": "tvCategory", "value": "sonarr-tv"}
+                    {"name": "tvCategory", "value": "sonarr"}
                 ],
                 "implementationName": "Transmission",
                 "implementation": "Transmission",
@@ -182,7 +182,7 @@ if [ -n "$SONARR_API_KEY" ]; then
                     {"name": "port", "value": '${TORRENT_CLIENT_PORT}'},
                     {"name": "username", "value": "admin"},
                     {"name": "password", "value": "adminpass"},
-                    {"name": "tvCategory", "value": "sonarr-tv"}
+                    {"name": "tvCategory", "value": "sonarr"}
                 ],
                 "implementationName": "qBittorrent",
                 "implementation": "QBittorrent",
