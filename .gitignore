@@ -198,3 +198,5 @@ config/transmission/transmission-daemon
 config/transmission/.transmission_config_initialized
 config/transmission/bandwidth-groups.json
 config/transmission/dht.dat
+config/jellyseer/settings.old.json
+config/jellyseer/db

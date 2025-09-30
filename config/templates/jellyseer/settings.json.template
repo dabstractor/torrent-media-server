@@ -1,0 +1,55 @@
+{
+  "main": {
+    "applicationTitle": "Jellyseer",
+    "applicationUrl": "${JELLYSEER_URL}",
+    "trustProxy": true,
+    "csrfProtection": false
+  },
+  "jellyfin": {
+    "hostname": "jellyfin",
+    "port": 8096,
+    "useSsl": false,
+    "libraries": [],
+    "serverName": "Jellyfin Server"
+  },
+  "sonarr": [
+    {
+      "id": 1,
+      "name": "Sonarr",
+      "hostname": "sonarr",
+      "port": 8989,
+      "apiKey": "${SONARR_API_KEY}",
+      "useSsl": false,
+      "baseUrl": "",
+      "isDefault": true,
+      "activeProfileId": 1,
+      "activeProfileName": "Any",
+      "activeDirectory": "/data/tvshows",
+      "activeLanguageProfileId": 1,
+      "tags": []
+    }
+  ],
+  "radarr": [
+    {
+      "id": 1,
+      "name": "Radarr",
+      "hostname": "radarr",
+      "port": 7878,
+      "apiKey": "${RADARR_API_KEY}",
+      "useSsl": false,
+      "baseUrl": "",
+      "isDefault": true,
+      "activeProfileId": 1,
+      "activeProfileName": "Any",
+      "activeDirectory": "/data/movies",
+      "minimumAvailability": "released",
+      "tags": []
+    }
+  ],
+  "public": {
+    "initialized": false
+  },
+  "notifications": {
+    "agents": {}
+  }
+}

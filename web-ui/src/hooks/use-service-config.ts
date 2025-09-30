@@ -15,6 +15,7 @@ interface EnvConfig {
   RADARR_URL?: string
   JELLYFIN_URL?: string
   OVERSEERR_URL?: string
+  JELLYSEER_URL?: string
   API_BASE_URL?: string
   WEB_UI_PORT?: string
 }
@@ -116,6 +117,20 @@ const mapEnvToServices = (envConfig: EnvConfig): ServiceConfig[] => {
       icon: 'Request',
       url: envConfig.OVERSEERR_URL,
       healthEndpoint: `${healthBaseUrl}/overseerr`,
+      requiresAuth: false,
+      category: 'management'
+    })
+  }
+
+  // Jellyseer - Media request management for Jellyfin
+  if (envConfig.JELLYSEER_URL) {
+    services.push({
+      id: 'jellyseer',
+      name: 'Jellyseer',
+      description: 'Media request management for Jellyfin',
+      icon: 'Play',
+      url: envConfig.JELLYSEER_URL,
+      healthEndpoint: `${healthBaseUrl}/jellyseer`,
       requiresAuth: false,
       category: 'management'
     })

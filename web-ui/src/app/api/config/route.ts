@@ -11,6 +11,7 @@ export async function GET() {
     RADARR_URL: process.env.RADARR_URL,
     JELLYFIN_URL: process.env.JELLYFIN_URL,
     OVERSEERR_URL: process.env.OVERSEERR_URL,
+    JELLYSEER_URL: process.env.JELLYSEER_URL,
     API_BASE_URL: process.env.API_BASE_URL,
     WEB_UI_PORT: process.env.WEB_UI_PORT,
   };

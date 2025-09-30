@@ -417,6 +417,7 @@ services:
       - RADARR_URL=http://localhost:${RADARR_PORT}
       - JELLYFIN_URL=http://localhost:${JELLYFIN_PORT}
       - OVERSEERR_URL=http://localhost:${OVERSEERR_PORT:-5055}
+      - JELLYSEER_URL=http://localhost:${JELLYSEER_PORT:-5056}
       # Backend URLs for internal Docker communication
       - PROWLARR_BACKEND_URL=http://prowlarr:9696
       - QBITTORRENT_BACKEND_URL=http://vpn:8080
@@ -425,6 +426,7 @@ services:
       - RADARR_BACKEND_URL=http://radarr:7878
       - JELLYFIN_BACKEND_URL=http://jellyfin:8096
       - OVERSEERR_BACKEND_URL=http://overseerr:5055
+      - JELLYSEER_BACKEND_URL=http://jellyseer:5055
       # Reverse proxy configuration for secure access
       - ENABLE_REVERSE_PROXY=true
       - QBITTORRENT_PROXY_PATH=/qbittorrent
@@ -508,6 +510,45 @@ services:
       - ./config/templates/overseerr:/templates:ro
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:${OVERSEERR_PORT:-5055}/api/v1/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    stop_grace_period: 60s
+  # Jellyseer - Media request management for Jellyfin
+  jellyseer:
+    build:
+      context: .
+      dockerfile: jellyseer.Dockerfile
+    container_name: ${CONTAINER_PREFIX}jellyseer
+    networks:
+      - media_network
+      - vpn_network
+    ports:
+      - "${JELLYSEER_PORT:-5056}:5055"
+    depends_on:
+      init-directories:
+        condition: service_completed_successfully
+      jellyfin:
+        condition: service_healthy
+      radarr:
+        condition: service_healthy
+      sonarr:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/New_York}
+      - PORT=5055
+    volumes:
+      - ./config/jellyseer:/app/config
+      - ./config/templates/jellyseer:/templates:ro
+      - ./scripts:/scripts:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5055/api/v1/status || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
