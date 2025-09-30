@@ -549,6 +549,20 @@ services:
       - vpn
     networks:
       - default
+  # Startup Coordinator - Automatically fixes VPN port conflicts after reboot
+  startup-coordinator:
+    image: docker:cli
+    container_name: ${CONTAINER_PREFIX}startup-coordinator
+    restart: always # Always restart, even if manually stopped - critical for boot recovery
+    network_mode: host # Required to access and kill host port bindings
+    environment:
+      - CONTAINER_PREFIX=${CONTAINER_PREFIX}
+      - VPN_BITTORRENT_PORT=${VPN_BITTORRENT_PORT:-17403}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./scripts/startup-coordinator.sh:/startup-coordinator.sh:ro
+    entrypoint: ["/bin/sh", "/startup-coordinator.sh"]
+    # No depends_on - must start independently to fix boot issues
   # Autoscan - Automated library scanning for Plex and Jellyfin
   autoscan:
     image: ghcr.io/niniyas/autoscan:latest
