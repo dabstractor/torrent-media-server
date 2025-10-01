@@ -72,15 +72,29 @@ sleep ${WARP_SLEEP:-5}
 
 # Register WARP if not already registered
 echo "Checking WARP registration..."
-if warp-cli --accept-tos status 2>/dev/null | grep -q 'Registration Missing'; then
-    echo "Registering WARP..."
+WARP_STATUS=$(warp-cli --accept-tos status 2>&1)
+
+if echo "$WARP_STATUS" | grep -qi 'Registration Missing\|Unable'; then
+    echo "WARP not registered - registering now..."
+    echo "Current status: $WARP_STATUS"
+
+    # Delete any stale registration first
+    warp-cli --accept-tos registration delete 2>/dev/null || true
+    sleep 1
+
     if [ -n "${WARP_LICENSE_KEY}" ]; then
         echo "Using provided license key..."
         warp-cli --accept-tos registration new --license-key "${WARP_LICENSE_KEY}" || echo "Registration with license failed, trying without..."
     fi
 
     # Fallback to registration without license key
-    warp-cli --accept-tos registration new || echo "Registration failed, continuing anyway..."
+    if ! warp-cli --accept-tos registration new 2>&1; then
+        echo "⚠️ Registration failed - VPN may not work correctly"
+    else
+        echo "✅ WARP registered successfully"
+    fi
+else
+    echo "✅ WARP already registered"
 fi
 
 # Try to connect WARP
