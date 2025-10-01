@@ -10,6 +10,7 @@ networks:
     ipam:
       config:
         - subnet: ${VPN_NETWORK_SUBNET}
+          ip_range: ${VPN_DHCP_RANGE:-10.233.1.0/24}  # DHCP range excludes static IPs
 # Logging configuration
 x-logging: &default-logging
   driver: json-file
