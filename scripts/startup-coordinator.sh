@@ -43,7 +43,8 @@ while true; do
     log "VPN Status: $VPN_STATE (exit code: $VPN_EXIT_CODE)"
 
     # Check if VPN failed with port conflict (exit code 128)
-    if [ "$VPN_STATE" = "exited" ] && [ "$VPN_EXIT_CODE" = "128" ]; then
+    # Can be in "exited" or "created" state when port conflict occurs
+    if [ "$VPN_EXIT_CODE" = "128" ] && { [ "$VPN_STATE" = "exited" ] || [ "$VPN_STATE" = "created" ]; }; then
         log "⚠️  VPN failed with exit code 128 - likely port conflict"
 
         # Check VPN error message
@@ -69,8 +70,16 @@ while true; do
             # Wait a moment for port to be released
             sleep 2
 
-            log "🔄 Restarting VPN container..."
-            docker start "$VPN_CONTAINER" || log "❌ Failed to start VPN"
+            log "🔄 Removing VPN container to clear IP allocation..."
+            # Remove the container to force Docker to reallocate network resources
+            docker rm -f "$VPN_CONTAINER" 2>/dev/null || true
+
+            # Wait for network cleanup
+            sleep 3
+
+            log "🔄 Recreating VPN container..."
+            # Use docker compose to recreate with proper dependencies
+            docker compose up -d --no-deps vpn || log "❌ Failed to recreate VPN"
 
             # Wait for VPN to become healthy
             log "Waiting for VPN health check..."
@@ -83,12 +92,21 @@ while true; do
                 sleep 2
             done
 
-            # Check if transmission also needs restart
-            TRANS_STATE=$(docker inspect --format='{{.State.Status}}' "$TRANSMISSION_CONTAINER" 2>/dev/null || echo "missing")
-            if [ "$TRANS_STATE" = "exited" ]; then
-                log "🔄 Restarting transmission container..."
-                docker start "$TRANSMISSION_CONTAINER" || log "❌ Failed to start transmission"
-            fi
+            # Restart all VPN-dependent containers that are stuck in created/exited state
+            log "Checking VPN-dependent containers..."
+            DEPENDENT_CONTAINERS="transmission sonarr radarr prowlarr watchlistarr autoheal autoscan"
+
+            for service in $DEPENDENT_CONTAINERS; do
+                CONTAINER="${CONTAINER_PREFIX}${service}"
+                STATE=$(docker inspect --format='{{.State.Status}}' "$CONTAINER" 2>/dev/null || echo "missing")
+
+                if [ "$STATE" = "created" ] || [ "$STATE" = "exited" ]; then
+                    log "🔄 Starting $service container (state: $STATE)..."
+                    docker compose up -d --no-deps "$service" || log "⚠️ Failed to start $service"
+                fi
+            done
+
+            log "✅ VPN recovery complete"
         fi
     elif [ "$VPN_STATE" = "running" ]; then
         log "✓ VPN is running normally"
