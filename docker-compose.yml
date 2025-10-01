@@ -25,12 +25,6 @@ services:
     user: "0:0" # Run as root to fix ownership
     command: >
       sh -c "
-
-
-
-
-
-
         mkdir -p /data/media/tv /data/media/movies /data/downloads/complete /data/downloads/incomplete /data/downloads/watch &&
         chown -R 1000:1000 /data/ &&
         echo 'Directory ownership initialized: 1000:1000'
@@ -98,6 +92,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 90s
+    depends_on:
+      startup-coordinator:
+        condition: service_started
     restart: unless-stopped
   # FlareSolverr - CloudFlare bypass proxy for Prowlarr indexers
   flaresolverr:
@@ -132,6 +129,8 @@ services:
         condition: service_completed_successfully
       vpn:
         condition: service_healthy
+      startup-coordinator:
+        condition: service_started
     environment:
       - TZ=${TZ:-America/New_York}
       - QBT_WEBUI_PORT=${QBITTORRENT_INTERNAL_PORT:-8080}
@@ -167,6 +166,8 @@ services:
         condition: service_completed_successfully
       vpn:
         condition: service_healthy
+      startup-coordinator:
+        condition: service_started
     environment:
       - PUID=1000
       - PGID=1000
@@ -458,6 +459,8 @@ services:
       - "${PROWLARR_PORT:-9696}:9696"
     depends_on:
       vpn:
+        condition: service_healthy
+      flaresolverr:
         condition: service_healthy
     env_file:
       - .env
