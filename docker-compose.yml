@@ -76,6 +76,8 @@ services:
       - ./scripts/qbittorrent-internal-monitor.sh:/scripts/qbittorrent-internal-monitor.sh:ro
       # PIA-specific volume for config storage
       - ./config/vpn:/config
+      # WARP registration persistence
+      - ./config/vpn/cloudflare-warp:/var/lib/cloudflare-warp
     ulimits:
       nofile: ${VPN_MAX_FILE_DESCRIPTORS:-32768}
       memlock: -1
