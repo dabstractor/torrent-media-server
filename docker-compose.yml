@@ -50,6 +50,8 @@ services:
       - NET_RAW
       - SYS_ADMIN # Required for network buffer sysctl modifications
     privileged: true # Required for iptables and routing setup
+    security_opt:
+      - apparmor=unconfined
     user: "root"
     ports:
       - "${VPN_BITTORRENT_PORT:-16881}:6881" # qBittorrent BitTorrent port

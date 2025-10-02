@@ -24,3 +24,6 @@ RUN find /scripts/vpn -type f -name "*.sh" -exec chmod +x {} \;
 
 # Set the modular entrypoint
 ENTRYPOINT ["/scripts/vpn/entrypoint.sh"]
+# Patch the base image's run script to use bash explicitly for wg-quick
+COPY dockerfiles/vpn/patch-run.sh /tmp/patch-run.sh
+RUN chmod +x /tmp/patch-run.sh && /tmp/patch-run.sh && rm /tmp/patch-run.sh
