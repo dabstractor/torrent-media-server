@@ -207,3 +207,6 @@ wgcf-account.toml
 wgcf-profile.conf
 .env.pia
 .env.warp
+
+# Torrent migration tool config (contains credentials)
+scripts/config.json
