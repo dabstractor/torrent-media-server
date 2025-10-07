@@ -13,6 +13,7 @@ config/radarr/
 config/sonarr/
 config/overseerr/
 config/vpn/
+config/gluetun/
 config/jellyfin/*
 !config/jellyfin/.gitkeep
 # Only preserve templates for secure configuration generation
@@ -200,3 +201,9 @@ config/transmission/bandwidth-groups.json
 config/transmission/dht.dat
 config/jellyseer/settings.old.json
 config/jellyseer/db
+
+# VPN provider-specific generated configs (created by setup-vpn.sh)
+wgcf-account.toml
+wgcf-profile.conf
+.env.pia
+.env.warp

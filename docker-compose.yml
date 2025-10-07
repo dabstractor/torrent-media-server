@@ -34,65 +34,55 @@ services:
     volumes:
       - ./data:/data
     restart: "no"
-  # VPN Service - Modular provider system
-  # Default: Cloudflare WARP (no credentials needed)
-  # To use PIA: Set VPN_PROVIDER=pia in .env file and provide PIA credentials
+  # VPN Service - Gluetun unified VPN client
+  # Supports multiple providers: PIA (native), Cloudflare WARP (custom wireguard)
+  # Switch providers by setting VPN_PROVIDER in .env (warp or pia)
   vpn:
-    build:
-      context: .
-      dockerfile: dockerfiles/vpn/Dockerfile.${VPN_PROVIDER:-warp}
+    image: qmcgaw/gluetun:latest
     container_name: ${CONTAINER_PREFIX}vpn
-    env_file:
-      - .env
     cap_add:
       - NET_ADMIN
-      - SYS_MODULE
-      - NET_RAW
-      - SYS_ADMIN # Required for network buffer sysctl modifications
-    privileged: true # Required for iptables and routing setup
-    security_opt:
-      - apparmor=unconfined
-    user: "root"
+    devices:
+      - /dev/net/tun:/dev/net/tun
     ports:
       - "${VPN_BITTORRENT_PORT:-16881}:6881" # qBittorrent BitTorrent port
       - "${VPN_BITTORRENT_PORT:-16881}:6881/udp" # qBittorrent BitTorrent port UDP
     environment:
-      - VPN_PROVIDER=${VPN_PROVIDER:-warp}
-      - WARP_SLEEP=2
+      # Gluetun VPN provider selection
+      # For PIA: set VPN_SERVICE_PROVIDER=private internet access (uses OpenVPN)
+      # For WARP: set VPN_SERVICE_PROVIDER=custom (uses Wireguard)
+      - VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER:-custom}
+      # VPN_TYPE only needed for custom providers (WARP uses wireguard)
+      - VPN_TYPE=${VPN_TYPE:-wireguard}
+
+      # Common gluetun settings
       - TZ=${TZ:-America/New_York}
-      # PIA-specific environment variables (ignored if not using PIA)
-      - USER=${PIA_USER:-}
-      - PASS=${PIA_PASS:-}
-      - LOC=${PIA_REGION:-us_atlanta}
-      - PORTFORWARD=${PORT_FORWARDING:-1}
-      - LOCAL_NETWORK=${LOCAL_NETWORK:-192.168.1.0/24}
-      - KEEPALIVE=25
-      # WARP-specific environment variables (ignored if not using WARP)
-      - WARP_LICENSE_KEY=${WARP_LICENSE_KEY:-}
+      - FIREWALL=on  # Built-in kill switch
+      - DOT=off
+      - HEALTH_VPN_DURATION_INITIAL=60s
+      - HEALTH_VPN_DURATION_ADDITION=10s
+
+      # Wireguard variables (custom provider for both PIA and WARP)
+      # Set WG_* variables in .env based on active provider
+      - WIREGUARD_PRIVATE_KEY=${WG_PRIVATE_KEY:-}
+      - WIREGUARD_PUBLIC_KEY=${WG_PUBLIC_KEY:-}
+      - WIREGUARD_ENDPOINT_IP=${WG_ENDPOINT_IP:-}
+      - WIREGUARD_ENDPOINT_PORT=${WG_ENDPOINT_PORT:-}
+      - WIREGUARD_ADDRESSES=${WG_ADDRESSES:-}
+      - WIREGUARD_PRESHARED_KEY=${WG_PRESHARED_KEY:-}
     networks:
       default:
       vpn_network:
         ipv4_address: ${VPN_IP_ADDRESS}
     volumes:
-      - ./setup-vpn-routing.sh:/usr/local/bin/setup-vpn-routing.sh:ro
-      - ./scripts/qbittorrent-internal-monitor.sh:/scripts/qbittorrent-internal-monitor.sh:ro
-      # PIA-specific volume for config storage
-      - ./config/vpn:/config
-      # WARP registration persistence
-      - ./config/vpn/cloudflare-warp:/var/lib/cloudflare-warp
-    ulimits:
-      nofile: ${VPN_MAX_FILE_DESCRIPTORS:-32768}
-      memlock: -1
-    sysctls:
-      - net.ipv6.conf.all.disable_ipv6=0
-      - net.ipv4.conf.all.src_valid_mark=1
-      - net.ipv4.ip_forward=1
+      # Gluetun state persistence
+      - ./config/gluetun:/gluetun
     deploy:
       resources:
         limits:
           memory: ${VPN_MEMORY_LIMIT:-1g}
     healthcheck:
-      test: ["CMD-SHELL", "/scripts/vpn/${VPN_PROVIDER:-warp}/healthcheck.sh"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9999"]
       interval: ${VPN_HEALTH_CHECK_INTERVAL:-30s}
       timeout: 10s
       retries: 3
