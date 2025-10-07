@@ -7,6 +7,7 @@ INSERT INTO Config VALUES(3,'rijndaelpassphrase','f2692ef2-fbbf-4314-88be-162dd6
 INSERT INTO Config VALUES(4,'hmacpassphrase','ae4aac33-2073-44b4-94c6-23a9b4c80aa8');
 INSERT INTO Config VALUES(5,'rijndaelsalt','e36beab8-aba8-4e13-b112-1b2e6b82b6b4');
 INSERT INTO Config VALUES(6,'hmacsalt','6c9f7db8-91e7-4246-add2-3edc715bbdc1');
+INSERT INTO Config VALUES(7,'maximumsize','5000');
 CREATE TABLE IF NOT EXISTS "RootFolders" ("Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "Path" TEXT NOT NULL);
 INSERT INTO RootFolders VALUES(1,'/movies');
 CREATE TABLE IF NOT EXISTS "QualityDefinitions" ("Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "Quality" INTEGER NOT NULL, "Title" TEXT NOT NULL, "MinSize" NUMERIC, "MaxSize" NUMERIC, "PreferredSize" NUMERIC);

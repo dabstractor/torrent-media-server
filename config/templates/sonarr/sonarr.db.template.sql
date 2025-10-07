@@ -8,6 +8,7 @@ INSERT INTO Config VALUES(4,'rijndaelpassphrase','81183955-605f-4e62-987e-7928a4
 INSERT INTO Config VALUES(5,'hmacpassphrase','76581f18-804d-41cb-80a5-5f0a64ab399b');
 INSERT INTO Config VALUES(6,'rijndaelsalt','5cd7a4fe-1752-4552-8eb4-52b57812d36e');
 INSERT INTO Config VALUES(7,'hmacsalt','742bd3eb-7b53-48ae-bbc2-a5dac9b24b67');
+INSERT INTO Config VALUES(8,'maximumsize','15000');
 CREATE TABLE IF NOT EXISTS "RootFolders" ("Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "Path" TEXT NOT NULL);
 INSERT INTO RootFolders VALUES(1,'/tv');
 CREATE TABLE IF NOT EXISTS "NamingConfig" ("Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "MultiEpisodeStyle" INTEGER NOT NULL, "RenameEpisodes" INTEGER, "StandardEpisodeFormat" TEXT, "DailyEpisodeFormat" TEXT, "SeasonFolderFormat" TEXT, "SeriesFolderFormat" TEXT, "AnimeEpisodeFormat" TEXT, "ReplaceIllegalCharacters" INTEGER NOT NULL DEFAULT 1, "SpecialsFolderFormat" TEXT, "ColonReplacementFormat" INTEGER NOT NULL DEFAULT 4, "CustomColonReplacementFormat" TEXT NOT NULL DEFAULT '');
