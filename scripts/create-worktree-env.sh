@@ -106,6 +106,9 @@ get_env_ports() {
         "FLARESOLVERR_PORT"
         "PLEX_PORT"
         "JELLYFIN_PORT"
+        "JELLYFIN_HTTPS_PORT"
+        "JELLYFIN_DISCOVERY_PORT"
+        "JELLYFIN_DLNA_PORT"
         "SONARR_PORT"
         "RADARR_PORT"
         "PROWLARR_PORT"
@@ -344,8 +347,13 @@ generate_unique_subnets() {
         fi
 
         if [[ "$overlap_found" == false ]]; then
+            # Calculate DHCP range within the VPN subnet
+            # For 10.X.0.0/16, use 10.X.1.0/24 to exclude static IPs (10.X.0.x)
+            local vpn_dhcp_range="10.${second_octet}.1.0/24"
+
             subnets+=("VPN_NETWORK_SUBNET=$candidate_subnet")
             subnets+=("VPN_IP_ADDRESS=$vpn_ip")
+            subnets+=("VPN_DHCP_RANGE=$vpn_dhcp_range")
             break
         fi
 
@@ -371,6 +379,9 @@ generate_port_configuration() {
         "FLARESOLVERR_PORT"
         "PLEX_PORT"
         "JELLYFIN_PORT"
+        "JELLYFIN_HTTPS_PORT"
+        "JELLYFIN_DISCOVERY_PORT"
+        "JELLYFIN_DLNA_PORT"
         "SONARR_PORT"
         "RADARR_PORT"
         "PROWLARR_PORT"
@@ -514,7 +525,7 @@ create_env_file() {
     done <<< "$network_config"
 
     # Ensure all required network variables exist - these are mandatory for docker-compose
-    local required_network_vars=("MEDIA_NETWORK_SUBNET" "VPN_NETWORK_SUBNET" "VPN_IP_ADDRESS")
+    local required_network_vars=("MEDIA_NETWORK_SUBNET" "VPN_NETWORK_SUBNET" "VPN_IP_ADDRESS" "VPN_DHCP_RANGE")
     for var_name in "${required_network_vars[@]}"; do
         if ! grep -q "^$var_name=" "$env_file"; then
             log_warning "Required network variable $var_name missing, adding with generated value"
