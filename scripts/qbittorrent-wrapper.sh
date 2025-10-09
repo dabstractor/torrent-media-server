@@ -11,8 +11,10 @@ LOG_FILE="/tmp/qbt_startup.log"
 FIRST_RUN_MARKER="$PROFILE_PATH/.qbt_config_initialized"
 
 # Ensure download directories exist with correct permissions
+# Create category subdirectories to match Transmission behavior
 echo "Ensuring download directories exist..."
 mkdir -p /downloads/complete /downloads/incomplete /downloads/watch
+mkdir -p /downloads/complete/radarr /downloads/complete/sonarr
 chown -R 1000:1000 /downloads 2>/dev/null || true
 
 # Only process configuration template on first run to preserve user settings

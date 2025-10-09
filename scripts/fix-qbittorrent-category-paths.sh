@@ -12,8 +12,9 @@ DRYRUN="${DRYRUN:-false}"
 LOG_FILE="/tmp/qbt_category_fix.log"
 
 # Target paths - the correct Docker volume-mapped paths
-RADARR_TARGET_PATH="/downloads"
-SONARR_TARGET_PATH="/downloads"
+# Matches Transmission behavior: completed/[category_name]
+RADARR_TARGET_PATH="/downloads/complete/radarr"
+SONARR_TARGET_PATH="/downloads/complete/sonarr"
 
 # Configuration files
 CATEGORIES_FILE="/config/qBittorrent/config/categories.json"

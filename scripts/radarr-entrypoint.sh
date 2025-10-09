@@ -166,8 +166,7 @@ if [ -n "$RADARR_API_KEY" ]; then
                 ],
                 "implementationName": "Transmission",
                 "implementation": "Transmission",
-                "configContract": "TransmissionSettings",
-                "id": 1
+                "configContract": "TransmissionSettings"
             }'
         else
             CLIENT_CONFIG='{
@@ -186,16 +185,52 @@ if [ -n "$RADARR_API_KEY" ]; then
                 ],
                 "implementationName": "qBittorrent",
                 "implementation": "QBittorrent",
-                "configContract": "QBittorrentSettings",
-                "id": 1
+                "configContract": "QBittorrentSettings"
             }'
         fi
 
-        curl -X PUT "http://localhost:7878/api/v3/downloadclient/1" \
-            -H "X-Api-Key: $RADARR_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d "$CLIENT_CONFIG" > /dev/null 2>&1
-        echo "[INIT] $TORRENT_CLIENT_NAME download client configuration updated"
+        # Check if download client exists and matches current configuration
+        EXISTING_CLIENTS=$(curl -s -H "X-Api-Key: $RADARR_API_KEY" "http://localhost:7878/api/v3/downloadclient" 2>/dev/null)
+        CLIENT_COUNT=$(echo "$EXISTING_CLIENTS" | jq '. | length' 2>/dev/null || echo "0")
+
+        # Determine target implementation based on TORRENT_CLIENT
+        if [ "$TORRENT_CLIENT" = "transmission" ]; then
+            TARGET_IMPL="Transmission"
+        else
+            TARGET_IMPL="QBittorrent"
+        fi
+
+        if [ "$CLIENT_COUNT" -eq 0 ]; then
+            # No download client exists, create new one with POST
+            curl -s -X POST "http://localhost:7878/api/v3/downloadclient" \
+                -H "X-Api-Key: $RADARR_API_KEY" \
+                -H "Content-Type: application/json" \
+                -d "$CLIENT_CONFIG" > /dev/null 2>&1
+            echo "[INIT] $TORRENT_CLIENT_NAME download client created"
+        else
+            # Check if existing client matches the target implementation
+            FIRST_CLIENT_ID=$(echo "$EXISTING_CLIENTS" | jq '.[0].id' 2>/dev/null || echo "1")
+            EXISTING_IMPL=$(echo "$EXISTING_CLIENTS" | jq -r '.[0].implementation' 2>/dev/null || echo "")
+
+            if [ "$EXISTING_IMPL" = "$TARGET_IMPL" ]; then
+                # Same implementation, update it with PUT
+                curl -s -X PUT "http://localhost:7878/api/v3/downloadclient/$FIRST_CLIENT_ID" \
+                    -H "X-Api-Key: $RADARR_API_KEY" \
+                    -H "Content-Type: application/json" \
+                    -d "$(echo "$CLIENT_CONFIG" | jq ". + {id: $FIRST_CLIENT_ID}")" > /dev/null 2>&1
+                echo "[INIT] $TORRENT_CLIENT_NAME download client updated"
+            else
+                # Different implementation, delete old and create new
+                curl -s -X DELETE "http://localhost:7878/api/v3/downloadclient/$FIRST_CLIENT_ID" \
+                    -H "X-Api-Key: $RADARR_API_KEY" > /dev/null 2>&1
+                sleep 2
+                curl -s -X POST "http://localhost:7878/api/v3/downloadclient" \
+                    -H "X-Api-Key: $RADARR_API_KEY" \
+                    -H "Content-Type: application/json" \
+                    -d "$CLIENT_CONFIG" > /dev/null 2>&1
+                echo "[INIT] $TORRENT_CLIENT_NAME download client replaced (was $EXISTING_IMPL)"
+            fi
+        fi
     ) &
 
     echo "[INIT] $TORRENT_CLIENT_NAME configuration initiated"
