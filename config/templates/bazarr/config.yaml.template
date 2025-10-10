@@ -1,0 +1,73 @@
+# Bazarr Configuration Template
+# CRITICAL: Use sed for variable substitution, NOT envsubst (breaks YAML structure)
+# Variables: ${SONARR_API_KEY}, ${RADARR_API_KEY}, ${BAZARR_API_KEY}
+
+general:
+  port: 6767
+  base_url: ""
+  enabled_providers: true
+  auto_update: false
+  single_language: false
+
+auth:
+  type: None  # Start with no auth, configure via UI if needed
+  apikey: ${BAZARR_API_KEY}
+
+sonarr:
+  - ip: sonarr  # Docker service name, NOT 127.0.0.1
+    port: 8989
+    base_url: ""
+    ssl: false
+    apikey: ${SONARR_API_KEY}
+    full_update: Daily
+    only_monitored: false
+    series_sync: 60  # Minutes between syncs
+
+radarr:
+  - ip: radarr  # Docker service name, NOT 127.0.0.1
+    port: 7878
+    base_url: ""
+    ssl: false
+    apikey: ${RADARR_API_KEY}
+    full_update: Daily
+    only_monitored: false
+    movies_sync: 60  # Minutes between syncs
+
+settings:
+  general:
+    # TRaSH Guides recommended scoring
+    minimum_score: 90  # Sonarr (TV) - prevents bad/out-of-sync subs
+    minimum_score_movie: 80  # Radarr (Movies) - prevents bad/out-of-sync subs
+    use_scene_name: true
+    use_postprocessing: false
+    upgradable_episode: true
+    upgradable_movie: true
+
+  # Subtitle storage alongside media files (TRaSH best practice)
+  subfolder: "current"  # Means "alongside media file"
+  subfolder_custom: ""
+  upgrade_subs: true
+
+  # Auto-sync settings (TRaSH recommendations)
+  serie_perfect_subtitles: false
+  movie_perfect_subtitles: false
+  serie_score_threshold: 96  # TRaSH recommendation for TV
+  movie_score_threshold: 86  # TRaSH recommendation for Movies
+
+  # Subtitle language settings
+  languages:
+    - en  # English primary
+
+  # Providers (start with basic config, customize via Web UI)
+  # Provider configuration is better handled through Web UI
+  enabled_providers: []  # Empty initially, configure via Web UI
+
+  # Embedded subtitles handling
+  ignore_embedded_subs: false
+
+  # Subtitle formats
+  hi: "False"  # Hearing impaired
+  forced: "False"  # Forced subtitles
+
+analytics:
+  enabled: false  # Disable analytics for privacy
