@@ -1,0 +1,163 @@
+{
+  "port": 11011,
+  "basePath": "",
+  "general": {
+    "supportBanner": true,
+    "dryRunMode": false,
+    "searchReplacementDownloads": true,
+    "searchDelay": 300,
+    "httpMaxRetries": 3,
+    "httpTimeout": 30,
+    "certificateValidation": true
+  },
+  "downloadClients": [
+    {
+      "id": 1,
+      "enabled": true,
+      "name": "${TORRENT_CLIENT_NAME}",
+      "type": "${TORRENT_CLIENT}",
+      "host": "http://vpn:${TORRENT_CLIENT_PORT}",
+      "username": "${QBITTORRENT_USERNAME:-}",
+      "password": "${QBITTORRENT_PASSWORD:-}",
+      "useSsl": false,
+      "testConnection": true
+    }
+  ],
+  "applications": [
+    {
+      "id": 1,
+      "enabled": true,
+      "name": "Sonarr",
+      "type": "sonarr",
+      "baseUrl": "http://sonarr:8989",
+      "apiKey": "${SONARR_API_KEY}",
+      "useSsl": false,
+      "testConnection": true
+    },
+    {
+      "id": 2,
+      "enabled": true,
+      "name": "Radarr",
+      "type": "radarr",
+      "baseUrl": "http://radarr:7878",
+      "apiKey": "${RADARR_API_KEY}",
+      "useSsl": false,
+      "testConnection": true
+    }
+  ],
+  "malwareBlocker": {
+    "enabled": true,
+    "schedule": {
+      "mode": "basic",
+      "interval": 5
+    },
+    "blocklists": [
+      {
+        "enabled": true,
+        "name": "Official Cleanuparr Blacklist",
+        "pathOrUrl": "https://cleanuparr.pages.dev/static/blacklist",
+        "type": "blacklist"
+      }
+    ],
+    "deleteKnownMalware": true,
+    "ignorePrivateTorrents": true,
+    "deletePrivateTorrents": false
+  },
+  "queueCleaner": {
+    "enabled": true,
+    "schedule": {
+      "mode": "basic",
+      "interval": 5
+    },
+    "failedImport": {
+      "enabled": true,
+      "maxStrikes": 3,
+      "ignorePrivateTorrents": true,
+      "deletePrivateTorrents": false,
+      "ignoredPatterns": []
+    },
+    "stalledDownload": {
+      "enabled": true,
+      "maxStrikes": 3,
+      "resetStrikesOnProgress": true,
+      "metadataDownloadStrikes": 5
+    },
+    "slowDownload": {
+      "enabled": true,
+      "maxStrikes": 5,
+      "minimumSpeedThreshold": 102400,
+      "maximumDownloadTime": 3600,
+      "ignoreDownloadsAboveSize": 10737418240,
+      "resetStrikesOnSpeedImprovement": true
+    }
+  },
+  "downloadCleaner": {
+    "enabled": true,
+    "schedule": {
+      "mode": "basic",
+      "interval": 60
+    },
+    "seedingRules": {
+      "categories": [
+        {
+          "name": "radarr",
+          "maxRatio": 2.0,
+          "minSeedTime": 48,
+          "maxSeedTime": 720
+        },
+        {
+          "name": "sonarr",
+          "maxRatio": 2.0,
+          "minSeedTime": 72,
+          "maxSeedTime": 1080
+        }
+      ]
+    },
+    "unlinkedDownloads": {
+      "enabled": true,
+      "targetCategory": "cleanuparr-orphaned",
+      "ignoredRootDirectories": [],
+      "categoriesToCheck": ["radarr", "sonarr"]
+    },
+    "deletePrivateTorrents": false,
+    "ignoredDownloads": []
+  },
+  "blacklistSync": {
+    "enabled": false,
+    "blacklistPath": "https://cleanuparr.pages.dev/static/blacklist"
+  },
+  "notifications": {
+    "notifiarr": {
+      "enabled": false,
+      "apiKey": "${NOTIFIARR_API_KEY:-}",
+      "events": {
+        "failedImportStrike": false,
+        "stalledStrike": false,
+        "slowStrike": false,
+        "queueItemDeleted": true,
+        "downloadCleaned": true,
+        "categoryChanged": false
+      }
+    },
+    "apprise": {
+      "enabled": false,
+      "serverUrl": "${APPRISE_SERVER_URL:-}",
+      "configKey": "${APPRISE_CONFIG_KEY:-}",
+      "events": {
+        "failedImportStrike": false,
+        "stalledStrike": false,
+        "slowStrike": false,
+        "queueItemDeleted": true,
+        "downloadCleaned": true,
+        "categoryChanged": false
+      }
+    }
+  },
+  "logging": {
+    "level": "info",
+    "maxFileSize": 10485760,
+    "maxFiles": 5,
+    "archiveLogs": true,
+    "archiveRetentionDays": 7
+  }
+}

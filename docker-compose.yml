@@ -713,3 +713,46 @@ services:
       start_period: 60s
     restart: unless-stopped
     stop_grace_period: 30s
+
+  # Cleanuparr - Automated Download Cleanup and Queue Management
+  # Monitors and cleans download queues, removes malicious/stalled downloads,
+  # manages seeding lifecycles, and maintains optimal download health
+  cleanuparr:
+    image: ghcr.io/cleanuparr/cleanuparr:latest
+    container_name: ${CONTAINER_PREFIX}cleanuparr
+    networks:
+      - media_network  # Access to *arr apps
+      - vpn_network    # Access to VPN-isolated torrent clients
+    ports:
+      - "${CLEANUPARR_PORT:-11011}:11011"
+    depends_on:
+      init-directories:
+        condition: service_completed_successfully
+      vpn:
+        condition: service_healthy
+      sonarr:
+        condition: service_healthy
+      radarr:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/New_York}
+      - PORT=11011
+      - BASE_PATH=
+    volumes:
+      - ./config/cleanuparr:/config
+      - ./config/templates/cleanuparr:/templates:ro
+      - ./scripts:/scripts:ro
+      - ./data/downloads:/downloads  # CRITICAL: Required for orphaned download detection
+    entrypoint: ["/scripts/cleanuparr-entrypoint.sh"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11011/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    stop_grace_period: 30s
