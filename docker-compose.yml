@@ -10,7 +10,7 @@ networks:
     ipam:
       config:
         - subnet: ${VPN_NETWORK_SUBNET}
-          ip_range: ${VPN_DHCP_RANGE:-10.233.1.0/24}  # DHCP range excludes static IPs
+          ip_range: ${VPN_DHCP_RANGE:-10.233.1.0/24} # DHCP range excludes static IPs
 # Logging configuration
 x-logging: &default-logging
   driver: json-file
@@ -26,6 +26,8 @@ services:
     user: "0:0" # Run as root to fix ownership
     command: >
       sh -c "
+
+
         mkdir -p /data/media/tv /data/media/movies /data/downloads/complete /data/downloads/incomplete /data/downloads/watch &&
         mkdir -p /data/downloads/complete/radarr /data/downloads/complete/sonarr &&
         chown -R 1000:1000 /data/ &&
@@ -55,14 +57,12 @@ services:
       - VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER:-custom}
       # VPN_TYPE only needed for custom providers (WARP uses wireguard)
       - VPN_TYPE=${VPN_TYPE:-wireguard}
-
       # Common gluetun settings
       - TZ=${TZ:-America/New_York}
-      - FIREWALL=on  # Built-in kill switch
+      - FIREWALL=on # Built-in kill switch
       - DOT=off
       - HEALTH_VPN_DURATION_INITIAL=60s
       - HEALTH_VPN_DURATION_ADDITION=10s
-
       # Wireguard variables (custom provider for both PIA and WARP)
       # Set WG_* variables in .env based on active provider
       - WIREGUARD_PRIVATE_KEY=${WG_PRIVATE_KEY:-}
@@ -326,7 +326,7 @@ services:
     container_name: ${CONTAINER_PREFIX}bazarr
     entrypoint: ["/scripts/bazarr-entrypoint.sh"]
     networks:
-      - media_network  # NO vpn_network - subtitles downloaded via HTTPS only
+      - media_network # NO vpn_network - subtitles downloaded via HTTPS only
     ports:
       - "${BAZARR_PORT:-6767}:6767"
     depends_on:
@@ -356,9 +356,45 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s  # Allow time for config.yaml population
+      start_period: 60s # Allow time for config.yaml population
     restart: unless-stopped
     stop_grace_period: 30s
+  # Huntarr - Automated Missing Content Discovery
+  huntarr:
+    image: ghcr.io/plexguide/huntarr:latest
+    container_name: ${CONTAINER_PREFIX}huntarr
+    entrypoint: ["/scripts/huntarr-entrypoint.sh"]
+    networks:
+      - media_network
+    ports:
+      - "${HUNTARR_PORT:-9705}:9705"
+    depends_on:
+      init-directories:
+        condition: service_completed_successfully
+      sonarr:
+        condition: service_healthy
+      radarr:
+        condition: service_healthy
+      prowlarr:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/New_York}
+    volumes:
+      - ./config/huntarr:/config
+      - ./scripts:/scripts:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9705/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    stop_grace_period: 30s
+    logging: *default-logging 
   # Nginx Reverse Proxy - Secure bridge for accessing isolated services
   nginx-proxy:
     image: nginx:alpine
@@ -465,6 +501,7 @@ services:
       - OVERSEERR_BACKEND_URL=http://overseerr:5055
       - JELLYSEER_BACKEND_URL=http://jellyseer:5055
       - BAZARR_BACKEND_URL=http://bazarr:6767
+      - HUNTARR_BACKEND_URL=http://huntarr:9705
       # Reverse proxy configuration for secure access
       - ENABLE_REVERSE_PROXY=true
       - QBITTORRENT_PROXY_PATH=/qbittorrent

@@ -57,6 +57,12 @@ async function getServiceConfigs(): Promise<Record<string, ServiceConfig>> {
       healthEndpoint: '/api/v1/status',
       authType: 'none',
       timeout: 10000
+    },
+    huntarr: {
+      url: process.env.HUNTARR_BACKEND_URL || 'http://huntarr:9705',
+      healthEndpoint: '/health',
+      authType: 'none',
+      timeout: 10000
     }
   }
 }

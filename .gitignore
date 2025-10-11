@@ -15,6 +15,7 @@ config/overseerr/
 config/vpn/
 config/gluetun/
 config/bazarr/
+config/huntarr/
 config/jellyfin/*
 !config/jellyfin/.gitkeep
 # Only preserve templates for secure configuration generation
