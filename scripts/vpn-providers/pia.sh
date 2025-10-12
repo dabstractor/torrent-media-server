@@ -32,8 +32,9 @@ provider_generate() {
     if ! docker image inspect "${PIA_IMAGE}" >/dev/null 2>&1; then
         echo "Building PIA config generator image..."
 
-        # Create temporary Dockerfile
-        TMP_DOCKERFILE=$(mktemp)
+        # Create temporary directory for build context
+        TMP_DIR=$(mktemp -d)
+        TMP_DOCKERFILE="${TMP_DIR}/Dockerfile"
         cat > "${TMP_DOCKERFILE}" <<'DOCKERFILE'
 FROM golang:alpine AS builder
 RUN apk add --no-cache git
@@ -45,14 +46,14 @@ COPY --from=builder /go/bin/pia-wg-config /usr/local/bin/
 ENTRYPOINT ["/usr/local/bin/pia-wg-config"]
 DOCKERFILE
 
-        # Build image
-        if ! docker build -t "${PIA_IMAGE}" -f "${TMP_DOCKERFILE}" "${PROJECT_ROOT}" 2>&1; then
-            rm -f "${TMP_DOCKERFILE}"
+        # Build image using dedicated temp directory
+        if ! docker build -t "${PIA_IMAGE}" -f "${TMP_DOCKERFILE}" "${TMP_DIR}" 2>&1; then
+            rm -rf "${TMP_DIR}"
             echo "ERROR: Failed to build PIA config generator image"
             return 1
         fi
 
-        rm -f "${TMP_DOCKERFILE}"
+        rm -rf "${TMP_DIR}"
         echo "✓ PIA config generator image built"
     fi
 
@@ -91,6 +92,10 @@ provider_extract() {
     # Extract wireguard parameters
     PRIVATE_KEY=$(grep "PrivateKey" "${PIA_CONFIG}" | awk '{print $3}')
     ADDRESSES=$(grep "Address" "${PIA_CONFIG}" | head -1 | awk '{print $3}')
+    # Add /32 CIDR notation if not present (required by gluetun)
+    if [[ ! "$ADDRESSES" =~ / ]]; then
+        ADDRESSES="${ADDRESSES}/32"
+    fi
     PUBLIC_KEY=$(grep "PublicKey" "${PIA_CONFIG}" | awk '{print $3}')
     ENDPOINT=$(grep "Endpoint" "${PIA_CONFIG}" | awk '{print $3}')
     ENDPOINT_IP=$(echo "$ENDPOINT" | cut -d: -f1)
