@@ -88,7 +88,7 @@ if provider_check; then
         if grep -q "^${key}=" "$ENV_FILE"; then
             # Variable exists - update it (escape special chars in value)
             # Use awk to avoid sed delimiter issues with special characters
-            awk -v key="$key" -v value="$value" 'BEGIN{FS=OFS="="} $1==key {$2=value; found=1} {print} END{if(!found) print key OFS value}' "$ENV_FILE" > "$ENV_FILE.tmp"
+            awk -v key="$key" -v value="$value" 'BEGIN{FS=OFS="="} $1==key {$2=value; NF=2; found=1} {print} END{if(!found) print key OFS value}' "$ENV_FILE" > "$ENV_FILE.tmp"
             mv "$ENV_FILE.tmp" "$ENV_FILE"
         else
             # Variable doesn't exist - append it
@@ -168,7 +168,7 @@ while IFS= read -r line; do
     if grep -q "^${key}=" "$ENV_FILE"; then
         # Variable exists - update it (escape special chars in value)
         # Use awk to avoid sed delimiter issues with special characters
-        awk -v key="$key" -v value="$value" 'BEGIN{FS=OFS="="} $1==key {$2=value; found=1} {print} END{if(!found) print key OFS value}' "$ENV_FILE" > "$ENV_FILE.tmp"
+        awk -v key="$key" -v value="$value" 'BEGIN{FS=OFS="="} $1==key {$2=value; NF=2; found=1} {print} END{if(!found) print key OFS value}' "$ENV_FILE" > "$ENV_FILE.tmp"
         mv "$ENV_FILE.tmp" "$ENV_FILE"
     else
         # Variable doesn't exist - append it
