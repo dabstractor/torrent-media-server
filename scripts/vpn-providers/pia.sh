@@ -35,7 +35,7 @@ provider_generate() {
         # Create temporary Dockerfile
         TMP_DOCKERFILE=$(mktemp)
         cat > "${TMP_DOCKERFILE}" <<'DOCKERFILE'
-FROM golang:1.21-alpine AS builder
+FROM golang:alpine AS builder
 RUN apk add --no-cache git
 RUN go install github.com/kylegrantlucas/pia-wg-config@latest
 
