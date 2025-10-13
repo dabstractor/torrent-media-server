@@ -73,6 +73,10 @@ services:
       - WIREGUARD_PRESHARED_KEY=${WG_PRESHARED_KEY:-}
       - WIREGUARD_ALLOWED_IPS=${WG_ALLOWED_IPS:-0.0.0.0/0}
       - WIREGUARD_PERSISTENT_KEEPALIVE_INTERVAL=${WG_PERSISTENT_KEEPALIVE:-25s}
+      # Torrent peer port configuration - Allow incoming connections through VPN firewall
+      # Note: PIA's dynamic port forwarding doesn't work with custom Wireguard configs
+      # Using static firewall rules to allow torrent client peer ports
+      - FIREWALL_VPN_INPUT_PORTS=${QBITTORRENT_PORT:-6881},${TRANSMISSION_PORT:-51413}
     networks:
       default:
       vpn_network:
