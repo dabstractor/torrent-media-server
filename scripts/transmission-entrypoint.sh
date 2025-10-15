@@ -59,6 +59,26 @@ fi
 
 echo "[INIT] Configuration initialization complete"
 
+# Update port from PIA if available (for PIA port forwarding)
+if [ "$VPN_SERVICE_PROVIDER" = "private internet access" ] && [ "$VPN_TYPE" = "openvpn" ]; then
+    echo "[INIT] Checking for PIA forwarded port..."
+    FORWARDED_PORT_FILE="/tmp/gluetun/forwarded_port"
+
+    # Wait up to 30 seconds for forwarded port file
+    for i in {1..30}; do
+        if [ -f "$FORWARDED_PORT_FILE" ]; then
+            PIA_PORT=$(cat "$FORWARDED_PORT_FILE" 2>/dev/null)
+            if [ -n "$PIA_PORT" ] && [ "$PIA_PORT" != "0" ]; then
+                echo "[INIT] Found PIA forwarded port: $PIA_PORT"
+                echo "[INIT] Updating Transmission peer port..."
+                export PEERPORT=$PIA_PORT
+                break
+            fi
+        fi
+        sleep 1
+    done
+fi
+
 # Start Transmission daemon using the standard LinuxServer.io entrypoint
 echo "[INIT] Starting Transmission with original entrypoint..."
 

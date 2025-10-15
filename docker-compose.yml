@@ -52,10 +52,10 @@ services:
       - "${VPN_BITTORRENT_PORT:-16881}:6881/udp" # qBittorrent BitTorrent port UDP
     environment:
       # Gluetun VPN provider selection
-      # For PIA: set VPN_SERVICE_PROVIDER=private internet access (uses OpenVPN)
+      # For PIA: set VPN_SERVICE_PROVIDER=private internet access with VPN_TYPE=wireguard
       # For WARP: set VPN_SERVICE_PROVIDER=custom (uses Wireguard)
       - VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER:-custom}
-      # VPN_TYPE only needed for custom providers (WARP uses wireguard)
+      # VPN_TYPE: wireguard or openvpn
       - VPN_TYPE=${VPN_TYPE:-wireguard}
       # Common gluetun settings
       - TZ=${TZ:-America/New_York}
@@ -63,6 +63,13 @@ services:
       - DOT=off
       - HEALTH_VPN_DURATION_INITIAL=60s
       - HEALTH_VPN_DURATION_ADDITION=10s
+      # PIA native provider settings (for automatic port forwarding)
+      - SERVER_REGIONS=${PIA_REGION:-CA Toronto}
+      - OPENVPN_USER=${PIA_USERNAME:-}
+      - OPENVPN_PASSWORD=${PIA_PASSWORD:-}
+      - VPN_PORT_FORWARDING=${VPN_PORT_FORWARDING:-on}
+      - VPN_PORT_FORWARDING_PROVIDER=private internet access
+      # - PORT_FORWARD_ONLY=true # Temporarily disabled to find available servers
       # Wireguard variables (custom provider for both PIA and WARP)
       # Set WG_* variables in .env based on active provider
       - WIREGUARD_PRIVATE_KEY=${WG_PRIVATE_KEY:-}
@@ -73,10 +80,11 @@ services:
       - WIREGUARD_PRESHARED_KEY=${WG_PRESHARED_KEY:-}
       - WIREGUARD_ALLOWED_IPS=${WG_ALLOWED_IPS:-0.0.0.0/0}
       - WIREGUARD_PERSISTENT_KEEPALIVE_INTERVAL=${WG_PERSISTENT_KEEPALIVE:-25s}
-      # Torrent peer port configuration - Allow incoming connections through VPN firewall
-      # Note: PIA's dynamic port forwarding doesn't work with custom Wireguard configs
-      # Using static firewall rules to allow torrent client peer ports
-      - FIREWALL_VPN_INPUT_PORTS=${QBITTORRENT_PORT:-6881},${TRANSMISSION_PORT:-51413}
+      # Torrent peer port configuration
+      # When using PIA native mode, Gluetun automatically requests a forwarded port from PIA
+      # and configures the firewall. The forwarded port is exposed in /tmp/gluetun/forwarded_port
+      # For custom Wireguard configs, uncomment FIREWALL_VPN_INPUT_PORTS with static ports:
+      # - FIREWALL_VPN_INPUT_PORTS=${QBITTORRENT_PEER_PORT:-6881},${TRANSMISSION_PORT:-51413}
     networks:
       default:
       vpn_network:
@@ -84,6 +92,7 @@ services:
     volumes:
       # Gluetun state persistence
       - ./config/gluetun:/gluetun
+      - ./scripts:/scripts:ro
     deploy:
       resources:
         limits:
@@ -98,6 +107,7 @@ services:
       startup-coordinator:
         condition: service_started
     restart: unless-stopped
+    # Port monitoring for PIA - runs after container starts
   # FlareSolverr - CloudFlare bypass proxy for Prowlarr indexers
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
@@ -135,10 +145,11 @@ services:
         condition: service_started
     environment:
       - TZ=${TZ:-America/New_York}
-      - QBT_WEBUI_PORT=${QBITTORRENT_INTERNAL_PORT:-8080}
+      - QBT_WEBUI_PORT=${QBITTORRENT_PORT:-8080}
       - QBT_LEGAL_NOTICE=confirm
       - QBITTORRENT_USERNAME=${QBITTORRENT_USERNAME:-admin}
-      - QBITTORRENT_PORT=${QBITTORRENT_PORT:-6881}
+      - QBITTORRENT_PORT=${QBITTORRENT_PORT:-8080}
+      - QBITTORRENT_PEER_PORT=${QBITTORRENT_PEER_PORT:-6881}
     volumes:
       - ./config/qbittorrent:/config
       - ./config/templates/qbittorrent:/templates:ro
@@ -149,7 +160,7 @@ services:
       - ./scripts/qbittorrent-wrapper-with-monitor.sh:/scripts/qbittorrent-wrapper-with-monitor.sh:ro
     entrypoint: ["/scripts/qbittorrent-entrypoint.sh"]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${QBITTORRENT_INTERNAL_PORT:-8080}"]
+      test: ["CMD", "curl", "-f", "http://localhost:${QBITTORRENT_PORT:-8080}"]
       interval: 30s
       timeout: 10s
       retries: 3

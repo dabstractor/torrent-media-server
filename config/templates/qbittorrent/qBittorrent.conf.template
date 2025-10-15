@@ -25,7 +25,7 @@ Session\MaxRatioAction=0
 Session\MaxSeedingTimeAction=0
 Session\MaxUploads=-1
 Session\MaxUploadsPerTorrent=-1
-Session\Port=${QBITTORRENT_PORT:-6881}
+Session\Port=${QBITTORRENT_PEER_PORT:-6881}
 Session\QueueingSystemEnabled=false
 Session\TempPathEnabled=true
 
@@ -102,7 +102,7 @@ WebUI\HostHeaderValidation=false
 WebUI\LocalHostAuth=false
 WebUI\MaxAuthenticationFailCount=5
 WebUI\Password_PBKDF2="@ByteArray(Isqg4PWellK9WlJG0tjKRQ==:zYxxu4u9F2hNkoKhSz8zjdM+IYcznSqBTgN8s9wf3Ye6aqxJbETXEjkPY7gm+LAaXhPdp+s7YHQuUWRq8Kr+4Q==)"
-WebUI\Port=8080
+WebUI\Port=${QBITTORRENT_PORT:-8080}
 WebUI\Username=${QBITTORRENT_USERNAME:-admin}
 WebUI\RootFolder=
 WebUI\SecureCookie=false

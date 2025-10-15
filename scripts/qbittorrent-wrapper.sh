@@ -28,20 +28,22 @@ if [ -f "/templates/qBittorrent.conf.template" ] && [ ! -f "$FIRST_RUN_MARKER" ]
         echo "✓ Backed up existing configuration"
     fi
 
-    # Use envsubst to process template with environment variables
-    if command -v envsubst >/dev/null 2>&1; then
-        envsubst < "/templates/qBittorrent.conf.template" > "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
-        # Also copy to the config subdirectory location where qBittorrent might look
-        mkdir -p "$PROFILE_PATH/qBittorrent/config"
-        envsubst < "/templates/qBittorrent.conf.template" > "$PROFILE_PATH/qBittorrent/config/qBittorrent.conf"
-        echo "✓ Configuration generated from template (both locations)"
-    else
-        # Fallback: simple copy if envsubst not available
-        cp "/templates/qBittorrent.conf.template" "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
-        mkdir -p "$PROFILE_PATH/qBittorrent/config"
-        cp "/templates/qBittorrent.conf.template" "$PROFILE_PATH/qBittorrent/config/qBittorrent.conf"
-        echo "✓ Configuration copied from template (both locations, envsubst not available)"
-    fi
+    # Process template with environment variables
+    # Use sed to expand ${VAR:-default} patterns since envsubst may not be available
+    cp "/templates/qBittorrent.conf.template" "$PROFILE_PATH/qBittorrent/qBittorrent.conf"
+    mkdir -p "$PROFILE_PATH/qBittorrent/config"
+    cp "/templates/qBittorrent.conf.template" "$PROFILE_PATH/qBittorrent/config/qBittorrent.conf"
+
+    # Expand environment variables using sed
+    for config_file in "$PROFILE_PATH/qBittorrent/qBittorrent.conf" "$PROFILE_PATH/qBittorrent/config/qBittorrent.conf"; do
+        # Replace ${QBITTORRENT_PORT:-8080} with actual value
+        sed -i "s|\${QBITTORRENT_PORT:-8080}|${QBITTORRENT_PORT:-8080}|g" "$config_file"
+        # Replace ${QBITTORRENT_PEER_PORT:-6881} with actual value
+        sed -i "s|\${QBITTORRENT_PEER_PORT:-6881}|${QBITTORRENT_PEER_PORT:-6881}|g" "$config_file"
+        # Replace ${QBITTORRENT_USERNAME:-admin} with actual value
+        sed -i "s|\${QBITTORRENT_USERNAME:-admin}|${QBITTORRENT_USERNAME:-admin}|g" "$config_file"
+    done
+    echo "✓ Configuration generated from template with environment variable expansion"
 
     # Force correct download paths immediately after generation
     echo "Forcing correct download paths in generated configuration..."
