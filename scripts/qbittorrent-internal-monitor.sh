@@ -30,12 +30,13 @@ log_critical() {
 
 # Check if we can reach the VPN container
 check_vpn_connectivity() {
-    # Try to reach the VPN container through the shared network namespace
-    if ping -c 1 -W 5 vpn >/dev/null 2>&1; then
-        log_info "VPN container is reachable"
+    # Since qBittorrent shares the VPN container's network namespace,
+    # we check if we can reach the VPN's internal management port
+    if timeout 5 curl -s --max-time 5 -o /dev/null http://127.0.0.1:9999 >/dev/null 2>&1; then
+        log_info "VPN container is reachable (internal management port)"
         return 0
     else
-        log_error "VPN container is not reachable"
+        log_error "VPN container is not reachable (management port down)"
         return 1
     fi
 }
