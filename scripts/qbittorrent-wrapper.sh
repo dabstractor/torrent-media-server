@@ -10,6 +10,30 @@ PROFILE_PATH="/config"
 LOG_FILE="/tmp/qbt_startup.log"
 FIRST_RUN_MARKER="$PROFILE_PATH/.qbt_config_initialized"
 
+# PIA Port Detection (only when using PIA OpenVPN)
+PIA_PORT=""
+if [ "$VPN_SERVICE_PROVIDER" = "private internet access" ] && [ "$VPN_TYPE" = "openvpn" ]; then
+    FORWARDED_PORT_FILE="/tmp/gluetun/forwarded_port"
+    echo "Checking for PIA forwarded port..."
+
+    # Wait up to 30 seconds for forwarded port file
+    for i in {1..30}; do
+        if [ -f "$FORWARDED_PORT_FILE" ]; then
+            PIA_PORT=$(cat "$FORWARDED_PORT_FILE" 2>/dev/null)
+            if [ -n "$PIA_PORT" ] && [ "$PIA_PORT" != "0" ]; then
+                echo "✓ Found PIA forwarded port: $PIA_PORT"
+                export QBITTORRENT_PEER_PORT=$PIA_PORT
+                break
+            fi
+        fi
+        sleep 1
+    done
+
+    if [ -z "$PIA_PORT" ] || [ "$PIA_PORT" = "0" ]; then
+        echo "⚠ No PIA forwarded port found, using default port"
+    fi
+fi
+
 # Ensure download directories exist with correct permissions
 # Create category subdirectories to match Transmission behavior
 echo "Ensuring download directories exist..."

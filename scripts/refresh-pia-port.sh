@@ -1,12 +1,38 @@
 #!/bin/bash
-# Script to refresh PIA port forwarding
+# Script to refresh PIA port forwarding - client-agnostic version
 # Use when port expires (after 60 days) or if port forwarding stops working
 
 set -e
 
+# Load environment variables
+if [ -f .env ]; then
+    # Simple approach: just get TORRENT_CLIENT directly
+    TORRENT_CLIENT_FROM_ENV=$(grep "^TORRENT_CLIENT=" .env | cut -d= -f2 | tr -d '"' | tr -d "'" | head -1)
+    if [ -n "$TORRENT_CLIENT_FROM_ENV" ]; then
+        export TORRENT_CLIENT="$TORRENT_CLIENT_FROM_ENV"
+    fi
+else
+    echo "ERROR: .env file not found"
+    exit 1
+fi
+
 FORWARDED_PORT_FILE="/tmp/gluetun/forwarded_port"
-TRANSMISSION_CONTAINER="transmission"
 VPN_CONTAINER="vpn"
+TORRENT_CLIENT=${TORRENT_CLIENT:-transmission}
+
+# Determine container name based on client
+case "$TORRENT_CLIENT" in
+    qbittorrent)
+        TORRENT_CONTAINER="qbittorrent"
+        ;;
+    transmission)
+        TORRENT_CONTAINER="transmission"
+        ;;
+    *)
+        echo "ERROR: Unsupported torrent client: $TORRENT_CLIENT"
+        exit 1
+        ;;
+esac
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
@@ -17,26 +43,81 @@ get_current_port() {
     docker exec "$VPN_CONTAINER" cat "$FORWARDED_PORT_FILE" 2>/dev/null || echo "0"
 }
 
-# Get Transmission current peer port
-get_transmission_port() {
-    docker exec "$TRANSMISSION_CONTAINER" cat /config/settings.json 2>/dev/null | \
-        grep -oP '"peer-port":\s*\K\d+' || echo "0"
+# Get torrent client current peer port
+get_client_port() {
+    case "$TORRENT_CLIENT" in
+        qbittorrent)
+            # qBittorrent uses Session\Port in configuration file
+            local port=$(docker exec "$TORRENT_CONTAINER" cat /config/qBittorrent/config/qBittorrent.conf 2>/dev/null | \
+                grep '^Session\\Port=' | cut -d= -f2 || echo "0")
+            if [ "$port" = "0" ]; then
+                # Try the main config file
+                port=$(docker exec "$TORRENT_CONTAINER" cat /config/qBittorrent/qBittorrent.conf 2>/dev/null | \
+                    grep '^Session\\Port=' | cut -d= -f2 || echo "0")
+            fi
+            echo "$port"
+            ;;
+        transmission)
+            # Transmission uses JSON settings
+            docker exec "$TORRENT_CONTAINER" cat /config/settings.json 2>/dev/null | \
+                grep -oP '"peer-port":\s*\K\d+' || echo "0"
+            ;;
+    esac
 }
 
-# Update Transmission peer port
-update_transmission_port() {
+# Update torrent client peer port
+update_client_port() {
     local port=$1
-    docker exec "$TRANSMISSION_CONTAINER" transmission-remote -p "$port" > /dev/null 2>&1
+    case "$TORRENT_CLIENT" in
+        qbittorrent)
+            # Update qBittorrent configuration by editing config file directly
+            # This works when API is not accessible due to network isolation
+            local config_file="/config/qBittorrent/config/qBittorrent.conf"
+
+            # Update Session\Port in the configuration file
+            docker exec "$TORRENT_CONTAINER" sed -i "s/^Session\\\\Port=.*/Session\\\\Port=$port/" "$config_file"
+
+            # Also try updating the main config file if it exists
+            if docker exec "$TORRENT_CONTAINER" test -f "/config/qBittorrent/qBittorrent.conf"; then
+                docker exec "$TORRENT_CONTAINER" sed -i "s/^Session\\\\Port=.*/Session\\\\Port=$port/" "/config/qBittorrent/qBittorrent.conf"
+            fi
+
+            # Restart qBittorrent container to apply the configuration change
+            docker restart "$TORRENT_CONTAINER" > /dev/null 2>&1
+            ;;
+        transmission)
+            # Update Transmission via RPC
+            docker exec "$TORRENT_CONTAINER" transmission-remote -p "$port" > /dev/null 2>&1
+            ;;
+    esac
 }
 
 # Test if port is accessible
 test_port() {
-    local port=$1
-    docker exec "$TRANSMISSION_CONTAINER" transmission-remote -pt > /dev/null 2>&1
+    case "$TORRENT_CLIENT" in
+        qbittorrent)
+            # Test if qBittorrent is running and port is set by checking config file
+            # Since API is not accessible due to network isolation, we verify the config
+            local config_file="/config/qBittorrent/config/qBittorrent.conf"
+            local configured_port=$(docker exec "$TORRENT_CONTAINER" grep '^Session\\Port=' "$config_file" 2>/dev/null | cut -d= -f2 || echo "0")
+
+            # Check if qBittorrent process is running
+            if docker exec "$TORRENT_CONTAINER" pgrep qbittorrent-nox > /dev/null 2>&1; then
+                # Return success if configured port matches expected port
+                [ "$configured_port" = "$port" ]
+            else
+                return 1
+            fi
+            ;;
+        transmission)
+            # Use Transmission's built-in port test
+            docker exec "$TORRENT_CONTAINER" transmission-remote -pt > /dev/null 2>&1
+            ;;
+    esac
 }
 
 main() {
-    log "Starting PIA port refresh process"
+    log "Starting PIA port refresh process for $TORRENT_CLIENT"
 
     # Check containers are running
     if ! docker ps | grep -q "$VPN_CONTAINER"; then
@@ -44,17 +125,17 @@ main() {
         exit 1
     fi
 
-    if ! docker ps | grep -q "$TRANSMISSION_CONTAINER"; then
-        log "ERROR: Transmission container is not running"
+    if ! docker ps | grep -q "$TORRENT_CONTAINER"; then
+        log "ERROR: $TORRENT_CLIENT container is not running"
         exit 1
     fi
 
     # Get ports before refresh
     local old_vpn_port=$(get_current_port)
-    local old_transmission_port=$(get_transmission_port)
+    local old_client_port=$(get_client_port)
 
     log "Current VPN forwarded port: $old_vpn_port"
-    log "Current Transmission port: $old_transmission_port"
+    log "Current $TORRENT_CLIENT port: $old_client_port"
 
     # Restart VPN container to get new port
     log "Restarting VPN container..."
@@ -92,10 +173,10 @@ main() {
 
     log "New forwarded port: $new_port"
 
-    # Update Transmission if port changed
-    if [ "$new_port" != "$old_transmission_port" ]; then
-        log "Updating Transmission port from $old_transmission_port to $new_port"
-        update_transmission_port "$new_port"
+    # Update torrent client if port changed
+    if [ "$new_port" != "$old_client_port" ]; then
+        log "Updating $TORRENT_CLIENT port from $old_client_port to $new_port"
+        update_client_port "$new_port"
 
         # Wait a moment for configuration to apply
         sleep 5
@@ -112,9 +193,19 @@ main() {
     fi
 
     # Update .env file for persistence
-    if [ "$new_port" != "$(grep TRANSMISSION_PORT= .env | cut -d= -f2)" ]; then
-        log "Updating TRANSMISSION_PORT in .env file..."
-        sed -i "s/^TRANSMISSION_PORT=.*/TRANSMISSION_PORT=$new_port/" .env
+    local env_var_name=""
+    case "$TORRENT_CLIENT" in
+        qbittorrent)
+            env_var_name="QBITTORRENT_PEER_PORT"
+            ;;
+        transmission)
+            env_var_name="TRANSMISSION_PORT"
+            ;;
+    esac
+
+    if [ -n "$env_var_name" ] && [ "$new_port" != "$(grep "^${env_var_name}=" .env | cut -d= -f2)" ]; then
+        log "Updating $env_var_name in .env file..."
+        sed -i "s/^${env_var_name}=.*/${env_var_name}=$new_port/" .env
     fi
 
     log "Port refresh completed successfully!"
