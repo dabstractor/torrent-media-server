@@ -9,7 +9,7 @@ Usage:
     ./migrate-torrents.py --direction qb2tr               # Migrate qBittorrent → Transmission
 
 Requirements:
-    pip install qbittorrent-api>=2024.1.59 transmission-rpc>=7.0.3
+    pip install qbittorrent-api>=2024.1.59 transmission-rpc>=7.0.3 python3-libtorrent
 
 Configuration:
     Create config.json with connection details (see config.json.template)
@@ -172,16 +172,35 @@ class QBittorrentHandler:
             raise RuntimeError("Not connected to qBittorrent. Call connect() first.")
 
         try:
-            with open(torrent_file, 'rb') as f:
-                # CRITICAL: is_skip_checking=True for complete torrents to avoid re-hash
-                self.client.torrents_add(
-                    torrent_files=f,
-                    save_path=save_path,
-                    is_skip_checking=is_complete,  # Skip hash check for complete torrents
-                    is_paused=is_paused,  # Add paused for safety
-                    tags=tags or [],  # Preserve labels as tags
-                    category=category or ""
-                )
+            if torrent_file == "MAGNET_FILE":
+                # Add as magnet link
+                if hasattr(self, '_current_magnet_file'):
+                    with open(self._current_magnet_file, 'r') as f:
+                        magnet_link = f.read().strip()
+
+                    self.client.torrents_add(
+                        urls=magnet_link,
+                        save_path=save_path,
+                        is_paused=is_paused,
+                        tags=tags or [],
+                        category=category or ""
+                    )
+                    print(f"  ✓ Added magnet link to qBittorrent")
+                else:
+                    raise ValueError("MAGNET_FILE specified but no magnet file available")
+            else:
+                # Add as torrent file
+                with open(torrent_file, 'rb') as f:
+                    # CRITICAL: is_skip_checking=True for complete torrents to avoid re-hash
+                    self.client.torrents_add(
+                        torrent_files=f,
+                        save_path=save_path,
+                        is_skip_checking=is_complete,  # Skip hash check for complete torrents
+                        is_paused=is_paused,  # Add paused for safety
+                        tags=tags or [],  # Preserve labels as tags
+                        category=category or ""
+                    )
+                    print(f"  ✓ Added torrent file to qBittorrent")
             return True
         except Exception as e:
             print(f"✗ Error adding torrent from {torrent_file}: {e}")
@@ -254,18 +273,27 @@ class TransmissionHandler:
             print(f"✗ Error getting torrents from Transmission: {e}")
             raise
 
-    def get_torrent_file_path(self, torrent_hash: str) -> str:
-        """Get path to .torrent file for a given hash."""
+    def get_torrent_file_path(self, torrent_hash: str, torrent_name: str = "") -> str:
+        """Get path to .torrent file for a given hash, handling both .torrent and .magnet files."""
         torrent_dir = Path(self.config['torrent_dir']).expanduser().resolve()
+
+        # First try .torrent file
         torrent_file = torrent_dir / f"{torrent_hash}.torrent"
+        if torrent_file.exists():
+            return str(torrent_file)
 
-        if not torrent_file.exists():
-            raise FileNotFoundError(
-                f"Torrent file not found: {torrent_file}\n"
-                f"  Make sure torrent_dir is correctly configured: {torrent_dir}"
-            )
+        # Check for .magnet file
+        magnet_file = torrent_dir / f"{torrent_hash}.magnet"
+        if magnet_file.exists():
+            # Store magnet file path for later use in add_torrent
+            self._current_magnet_file = str(magnet_file)
+            self._current_magnet_hash = torrent_hash
+            return "MAGNET_FILE"
 
-        return str(torrent_file)
+        raise FileNotFoundError(
+            f"Neither torrent nor magnet file found for hash {torrent_hash}\n"
+            f"  Make sure torrent_dir is correctly configured: {torrent_dir}"
+        )
 
     def add_torrent(
         self,
@@ -374,7 +402,7 @@ class Migrator:
 
                 # Get .torrent file path
                 try:
-                    torrent_file = self.tr_handler.get_torrent_file_path(torrent.hashString)
+                    torrent_file = self.tr_handler.get_torrent_file_path(torrent.hashString, torrent.name)
                 except FileNotFoundError as e:
                     print(f"  ✗ Torrent file not found: {e}")
                     results['failed'].append({
