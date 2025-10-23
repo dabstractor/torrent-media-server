@@ -61,9 +61,12 @@ services:
       - TZ=${TZ:-America/New_York}
       - FIREWALL=on # Built-in kill switch
       - DOT=off
-      - HEALTH_VPN_DURATION_INITIAL=60s
-      - HEALTH_VPN_DURATION_ADDITION=10s
-      # PIA native provider settings (for automatic port forwarding)
+      # DNS resilience settings to prevent timeout crashes
+      - DNS_PLAINTEXT_ADDRESS=8.8.8.8
+      - HEALTH_VPN_FAILURE_THRESHOLD=5
+      - HEALTH_VPN_SUCCESS_THRESHOLD=3
+      - HEALTH_VPN_TARGET_ADDRESS=google.com:443
+            # PIA native provider settings (for automatic port forwarding)
       - SERVER_REGIONS=${PIA_REGION:-CA Toronto}
       - OPENVPN_USER=${PIA_USERNAME:-}
       - OPENVPN_PASSWORD=${PIA_PASSWORD:-}
@@ -163,39 +166,39 @@ services:
     restart: unless-stopped
     stop_grace_period: 60s
   # Transmission - Alternative torrent download client running through VPN
-  # transmission:
-  #   image: lscr.io/linuxserver/transmission:latest
-  #   container_name: ${CONTAINER_PREFIX}transmission
-  #   network_mode: "container:${CONTAINER_PREFIX}vpn" # Share VPN container's network stack (most secure isolation)
-  #   depends_on:
-  #     init-directories:
-  #       condition: service_completed_successfully
-  #     vpn:
-  #       condition: service_healthy
-    #   environment:
-  #     - PUID=1000
-  #     - PGID=1000
-  #     - TZ=${TZ:-America/New_York}
-  #     - USER=${TRANSMISSION_USERNAME}
-  #     - PASS=${TRANSMISSION_PASSWORD}
-  #     - PEERPORT=${TRANSMISSION_PORT:-51413}
-  #   volumes:
-  #     - ./config/transmission:/config
-  #     - ./config/templates/transmission:/templates:ro
-  #     - ./data/downloads:/downloads
-  #     - ./data/downloads/watch:/watch
-  #     - ./scripts:/scripts:ro
-  #   entrypoint: ["/scripts/transmission-entrypoint.sh"]
-  #   healthcheck:
-  #     test: ["CMD", "sh", "-c", "curl -s http://localhost:9091/transmission/rpc | grep -q 'X-Transmission-Session-Id'"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
-  #     start_period: 40s
-  #   profiles:
-  #     - transmission
-  #   restart: unless-stopped
-  #   stop_grace_period: 60s
+  transmission:
+    image: lscr.io/linuxserver/transmission:latest
+    container_name: ${CONTAINER_PREFIX}transmission
+    network_mode: "container:${CONTAINER_PREFIX}vpn" # Share VPN container's network stack (most secure isolation)
+    depends_on:
+      init-directories:
+        condition: service_completed_successfully
+      vpn:
+        condition: service_healthy
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/New_York}
+      - USER=${TRANSMISSION_USERNAME}
+      - PASS=${TRANSMISSION_PASSWORD}
+      - PEERPORT=${TRANSMISSION_PORT:-51413}
+    volumes:
+      - ./config/transmission:/config
+      - ./config/templates/transmission:/templates:ro
+      - ./data/downloads:/downloads
+      - ./data/downloads/watch:/watch
+      - ./scripts:/scripts:ro
+    entrypoint: ["/scripts/transmission-entrypoint.sh"]
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -s http://localhost:9091/transmission/rpc | grep -q 'X-Transmission-Session-Id'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    profiles:
+      - transmission
+    restart: unless-stopped
+    stop_grace_period: 60s
   # Plex Media Server
   plex:
     image: ghcr.io/linuxserver/plex
@@ -721,3 +724,30 @@ services:
       start_period: 60s
     restart: unless-stopped
     stop_grace_period: 30s
+
+  # VPN Dependency Monitor - Restarts torrent containers when VPN restarts
+  vpn-dependency-monitor:
+    image: docker:cli
+    container_name: ${CONTAINER_PREFIX}vpn-dependency-monitor
+    command: ["sh", "-c", "while true; do sh /scripts/vpn-dependency-monitor.sh; sleep 5; done"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./scripts:/scripts:ro
+      - vpn-dependency-monitor-tmp:/tmp
+    environment:
+      - CONTAINER_PREFIX=${CONTAINER_PREFIX:-}
+      - VPN_CONTAINER=${CONTAINER_PREFIX:-}vpn
+      - QBITTORRENT_CONTAINER=${CONTAINER_PREFIX:-}qbittorrent
+      - TRANSMISSION_CONTAINER=${CONTAINER_PREFIX:-}transmission
+    depends_on:
+      vpn:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 64m
+
+volumes:
+  vpn-dependency-monitor-tmp:
+    driver: local
