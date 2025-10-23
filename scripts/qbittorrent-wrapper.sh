@@ -105,7 +105,7 @@ fi
 
 # Start qBittorrent and capture output
 echo "Starting qBittorrent..."
-/usr/bin/qbittorrent-nox --profile="$PROFILE_PATH" --webui-port="$WEBUI_PORT" 2>&1 | tee "$LOG_FILE" &
+/usr/bin/qbittorrent-nox --profile="$PROFILE_PATH" --webui-port="$WEBUI_PORT" --confirm-legal-notice 2>&1 | tee "$LOG_FILE" &
 QBIT_PID=$!
 
 echo "qBittorrent PID: $QBIT_PID"

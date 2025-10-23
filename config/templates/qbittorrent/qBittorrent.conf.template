@@ -109,3 +109,6 @@ WebUI\SecureCookie=false
 WebUI\ServerDomains=*
 WebUI\SessionTimeout=3600
 WebUI\UseUPnP=true
+Session\DisableOSCache=false
+Session\DiskCache=64
+Session\DiskCacheTTL=60
