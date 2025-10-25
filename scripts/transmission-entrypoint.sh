@@ -59,6 +59,14 @@ fi
 
 echo "[INIT] Configuration initialization complete"
 
+# Apply PEERPORT environment variable to settings.json (fix for environment variable not being applied)
+# This runs every time the container starts, not just on first run
+if [[ -n "$PEERPORT" ]]; then
+    echo "[INIT] Updating peer-port to $PEERPORT from environment variable"
+    jq --arg peerport "$PEERPORT" '.["peer-port"] = $peerport' /config/transmission-daemon/settings.json > /tmp/settings.json.tmp
+    mv /tmp/settings.json.tmp /config/transmission-daemon/settings.json
+fi
+
 # Update port from PIA if available (for PIA port forwarding)
 if [ "$VPN_SERVICE_PROVIDER" = "private internet access" ] && [ "$VPN_TYPE" = "openvpn" ]; then
     echo "[INIT] Checking for PIA forwarded port..."
